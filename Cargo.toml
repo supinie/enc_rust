@@ -2,8 +2,8 @@
 name = "kyber_rust"
 version = "0.1.0"
 edition = "2021"
-authors = ["supinie <joshua@supinie.com>"
-]
+authors = ["supinie <joshua@supinie.com>"]
+
 description = "A rust implementation of the IND-CCA2-secure PQC KEM Kyber (https://pq-crystals.org/kyber/)"
 readme = "README.md"
 

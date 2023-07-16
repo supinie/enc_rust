@@ -1,5 +1,7 @@
 use clap::{command, arg};
 use kyber512;
+use kyber768;
+use kyber1024;
 
 fn main() {
     let matches = command!()
@@ -19,12 +21,11 @@ fn main() {
         .get_one::<String>("SECURITYLEVEL")
         .expect("");
     println!("{}", bits);
-    println!("my name jeff");
-    if bits == "512" {
-        println!("test");
-        kyber512::test_512();
-    } else {
-        println!("didnt test")
+    match &bits as &str {
+        "512" => kyber512::test_512(),
+        "768" => kyber768::test_768(),
+        "1024" => kyber1024::test_1024(),
+        _ => panic!("Invalid security level"),
     }
 }
 

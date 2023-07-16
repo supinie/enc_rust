@@ -1,1 +1,9 @@
-pub const TEST: usize = 100;
+pub const N: usize = 256;
+pub const Q: usize = 3329;
+
+pub const SYMBYTES: usize = 32; // size of hashes
+
+pub const SHAREDSECRETBYTES: usize = 32;
+
+pub const POLYBYTES: usize = 384;
+// pub const POLYVECBYTES: usize = 

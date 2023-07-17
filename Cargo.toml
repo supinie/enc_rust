@@ -15,11 +15,6 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 
-[features]
-kyber512 = []
-kyber768 = []
-kyber1024 = []
-
 [workspace]
 members = ["src/kyber", "src/kyber512", "src/kyber768", "src/kyber1024"]
 default-members = ["src/kyber"]

@@ -1,4 +1,6 @@
 pub mod kem;
-mod params;
+pub mod params;
 mod kex;
 mod indcpa;
+
+

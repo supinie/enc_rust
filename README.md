@@ -1,4 +1,4 @@
-# Kyber_Rust
+# Kyber_Rust _(WIP)_
 
 A rust implementation of the IND-CCA2-secure PQC KEM Kyber (https://pq-crystals.org/kyber/).
 

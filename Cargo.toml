@@ -14,7 +14,8 @@ license = "GPL-3.0-or-later"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "4.3.12", features = ["cargo"] }
 
-[workspace]
-members = ["src/kyber"]
-default-members = ["src/kyber"]
+# [workspace]
+# members = ["src/kyber"]
+# default-members = ["src/kyber"]

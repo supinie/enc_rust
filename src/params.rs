@@ -1,7 +1,3 @@
-pub const K_512: usize = 2;
-pub const K_768: usize = 3;
-pub const K_1024: usize = 4;
-
 pub const N: usize = 256;
 pub const Q: usize = 3329;
 
@@ -13,62 +9,56 @@ pub const POLYBYTES: usize = 384;
 
 pub const POLYCOMPRESSEDBYTES: usize = 128;
 
-pub trait ParamsTemplate {
-    const K: usize;
-    const ETA: usize;
-    const POLYVECBYTES: usize;
-    const POLYVECCOMPRESSEDBYTES: usize;
-    const INDCPAPUBLICKEYBYTES: usize;
-    const INDCPASECRETKEYBYTES: usize;
-    const INDCPABYTES: usize;
-    const PUBLICKEYBYTES: usize;
-    const SECRETKEYBYTES: usize;
-    const CIPHERTEXTBYTES: usize;
+pub struct Params {
+    pub k: usize,
+    pub eta1: usize,
+    pub eta2: usize,
 }
 
-pub struct Params;
+impl Params {
+    pub fn poly_vec_bytes(&self) -> usize {
+        self.k * POLYBYTES
+    }
 
-// pub fn set_512_params() {
-//     impl ParamsTemplate for Params {
-//         const K: usize = K_512;
-//         const ETA: usize = 5;
-//         const POLYVECBYTES: usize = Self::K * POLYBYTES;
-//         const POLYVECCOMPRESSEDBYTES: usize = Self::K * 320;
-//         const INDCPAPUBLICKEYBYTES: usize = Self::POLYVECBYTES + SYMBYTES;
-//         const INDCPASECRETKEYBYTES: usize = Self::POLYVECBYTES;
-//         const INDCPABYTES: usize = Self::POLYVECCOMPRESSEDBYTES + POLYCOMPRESSEDBYTES;
-//         const PUBLICKEYBYTES: usize = Self::INDCPAPUBLICKEYBYTES;
-//         const SECRETKEYBYTES: usize = Self::INDCPASECRETKEYBYTES + Self::INDCPAPUBLICKEYBYTES + 2 * SYMBYTES;
-//         const CIPHERTEXTBYTES: usize = Self::INDCPABYTES;
-//     }
-// }
+    pub fn poly_vec_compressed_bytes(&self) -> usize {
+        self.k * 320
+    }
 
-// pub fn set_768_params() {
-//     impl ParamsTemplate for Params {
-//         const K: usize = K_768;
-//         const ETA: usize = 5;
-//         const POLYVECBYTES: usize = Self::K * POLYBYTES;
-//         const POLYVECCOMPRESSEDBYTES: usize = Self::K * 320;
-//         const INDCPAPUBLICKEYBYTES: usize = Self::POLYVECBYTES + SYMBYTES;
-//         const INDCPASECRETKEYBYTES: usize = Self::POLYVECBYTES;
-//         const INDCPABYTES: usize = Self::POLYVECCOMPRESSEDBYTES + POLYCOMPRESSEDBYTES;
-//         const PUBLICKEYBYTES: usize = Self::INDCPAPUBLICKEYBYTES;
-//         const SECRETKEYBYTES: usize = Self::INDCPASECRETKEYBYTES + Self::INDCPAPUBLICKEYBYTES + 2 * SYMBYTES;
-//         const CIPHERTEXTBYTES: usize = Self::INDCPABYTES;
-//     }
-// }
+    pub fn indcpa_public_key_bytes(&self) -> usize {
+        self.poly_vec_bytes() + SYMBYTES
+    }
 
-// pub fn set_1024_params() {
-//     impl ParamsTemplate for Params {
-//         const K: usize = K_1024;
-//         const ETA: usize = 5;
-//         const POLYVECBYTES: usize = Self::K * POLYBYTES;
-//         const POLYVECCOMPRESSEDBYTES: usize = Self::K * 320;
-//         const INDCPAPUBLICKEYBYTES: usize = Self::POLYVECBYTES + SYMBYTES;
-//         const INDCPASECRETKEYBYTES: usize = Self::POLYVECBYTES;
-//         const INDCPABYTES: usize = Self::POLYVECCOMPRESSEDBYTES + POLYCOMPRESSEDBYTES;
-//         const PUBLICKEYBYTES: usize = Self::INDCPAPUBLICKEYBYTES;
-//         const SECRETKEYBYTES: usize = Self::INDCPASECRETKEYBYTES + Self::INDCPAPUBLICKEYBYTES + 2 * SYMBYTES;
-//         const CIPHERTEXTBYTES: usize = Self::INDCPABYTES;
-//     }
-// }
+    pub fn indcpa_private_key_bytes(&self) -> usize {
+        self.poly_vec_bytes()
+    }
+
+    pub fn indcpa_bytes(&self) -> usize {
+        self.poly_vec_compressed_bytes() + POLYCOMPRESSEDBYTES
+    }
+
+    pub fn public_key_bytes(&self) -> usize {
+        self.indcpa_public_key_bytes()
+    }
+
+    pub fn private_key_bytes(&self) -> usize {
+        self.indcpa_private_key_bytes() + self.indcpa_private_key_bytes() + 2 * SYMBYTES
+    }
+
+    pub fn cipher_text_bytes(&self) -> usize {
+        self.indcpa_bytes()
+    }
+}
+
+
+pub fn set_params(sec_level: usize) -> Params {
+    Params {
+        k: sec_level,
+        eta1: {
+            if sec_level == 2 {
+                3
+            } else {
+                2
+            }},
+        eta2: 2,
+    }
+}

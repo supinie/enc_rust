@@ -1,4 +1,4 @@
-use crate::{params::N, field_ops::{ZETAS, montgomery_reduce}};
+use crate::{params::N, field_ops::{ZETAS, INV_NTT_REDUCTIONS, montgomery_reduce}};
 
 #[derive(Copy, Clone, Default)]
 pub struct Poly {
@@ -28,7 +28,7 @@ impl Poly {
             let mut offset = 0;
             while offset < N - l {
                 k+=1;
-                let zeta = (ZETAS[k] as i32);
+                let zeta = ZETAS[k] as i32;
 
                 let mut j = offset;
                 while j < offset + l {
@@ -40,6 +40,45 @@ impl Poly {
                 offset += 2 * l;
             }
             l >>= 1;
+        }
+    }
+
+    // In place inverse NTT, with montgomery reduction
+    pub fn inv_ntt(&mut self) {
+        let mut k: usize = 127;
+        let mut r = 0usize;
+        let mut l = 2;
+
+        while l < N {
+            let mut offset = 0usize;
+            while offset < N - l {
+                let min_zeta = ZETAS[k] as i32;
+                k-=1;
+
+                let mut j = offset;
+                while j < offset + l {
+                    let t = self.coeffs[j + l] - self.coeffs[j];
+                    self.coeffs[j] += self.coeffs[j + l];
+                    self.coeffs[j + l] = montgomery_reduce(min_zeta * (t as i32));
+
+                    j+=1;
+                }
+                offset += 2 * l;
+            }
+
+            let mut i = INV_NTT_REDUCTIONS[r];
+            while i >= 0 {
+                i = INV_NTT_REDUCTIONS[r];
+                self.coeffs[i] = barrett_reduce(p[i]);
+                r+=1;
+            }
+
+            let mut j = 0usize;
+            while j < N {
+                self.coeffs[j] = montgomery_reduce(1441 * (p[j] as i32));
+                j+=1;
+            }
+            l <<= 1;
         }
     }
 }

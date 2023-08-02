@@ -1,4 +1,4 @@
-use crate::{params::N, field_ops::{ZETAS, INV_NTT_REDUCTIONS, montgomery_reduce}};
+use crate::{params::N, field_ops::*};
 
 #[derive(Copy, Clone)]
 pub struct Poly {
@@ -73,13 +73,13 @@ impl Poly {
             let mut i = INV_NTT_REDUCTIONS[r];
             while i >= 0 {
                 i = INV_NTT_REDUCTIONS[r];
-                self.coeffs[i] = barrett_reduce(p[i]);
+                self.coeffs[i] = barrett_reduce(self.coeffs[i]);
                 r+=1;
             }
 
             let mut j = 0usize;
             while j < N {
-                self.coeffs[j] = montgomery_reduce(1441 * (p[j] as i32));
+                self.coeffs[j] = montgomery_reduce(1441 * (self.coeffs[j] as i32));
                 j+=1;
             }
             l <<= 1;

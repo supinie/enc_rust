@@ -29,7 +29,7 @@ pub const INV_NTT_REDUCTIONS: [i16; 79] = [
 // given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
 pub fn montgomery_reduce(x: i32) -> i16 {
     let m = x.wrapping_mul(QPRIME) as i16;
-    let t = (x - (m as i32).wrapping_mul(Q)) >> 16;
+    let t = (x - (m as i32).wrapping_mul(Q as i32)) >> 16;
     return t as i16;
 }
 
@@ -57,12 +57,13 @@ pub fn barrett_reduce(x: i16) -> i16 {
 	//                        [ q        if x=-nq for pos. integer n
 	//  x - ⌊x 20156/2²⁶⌋ q = [
 	//                        [ x mod q  otherwise
-    let inside_floor = ((x as i32).wrapping_mul(APPROXIMATION) >> 26) as i16;
+    let inside_floor = ((x as i32).wrapping_mul(APPROXIMATION as i32) >> 26) as i16;
     return x - (inside_floor) * 3329
 }
 
 pub fn cond_sub_q(x: i16) -> i16 {
-    let mut result = x - Q;
-    result += (result >> 15) & Q;
+    const Q_16: i16 = Q as i16;
+    let mut result = x - Q_16;
+    result += (result >> 15) & Q_16;
     return result
 }

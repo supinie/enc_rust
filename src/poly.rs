@@ -72,8 +72,8 @@ impl Poly {
 
             let mut i = INV_NTT_REDUCTIONS[r];
             while i >= 0 {
+                self.coeffs[i as usize] = barrett_reduce(self.coeffs[i as usize]);
                 i = INV_NTT_REDUCTIONS[r];
-                self.coeffs[i] = barrett_reduce(self.coeffs[i]);
                 r+=1;
             }
 

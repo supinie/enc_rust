@@ -1,11 +1,15 @@
 use crate::{params::N, field_ops::{ZETAS, INV_NTT_REDUCTIONS, montgomery_reduce}};
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone)]
 pub struct Poly {
     pub coeffs: [i16; N]
 }
 
 impl Poly {
+    pub fn new() -> Self {
+        Poly { coeffs: [0; N] }
+    }
+
     // Sets self to self + x
     pub fn add(&mut self, x: &Poly) {
         for i in 0..N {

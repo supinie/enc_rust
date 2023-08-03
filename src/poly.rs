@@ -85,4 +85,12 @@ impl Poly {
             l <<= 1;
         }
     }
+
+    // Normalise coefficients of given polynomial
+    pub fn normalise(&mut self) {
+        for coefficient in self.coeffs.iter_mut() {
+            *coefficient = cond_sub_q(barrett_reduce(*coefficient));
+        }
+    }
+
 }

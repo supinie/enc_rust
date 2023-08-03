@@ -4,5 +4,5 @@ mod kex;
 mod indcpa;
 mod field_ops;
 mod poly;
-
+mod test;
 

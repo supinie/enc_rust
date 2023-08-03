@@ -55,6 +55,7 @@ mod tests {
 
         // Perform NTT
         input_poly.ntt();
+        println!("{:?}", input_poly.coeffs[0]);
 
         for coefficient in input_poly.coeffs {
             ma::assert_lt!(coefficient, 7*(Q as i16));
@@ -63,9 +64,11 @@ mod tests {
             
 
         input_poly.normalise();
+        println!("{:?}", input_poly.coeffs[0]);
 
         // Perform inverse NTT
         input_poly.inv_ntt();
+        println!("{:?}", input_poly.coeffs[0]);
 
         for coefficient in input_poly.coeffs {
             ma::assert_lt!(coefficient, (Q as i16));
@@ -73,6 +76,7 @@ mod tests {
         }
 
         input_poly.normalise();
+        println!("{:?}", input_poly.coeffs[0]);
 
         for i in 0..N {
             let p: i32 = input_poly.coeffs[i] as i32;

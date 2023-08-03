@@ -50,39 +50,34 @@ impl Poly {
     // In place inverse NTT, with montgomery reduction
     pub fn inv_ntt(&mut self) {
         let mut k: usize = 127;
-        let mut r = 0usize;
+        let mut r: isize = -1;
         let mut l = 2;
 
         while l < N {
-            let mut offset = 0usize;
-            while offset < N - l {
+            for offset in (0..N - 1).step_by(2 * l) {
                 let min_zeta = ZETAS[k] as i32;
-                k-=1;
+                k -= 1;
 
-                let mut j = offset;
-                while j < offset + l {
+                for j in offset..offset + l {
                     let t = self.coeffs[j + l] - self.coeffs[j];
                     self.coeffs[j] += self.coeffs[j + l];
                     self.coeffs[j + l] = montgomery_reduce(min_zeta * (t as i32));
-
-                    j+=1;
                 }
-                offset += 2 * l;
             }
 
-            let mut i = INV_NTT_REDUCTIONS[r];
-            while i >= 0 {
+            while true {
+                r += 1;
+                let i = INV_NTT_REDUCTIONS[r as usize];
+                if i < 0 {
+                    break;
+                }
                 self.coeffs[i as usize] = barrett_reduce(self.coeffs[i as usize]);
-                i = INV_NTT_REDUCTIONS[r];
-                r+=1;
-            }
-
-            let mut j = 0usize;
-            while j < N {
-                self.coeffs[j] = montgomery_reduce(1441 * (self.coeffs[j] as i32));
-                j+=1;
             }
             l <<= 1;
+        }
+
+        for j in 0..N {
+            self.coeffs[j] = montgomery_reduce(1441 * (self.coeffs[j] as i32));
         }
     }
 

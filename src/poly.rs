@@ -6,6 +6,7 @@ pub struct Poly {
 }
 
 impl Poly {
+    // We can't use default, as that is only supported for arrays of length 32 or less
     pub fn new() -> Self {
         Poly { coeffs: [0; N] }
     }
@@ -65,7 +66,7 @@ impl Poly {
                 }
             }
 
-            while true {
+            loop {
                 r += 1;
                 let i = INV_NTT_REDUCTIONS[r as usize];
                 if i < 0 {
@@ -83,9 +84,20 @@ impl Poly {
 
     // Normalise coefficients of given polynomial
     pub fn normalise(&mut self) {
-        for coefficient in self.coeffs.iter_mut() {
-            *coefficient = cond_sub_q(barrett_reduce(*coefficient));
+        for coeff in self.coeffs.iter_mut() {
+            *coeff = cond_sub_q(barrett_reduce(*coeff));
         }
     }
 
+    pub fn barrett_reduce(&mut self) {
+        for coeff in self.coeffs.iter_mut() {
+            *coeff = barrett_reduce(*coeff);
+        }
+    }
+
+    pub fn to_mont(&mut self) {
+        for coeff in self.coeffs.iter_mut() {
+            *coeff = to_mont(*coeff);
+        }
+    }
 }

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{params::*, field_ops::*, poly::*};    
-    use more_asserts as ma;
+    use more_asserts::{assert_gt, assert_lt};
 
     // Test Poly::new()
     #[test]
@@ -57,8 +57,8 @@ mod tests {
         input_poly.ntt();
 
         for coefficient in input_poly.coeffs {
-            ma::assert_lt!(coefficient, 7*(Q as i16));
-            ma::assert_gt!(coefficient, -7*(Q as i16));
+            assert_lt!(coefficient, 7*(Q as i16));
+            assert_gt!(coefficient, -7*(Q as i16));
         }
             
 
@@ -68,8 +68,8 @@ mod tests {
         input_poly.inv_ntt();
 
         for coefficient in input_poly.coeffs {
-            ma::assert_lt!(coefficient, (Q as i16));
-            ma::assert_gt!(coefficient, -(Q as i16));
+            assert_lt!(coefficient, (Q as i16));
+            assert_gt!(coefficient, -(Q as i16));
         }
 
         input_poly.normalise();
@@ -81,5 +81,29 @@ mod tests {
         }
         // // The result of inverse NTT should match the original input.
         // assert_eq!(input_poly.coeffs, original_input.coeffs);
+    }
+
+    #[test]
+    pub fn test_montgomery_reduce() {
+        assert_eq!(montgomery_reduce(i32::MAX), 32599);
+        assert_eq!(montgomery_reduce(i32::MIN), -32768);
+    }
+
+    #[test]
+    pub fn test_to_mont() {
+        assert_eq!(to_mont(i16::MAX), 56);
+        assert_eq!(to_mont(i16::MIN), 988);
+    }
+
+    #[test]
+    pub fn test_barrett_reduce() {
+        assert_eq!(barrett_reduce(i16::MAX), 2806);
+        assert_eq!(barrett_reduce(i16::MIN), 522);
+    }
+
+    #[test]
+    pub fn test_cond_sub_q() {
+        assert_eq!(cond_sub_q(i16::MAX), 29438);
+        assert_eq!(cond_sub_q(-29439), -29439);
     }
 }

@@ -1,3 +1,5 @@
+use more_asserts::assert_ge;
+
 use crate::params::*;
 
 const QPRIME: i32 = 62209;
@@ -58,10 +60,11 @@ pub fn barrett_reduce(x: i16) -> i16 {
 	//  x - ⌊x 20156/2²⁶⌋ q = [
 	//                        [ x mod q  otherwise
     let inside_floor = ((x as i32).wrapping_mul(APPROXIMATION as i32) >> 26) as i16;
-    return x - (inside_floor) * 3329
+    return x.wrapping_sub(inside_floor.wrapping_mul(Q as i16))
 }
 
 pub fn cond_sub_q(x: i16) -> i16 {
+    assert_ge!(x, -29439, "x must be >= to -29439 when applying conditional subtract q");
     const Q_16: i16 = Q as i16;
     let mut result = x - Q_16;
     result += (result >> 15) & Q_16;

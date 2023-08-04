@@ -1,18 +1,18 @@
 #[cfg(test)]
-mod tests {
-    use crate::{params::*, field_ops::*, poly::*};    
+mod poly_tests {
+    use crate::{params::*, poly::*};    
     use more_asserts::{assert_gt, assert_lt};
 
     // Test Poly::new()
     #[test]
-    fn test_poly_new() {
+    fn new_test() {
         let poly = Poly::new();
         assert_eq!(poly.coeffs, [0; N]);
     }
 
     // Test Poly::add()
     #[test]
-    fn test_poly_add() {
+    fn add_test() {
         let mut poly1 = Poly { coeffs: [1; N] };
         let poly2 = Poly { coeffs: [4; N] };
         poly1.add(&poly2);
@@ -21,7 +21,7 @@ mod tests {
 
     // Test Poly::sub()
     #[test]
-    fn test_poly_sub() {
+    fn sub_test() {
         let mut poly1 = Poly { coeffs: [3; N] };
         let poly2 = Poly { coeffs: [1; N] };
         poly1.sub(&poly2);
@@ -30,21 +30,21 @@ mod tests {
 
     // // Test Poly::ntt()
     // #[test]
-    // fn test_poly_ntt() {
+    // fn poly_ntt_test() {
     //     // Write a test case to check if the NTT function is working as expected.
     //     // You might need to add additional helper functions if required.
     // }
 
     // // Test Poly::inv_ntt()
     // #[test]
-    // fn test_poly_inv_ntt() {
+    // fn poly_inv_ntt_test() {
     //     // Write a test case to check if the inverse NTT function is working as expected.
     //     // You might need to add additional helper functions if required.
     // }
 
     // Test Poly::ntt() and Poly::inv_ntt()
     #[test]
-    fn test_ntt_inv_ntt() {
+    fn ntt_inv_ntt_test() {
         // Create a random input polynomial.
         let mut input_poly = Poly { coeffs: [20; N] };
 
@@ -81,29 +81,5 @@ mod tests {
         }
         // // The result of inverse NTT should match the original input.
         // assert_eq!(input_poly.coeffs, original_input.coeffs);
-    }
-
-    #[test]
-    pub fn test_montgomery_reduce() {
-        assert_eq!(montgomery_reduce(i32::MAX), 32599);
-        assert_eq!(montgomery_reduce(i32::MIN), -32768);
-    }
-
-    #[test]
-    pub fn test_to_mont() {
-        assert_eq!(to_mont(i16::MAX), 56);
-        assert_eq!(to_mont(i16::MIN), 988);
-    }
-
-    #[test]
-    pub fn test_barrett_reduce() {
-        assert_eq!(barrett_reduce(i16::MAX), 2806);
-        assert_eq!(barrett_reduce(i16::MIN), 522);
-    }
-
-    #[test]
-    pub fn test_cond_sub_q() {
-        assert_eq!(cond_sub_q(i16::MAX), 29438);
-        assert_eq!(cond_sub_q(-29439), -29439);
     }
 }

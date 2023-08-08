@@ -100,4 +100,34 @@ impl Poly {
             *coeff = to_mont(*coeff);
         }
     }
+
+        // Pointwise multiplication of two polynomials, 
+    // assumes inputs are of montgomery form.
+    pub fn pointwise_mul(&mut self, x: &Poly) {
+        let mut j: usize = 64;
+
+        for i in (0..N).step_by(4) {
+            let zeta = ZETAS[j] as i32;
+            j += 1;
+
+            let mut p0 = montgomery_reduce((self.coeffs[i+1] as i32) * (x.coeffs[i+1] as i32));
+            p0 = montgomery_reduce((p0 as i32) * zeta);
+            p0 += montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i] as i32));
+
+            let mut p1 = montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i+1] as i32));
+            p1 += montgomery_reduce((self.coeffs[i+1] as i32) * (x.coeffs[i] as i32));
+
+            let mut p2 = montgomery_reduce((self.coeffs[i+3] as i32) * (x.coeffs[i+3] as i32));
+            p2 = - montgomery_reduce((p2 as i32) * zeta);
+            p2 += montgomery_reduce((self.coeffs[i+2] as i32) * (x.coeffs[i+2] as i32));
+
+            let mut p3 = montgomery_reduce((self.coeffs[i+2] as i32) * (x.coeffs[i+3] as i32));
+            p3 += montgomery_reduce((self.coeffs[i+3] as i32) * (x.coeffs[i+2] as i32));
+
+            self.coeffs[i] = p0;
+            self.coeffs[i + 1] = p1;
+            self.coeffs[i + 2] = p2;
+            self.coeffs[i + 3] = p3;
+        }
+    }
 }

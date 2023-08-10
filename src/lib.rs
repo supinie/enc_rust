@@ -9,4 +9,5 @@ mod buffer;
 mod tests {
     mod field;
     mod poly;
+    mod buffer;
 }

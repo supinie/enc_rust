@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod field_tests {
-    use crate::{params::*, field_ops::*};    
-    use more_asserts::{assert_gt, assert_lt};
+    use crate::field_ops::*;
 
     #[test]
     pub fn montgomery_reduce_test() {

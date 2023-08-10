@@ -24,7 +24,7 @@ mod buffer_tests {
         let mut buffer = Buffer::new();
         buffer.push(&[1, 2, 3, 4, 5]);
         
-        let bad_result = buffer.read(6);
+        let _bad_result = buffer.read(6);
     }
 
     #[test]

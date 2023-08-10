@@ -14,6 +14,13 @@ impl Buffer {
         }
     }
     
+    pub fn zero_initialise() -> Self {
+        Buffer {
+            data: vec![0; 3*128],
+            pointer: 0,
+        }
+    }
+
     // Write to our bytes buffer
     pub fn push(&mut self, bytes: &[u8]) {
         self.data.extend_from_slice(bytes);

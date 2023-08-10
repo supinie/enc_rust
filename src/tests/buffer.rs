@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod buffer_tests {
-    use crate::buffer::*;
+    use crate::{params::*, buffer::*, poly::*};
 
     #[test]
     fn new_test() {
@@ -33,5 +33,17 @@ mod buffer_tests {
         buffer.pointer = 3;
         buffer.reset();
         assert_eq!(buffer.pointer, 0);
+    }
+
+    #[test]
+    fn pack_unpack_test() {
+        let p = Poly { coeffs: [20; N] };
+        let mut buffer = Buffer::zero_initialise();
+        buffer.pack(&p);
+
+        let mut comp_p = Poly::new();
+        comp_p.unpack(&buffer);
+
+        assert_eq!(comp_p.coeffs, p.coeffs);
     }
 }

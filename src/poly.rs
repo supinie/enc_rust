@@ -101,7 +101,7 @@ impl Poly {
         }
     }
 
-        // Pointwise multiplication of two polynomials, 
+    // Pointwise multiplication of two polynomials, 
     // assumes inputs are of montgomery form.
     pub fn pointwise_mul(&mut self, x: &Poly) {
         let mut j: usize = 64;

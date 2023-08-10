@@ -1,4 +1,4 @@
-use crate::{params::N, field_ops::*, ntt::ZETAS};
+use crate::{params::N, field_ops::*, ntt::ZETAS, buffer::Buffer};
 
 #[derive(Copy, Clone)]
 pub struct Poly {
@@ -71,6 +71,18 @@ impl Poly {
             self.coeffs[i + 1] = p1;
             self.coeffs[i + 2] = p2;
             self.coeffs[i + 3] = p3;
+        }
+    }
+
+    // Packs given poly into buf
+    pub fn unpack(&mut self, buf: &mut Buffer) {
+        for i in 0..N/2 {
+            let t0 = self.coeffs[2*i];
+            let t1 = self.coeffs[2*i + 1];
+            
+            buf.data[3*i] = t0 as u8;
+            buf.data[3*i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
+            buf.data[3*i + 2] = (t1 >> 4) as u8;
         }
     }
 }

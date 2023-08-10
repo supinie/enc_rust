@@ -74,15 +74,11 @@ impl Poly {
         }
     }
 
-    // Packs given poly into buf
-    pub fn unpack(&mut self, buf: &mut Buffer) {
+    // Unpacks a buffer of bytes into a polynomial
+    pub fn unpack(&mut self, buf: &Buffer) {
         for i in 0..N/2 {
-            let t0 = self.coeffs[2*i];
-            let t1 = self.coeffs[2*i + 1];
-            
-            buf.data[3*i] = t0 as u8;
-            buf.data[3*i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
-            buf.data[3*i + 2] = (t1 >> 4) as u8;
+            self.coeffs[2*i] = (buf.data[3*i] as i16) | (((buf.data[3*i + 1] as i16) << 8) & 0xfff);
+            self.coeffs[2*i + 1] = ((buf.data[3*i + 1] >> 4) as i16) | ((buf.data[3*i + 2] as i16) << 4);
         }
     }
 }

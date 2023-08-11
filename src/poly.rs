@@ -1,8 +1,8 @@
-use crate::{params::N, field_ops::*, ntt::ZETAS, buffer::Buffer};
+use crate::{buffer::Buffer, field_ops::*, ntt::ZETAS, params::N};
 
 #[derive(Copy, Clone)]
 pub struct Poly {
-    pub coeffs: [i16; N]
+    pub coeffs: [i16; N],
 }
 
 impl Poly {
@@ -44,7 +44,7 @@ impl Poly {
         }
     }
 
-    // Pointwise multiplication of two polynomials, 
+    // Pointwise multiplication of two polynomials,
     // assumes inputs are of montgomery form.
     pub fn pointwise_mul(&mut self, x: &Poly) {
         let mut j: usize = 64;
@@ -53,19 +53,19 @@ impl Poly {
             let zeta = ZETAS[j] as i32;
             j += 1;
 
-            let mut p0 = montgomery_reduce((self.coeffs[i+1] as i32) * (x.coeffs[i+1] as i32));
+            let mut p0 = montgomery_reduce((self.coeffs[i + 1] as i32) * (x.coeffs[i + 1] as i32));
             p0 = montgomery_reduce((p0 as i32) * zeta);
             p0 += montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i] as i32));
 
-            let mut p1 = montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i+1] as i32));
-            p1 += montgomery_reduce((self.coeffs[i+1] as i32) * (x.coeffs[i] as i32));
+            let mut p1 = montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i + 1] as i32));
+            p1 += montgomery_reduce((self.coeffs[i + 1] as i32) * (x.coeffs[i] as i32));
 
-            let mut p2 = montgomery_reduce((self.coeffs[i+3] as i32) * (x.coeffs[i+3] as i32));
-            p2 = - montgomery_reduce((p2 as i32) * zeta);
-            p2 += montgomery_reduce((self.coeffs[i+2] as i32) * (x.coeffs[i+2] as i32));
+            let mut p2 = montgomery_reduce((self.coeffs[i + 3] as i32) * (x.coeffs[i + 3] as i32));
+            p2 = -montgomery_reduce((p2 as i32) * zeta);
+            p2 += montgomery_reduce((self.coeffs[i + 2] as i32) * (x.coeffs[i + 2] as i32));
 
-            let mut p3 = montgomery_reduce((self.coeffs[i+2] as i32) * (x.coeffs[i+3] as i32));
-            p3 += montgomery_reduce((self.coeffs[i+3] as i32) * (x.coeffs[i+2] as i32));
+            let mut p3 = montgomery_reduce((self.coeffs[i + 2] as i32) * (x.coeffs[i + 3] as i32));
+            p3 += montgomery_reduce((self.coeffs[i + 3] as i32) * (x.coeffs[i + 2] as i32));
 
             self.coeffs[i] = p0;
             self.coeffs[i + 1] = p1;
@@ -76,9 +76,11 @@ impl Poly {
 
     // Unpacks a buffer of bytes into a polynomial
     pub fn unpack(&mut self, buf: &Buffer) {
-        for i in 0..N/2 {
-            self.coeffs[2*i] = (buf.data[3*i] as i16) | (((buf.data[3*i + 1] as i16) << 8) & 0xfff);
-            self.coeffs[2*i + 1] = ((buf.data[3*i + 1] >> 4) as i16) | ((buf.data[3*i + 2] as i16) << 4);
+        for i in 0..N / 2 {
+            self.coeffs[2 * i] =
+                (buf.data[3 * i] as i16) | (((buf.data[3 * i + 1] as i16) << 8) & 0xfff);
+            self.coeffs[2 * i + 1] =
+                ((buf.data[3 * i + 1] >> 4) as i16) | ((buf.data[3 * i + 2] as i16) << 4);
         }
     }
 }

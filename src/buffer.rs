@@ -1,4 +1,4 @@
-use crate::{poly::*, params::*};
+use crate::{params::*, poly::*};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Buffer {
@@ -13,10 +13,10 @@ impl Buffer {
             pointer: 0,
         }
     }
-    
+
     pub fn zero_initialise() -> Self {
         Buffer {
-            data: vec![0; 3*128],
+            data: vec![0; 3 * 128],
             pointer: 0,
         }
     }
@@ -33,7 +33,7 @@ impl Buffer {
         if self.pointer + length <= self.data.len() {
             let slice = &self.data[self.pointer..self.pointer + length];
             self.pointer += length;
-            return slice
+            return slice;
         } else {
             panic!("Not enough bytes to read");
         }
@@ -46,13 +46,13 @@ impl Buffer {
 
     // Packs given poly into a buffer of bytes
     pub fn pack(&mut self, poly: &Poly) {
-        for i in 0..N/2 {
-            let t0 = poly.coeffs[2*i];
-            let t1 = poly.coeffs[2*i + 1];
-            
-            self.data[3*i] = t0 as u8;
-            self.data[3*i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
-            self.data[3*i + 2] = (t1 >> 4) as u8;
+        for i in 0..N / 2 {
+            let t0 = poly.coeffs[2 * i];
+            let t1 = poly.coeffs[2 * i + 1];
+
+            self.data[3 * i] = t0 as u8;
+            self.data[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
+            self.data[3 * i + 2] = (t1 >> 4) as u8;
         }
     }
 }

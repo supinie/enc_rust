@@ -1,15 +1,15 @@
-pub mod kem;
-pub mod params;
-mod kex;
-mod indcpa;
-mod field_ops;
-mod poly;
-mod ntt;
 mod buffer;
+mod field_ops;
+mod indcpa;
+pub mod kem;
+mod kex;
+mod ntt;
+pub mod params;
+mod poly;
 
 mod tests {
-    mod field;
-    mod poly;
-    mod ntt;
     mod buffer;
+    mod field;
+    mod ntt;
+    mod poly;
 }

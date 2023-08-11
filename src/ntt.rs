@@ -1,6 +1,6 @@
-use crate::{params::N, field_ops::*, poly::*};
+use crate::{field_ops::*, params::N, poly::*};
 
-
+#[rustfmt::skip]
 pub const ZETAS: [i16; 128] = [
     2285, 2571, 2970, 1812, 1493, 1422, 287, 202, 3158, 622, 1577, 182,
 	962, 2127, 1855, 1468, 573, 2004, 264, 383, 2500, 1458, 1727, 3199,
@@ -15,6 +15,7 @@ pub const ZETAS: [i16; 128] = [
 	2459, 478, 3221, 3021, 996, 991, 958, 1869, 1522, 1628,
 ];
 
+#[rustfmt::skip]
 const INV_NTT_REDUCTIONS: [i16; 79] = [
     -1,
 	-1,
@@ -25,7 +26,6 @@ const INV_NTT_REDUCTIONS: [i16; 79] = [
 	-1
 ];
 
-
 impl Poly {
     // In place Cooley-Tukey radix-2 Decimation in Time (DIT) NTT algorithm
     pub fn ntt(&mut self) {
@@ -34,7 +34,7 @@ impl Poly {
         while l > 1 {
             let mut offset = 0;
             while offset < N - l {
-                k+=1;
+                k += 1;
                 let zeta = ZETAS[k] as i32;
 
                 let mut j = offset;
@@ -84,4 +84,3 @@ impl Poly {
         }
     }
 }
-

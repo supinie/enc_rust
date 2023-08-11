@@ -1,6 +1,10 @@
 #[cfg(test)]
 mod poly_tests {
-    use crate::{params::*, poly::*, field_ops::{montgomery_reduce, barrett_reduce}};    
+    use crate::{
+        field_ops::{barrett_reduce, montgomery_reduce},
+        params::*,
+        poly::*,
+    };
 
     // Test Poly::new()
     #[test]
@@ -27,16 +31,17 @@ mod poly_tests {
         assert_eq!(poly1.coeffs, [2; N]);
     }
 
-
     // Test Poly::pointwise_mul()
     #[test]
     fn pointwise_mul_test() {
-        let a = Poly { coeffs: [Q as i16; N] };
+        let a = Poly {
+            coeffs: [Q as i16; N],
+        };
         let mut b = Poly { coeffs: [20; N] };
         let mut p = Poly::new();
 
         b.coeffs[0] = 1;
-        
+
         let mut a_copy = a;
         let mut b_copy = b;
 
@@ -51,7 +56,7 @@ mod poly_tests {
             for j in 0..N {
                 let mut v = montgomery_reduce((a.coeffs[i] as i32) * (b.coeffs[j] as i32));
                 let mut k = i + j;
-                
+
                 // circular shifting case; x^N = -1
                 if k >= N {
                     k -= N;

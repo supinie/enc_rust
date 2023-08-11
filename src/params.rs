@@ -49,7 +49,6 @@ impl Params {
     }
 }
 
-
 pub fn set_params(sec_level: usize) -> Params {
     Params {
         k: sec_level,
@@ -58,7 +57,8 @@ pub fn set_params(sec_level: usize) -> Params {
                 3
             } else {
                 2
-            }},
+            }
+        },
         eta2: 2,
     }
 }

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod buffer_tests {
-    use crate::{params::*, buffer::*, poly::*};
+    use crate::{buffer::*, params::*, poly::*};
 
     #[test]
     fn new_test() {
@@ -13,7 +13,7 @@ mod buffer_tests {
     fn push_and_valid_read_test() {
         let mut buffer = Buffer::new();
         buffer.push(&[1, 2, 3, 4, 5]);
-        
+
         let good_result = buffer.read(3);
         assert_eq!(good_result, &[1, 2, 3]);
     }
@@ -23,7 +23,7 @@ mod buffer_tests {
     fn push_and_invalid_read_test() {
         let mut buffer = Buffer::new();
         buffer.push(&[1, 2, 3, 4, 5]);
-        
+
         let _bad_result = buffer.read(6);
     }
 

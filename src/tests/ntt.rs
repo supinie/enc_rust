@@ -15,10 +15,9 @@ mod ntt_tests {
         input_poly.ntt();
 
         for coefficient in input_poly.coeffs {
-            assert_lt!(coefficient, 7*(Q as i16));
-            assert_gt!(coefficient, -7*(Q as i16));
+            assert_lt!(coefficient, 7 * (Q as i16));
+            assert_gt!(coefficient, -7 * (Q as i16));
         }
-            
 
         input_poly.normalise();
         input_poly.inv_ntt();
@@ -33,7 +32,12 @@ mod ntt_tests {
         for i in 0..N {
             let p: i32 = input_poly.coeffs[i] as i32;
             let q: i32 = original_input.coeffs[i] as i32;
-            assert_eq!(p, (q * (1<<16))%(Q as i32), "we are testing equality with original at index {}", i);
+            assert_eq!(
+                p,
+                (q * (1 << 16)) % (Q as i32),
+                "we are testing equality with original at index {}",
+                i
+            );
         }
     }
 }

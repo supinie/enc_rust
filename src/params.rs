@@ -72,17 +72,3 @@ impl Params {
         self.indcpa_bytes()
     }
 }
-
-pub fn set_params(sec_level: usize) -> Params {
-    Params {
-        k: sec_level,
-        eta1: {
-            if sec_level == 2 {
-                3
-            } else {
-                2
-            }
-        },
-        eta2: 2,
-    }
-}

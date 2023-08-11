@@ -19,6 +19,11 @@ jobs:
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+
+      - name: Install cargo llvm
+        run: cargo install cargo-llvm-cov
 
       - name: cargo build
         run: cargo build
@@ -28,10 +33,16 @@ jobs:
         env:
           RUST_BACKTRACE: 1
 
+      - name: Get coverage
+        run: cargo llvm-cov clean --workspace
+          cargo llvm-cov report "cov_report"i
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          file: cov_report
 
   format:
     name: Format

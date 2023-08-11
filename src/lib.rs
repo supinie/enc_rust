@@ -12,4 +12,5 @@ mod tests {
     mod field;
     mod ntt;
     mod poly;
+    mod params;
 }

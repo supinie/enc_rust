@@ -18,7 +18,7 @@ jobs:
           persist-credentials: false
 
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
 
       - name: cargo build
         run: cargo build

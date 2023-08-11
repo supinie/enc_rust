@@ -34,7 +34,7 @@ jobs:
           RUST_BACKTRACE: 1
 
       - name: Get coverage
-        run: ./github/coverage --lcov --output-path cov_report
+        run: ./coverage/coverage --lcov --output-path cov_report
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3

@@ -1,5 +1,6 @@
 # Kyber_Rust _(WIP)_
 
+![kyber_rust_ferris](./kyber_rust_ferris.png)
 [![codecov](https://codecov.io/github/supinie/kyber_rust/branch/main/graph/badge.svg?token=S7UTUFQ8M5)](https://codecov.io/github/supinie/kyber_rust)
 
 A rust implementation of the IND-CCA2-secure PQC KEM Kyber (https://pq-crystals.org/kyber/).

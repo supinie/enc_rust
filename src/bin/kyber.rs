@@ -20,7 +20,7 @@ fn main() {
     let bits: &String = matches.get_one::<String>("SECURITYLEVEL").expect("");
     println!("{}", bits);
     let params;
-    match &bits as &str {
+    match bits as &str {
         "512" => {
             params = set_params(2);
         }

@@ -4,9 +4,30 @@ mod params_tests {
 
     #[test]
     fn sec_level_test() {
-        assert_eq!(Params::sec_level_512(), Params { k: 2, eta1: 3, eta2: 2 });
-        assert_eq!(Params::sec_level_768(), Params { k: 3, eta1: 2, eta2: 2 });
-        assert_eq!(Params::sec_level_1024(), Params { k: 4, eta1: 2, eta2: 2 });
+        assert_eq!(
+            Params::sec_level_512(),
+            Params {
+                k: 2,
+                eta1: 3,
+                eta2: 2
+            }
+        );
+        assert_eq!(
+            Params::sec_level_768(),
+            Params {
+                k: 3,
+                eta1: 2,
+                eta2: 2
+            }
+        );
+        assert_eq!(
+            Params::sec_level_1024(),
+            Params {
+                k: 4,
+                eta1: 2,
+                eta2: 2
+            }
+        );
     }
 
     #[test]
@@ -65,4 +86,3 @@ mod params_tests {
         assert_eq!(Params::sec_level_1024().cipher_text_bytes(), 1408);
     }
 }
-

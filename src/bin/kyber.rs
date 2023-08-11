@@ -1,5 +1,5 @@
 use clap::{arg, command};
-use kyber_rust::params::set_params;
+use kyber_rust::params::Params;
 
 fn main() {
     let matches = command!()
@@ -22,13 +22,13 @@ fn main() {
     let params;
     match bits as &str {
         "512" => {
-            params = set_params(2);
+            params = Params::sec_level_512();
         }
         "768" => {
-            params = set_params(3);
+            params = Params::sec_level_768();
         }
         "1024" => {
-            params = set_params(4);
+            params = Params::sec_level_1024();
         }
         _ => panic!("Invalid security level"),
     }

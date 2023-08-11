@@ -35,7 +35,7 @@ jobs:
 
       - name: Get coverage
         run: cargo llvm-cov clean --workspace
-          cargo llvm-cov report "cov_report"i
+        run: cargo llvm-cov report "cov_report"i
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3

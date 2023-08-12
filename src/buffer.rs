@@ -44,7 +44,7 @@ impl Buffer {
         self.pointer = 0;
     }
 
-    // Packs given poly into a buffer of bytes
+    // Packs given poly into a 384-byte buffer
     pub fn pack(&mut self, poly: Poly) {
         for i in 0..N / 2 {
             let t0 = poly.coeffs[2 * i];
@@ -56,5 +56,16 @@ impl Buffer {
         }
     }
 
-    // pub fn msg_from_poly(&mut self, poly; Poly)
+    // Convert a given polynomial into a 32-byte message
+    pub fn msg_from_poly(&mut self, poly: Poly) {
+        for i in 0..N / 8 {
+            self.data[i] = 0;
+            for j in 0..8 {
+                let mut x = poly.coeffs[8 * i + j];
+                x += (x >> 15) & (Q as i16);
+                x = (((x << 1) + (Q as i16) / 2) / (Q as i16)) & 1;
+                self.data[i] |= (x << j) as u8;
+            }
+        }
+    }
 }

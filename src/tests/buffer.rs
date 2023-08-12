@@ -38,11 +38,11 @@ mod buffer_tests {
     #[test]
     fn pack_unpack_test() {
         let p = Poly { coeffs: [20; N] };
-        let mut buffer = Buffer::zero_initialise();
-        buffer.pack(&p);
+        let mut buffer = Buffer::zero_initialise(3 * 128);
+        buffer.pack(p);
 
         let mut comp_p = Poly::new();
-        comp_p.unpack(&buffer);
+        comp_p.unpack(buffer);
 
         assert_eq!(comp_p.coeffs, p.coeffs);
     }

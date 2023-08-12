@@ -14,9 +14,9 @@ impl Buffer {
         }
     }
 
-    pub fn zero_initialise() -> Self {
+    pub fn zero_initialise(n: usize) -> Self {
         Buffer {
-            data: vec![0; 3 * 128],
+            data: vec![0; n],
             pointer: 0,
         }
     }
@@ -45,7 +45,7 @@ impl Buffer {
     }
 
     // Packs given poly into a buffer of bytes
-    pub fn pack(&mut self, poly: &Poly) {
+    pub fn pack(&mut self, poly: Poly) {
         for i in 0..N / 2 {
             let t0 = poly.coeffs[2 * i];
             let t1 = poly.coeffs[2 * i + 1];
@@ -55,4 +55,6 @@ impl Buffer {
             self.data[3 * i + 2] = (t1 >> 4) as u8;
         }
     }
+
+    // pub fn msg_from_poly(&mut self, poly; Poly)
 }

@@ -31,6 +31,13 @@ mod params_tests {
     }
 
     #[test]
+    fn poly_compressed_bytes_test() {
+        assert_eq!(Params::sec_level_512().poly_compressed_bytes(), 128);
+        assert_eq!(Params::sec_level_768().poly_compressed_bytes(), 128);
+        assert_eq!(Params::sec_level_1024().poly_compressed_bytes(), 160);
+    }
+
+    #[test]
     fn poly_vec_bytes_test() {
         assert_eq!(Params::sec_level_512().poly_vec_bytes(), 768);
         assert_eq!(Params::sec_level_768().poly_vec_bytes(), 1152);
@@ -41,7 +48,7 @@ mod params_tests {
     fn poly_vec_compressed_bytes_test() {
         assert_eq!(Params::sec_level_512().poly_vec_compressed_bytes(), 640);
         assert_eq!(Params::sec_level_768().poly_vec_compressed_bytes(), 960);
-        assert_eq!(Params::sec_level_1024().poly_vec_compressed_bytes(), 1280);
+        assert_eq!(Params::sec_level_1024().poly_vec_compressed_bytes(), 1408);
     }
 
     #[test]
@@ -62,7 +69,7 @@ mod params_tests {
     fn indcpa_bytes_test() {
         assert_eq!(Params::sec_level_512().indcpa_bytes(), 768);
         assert_eq!(Params::sec_level_768().indcpa_bytes(), 1088);
-        assert_eq!(Params::sec_level_1024().indcpa_bytes(), 1408);
+        assert_eq!(Params::sec_level_1024().indcpa_bytes(), 1568);
     }
 
     #[test]
@@ -83,6 +90,6 @@ mod params_tests {
     fn cipher_text_bytes_test() {
         assert_eq!(Params::sec_level_512().cipher_text_bytes(), 768);
         assert_eq!(Params::sec_level_768().cipher_text_bytes(), 1088);
-        assert_eq!(Params::sec_level_1024().cipher_text_bytes(), 1408);
+        assert_eq!(Params::sec_level_1024().cipher_text_bytes(), 1568);
     }
 }

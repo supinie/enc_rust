@@ -69,4 +69,18 @@ impl Buffer {
             }
         }
     }
+
+    // Compress polynomial to a buffer
+    // pub fn compress(&mut self, poly: Poly, compressed_bytes: usize) {
+    //     let mut k = 0usize;
+    //     let mut t = [0u8; 8];
+
+    //     match compressed_bytes {
+    //         128 => {
+    //             for i in 0..N / 8 {
+    //                 for j in 0..8 {
+    //                     let mut u = poly.coeffs[8 * i + j];
+                
+
+
 }

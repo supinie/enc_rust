@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, field_ops::*, ntt::ZETAS, params::N};
+use crate::{buffer::Buffer, field_ops::*, ntt::ZETAS, params::{N, Q}};
 
 #[derive(Copy, Clone)]
 pub struct Poly {
@@ -81,6 +81,15 @@ impl Poly {
                 (buf.data[3 * i] as i16) | (((buf.data[3 * i + 1] as i16) << 8) & 0xfff);
             self.coeffs[2 * i + 1] =
                 ((buf.data[3 * i + 1] >> 4) as i16) | ((buf.data[3 * i + 2] as i16) << 4);
+        }
+    }
+
+    pub fn from_msg(&mut self, msg: Buffer) {
+        for i in 0..N / 8 {
+            for j in 0..8 {
+                let mask = (((msg.data[i] as i16) >> j) & 1).wrapping_neg();
+                self.coeffs[8 * i + j] = mask & ((Q + 1) / 2) as i16;
+            }
         }
     }
 }

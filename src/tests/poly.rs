@@ -50,7 +50,7 @@ mod poly_tests {
         b_copy.ntt();
 
         a_copy.pointwise_mul(&b_copy);
-        a_copy.barrett_reduce();
+        a_copy.reduce();
         a_copy.inv_ntt();
 
         for i in 0..N {

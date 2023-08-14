@@ -40,12 +40,25 @@ impl Params {
             eta2: 2,
         }
     }
+
+    pub fn poly_compressed_bytes(&self) -> usize {
+        match self.k {
+            2 | 3 => 128,
+            4 => 160,
+            _ => panic!("Invalid security level passed to poly_compressed_bytes"),
+        }
+    }
+
     pub fn poly_vec_bytes(&self) -> usize {
         self.k * POLYBYTES
     }
 
     pub fn poly_vec_compressed_bytes(&self) -> usize {
-        self.k * 320
+        match self.k {
+            2 | 3 => self.k * 320,
+            4 => self.k * 352,
+            _ => panic!("Invalid security level passed to poly_vec_compressed_bytes"),
+        }
     }
 
     pub fn indcpa_public_key_bytes(&self) -> usize {
@@ -57,7 +70,7 @@ impl Params {
     }
 
     pub fn indcpa_bytes(&self) -> usize {
-        self.poly_vec_compressed_bytes() + POLYCOMPRESSEDBYTES
+        self.poly_vec_compressed_bytes() + self.poly_compressed_bytes()
     }
 
     pub fn public_key_bytes(&self) -> usize {

@@ -58,12 +58,13 @@ impl Buffer {
 
     // Convert a given polynomial into a 32-byte message
     pub fn msg_from_poly(&mut self, poly: Poly) {
+        const Q_16: i16 = Q as i16;
         for i in 0..N / 8 {
             self.data[i] = 0;
             for j in 0..8 {
                 let mut x = poly.coeffs[8 * i + j];
-                x += (x >> 15) & (Q as i16);
-                x = (((x << 1) + (Q as i16) / 2) / (Q as i16)) & 1;
+                x += (x >> 15) & Q_16;
+                x = (((x << 1) + Q_16 / 2) / Q_16) & 1;
                 self.data[i] |= (x << j) as u8;
             }
         }

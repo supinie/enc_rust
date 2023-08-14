@@ -1,4 +1,9 @@
-use crate::{buffer::Buffer, field_ops::*, ntt::ZETAS, params::{N, Q}};
+use crate::{
+    buffer::Buffer,
+    field_ops::*,
+    ntt::ZETAS,
+    params::{N, Q},
+};
 
 #[derive(Copy, Clone)]
 pub struct Poly {

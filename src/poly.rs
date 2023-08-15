@@ -97,4 +97,38 @@ impl Poly {
             }
         }
     }
+
+    pub fn decompress(&mut self, buf: Buffer, compressed_bytes: usize) {
+        let mut k = 0usize;
+
+        match compressed_bytes {
+            128 => {
+                for i in 0..N / 2 {
+                    self.coeffs[2 * i] = ((((buf.data[k] & 15) as usize) * Q + 8) >> 4) as i16;
+                    self.coeffs[2 * i + 1] = ((((buf.data[k] >> 4) as usize) * Q + 8) >> 4) as i16;
+                    k += 1;
+                }
+            }
+            160 => {
+                let mut t = [0u8; 8];
+                for i in 0..N / 8 {
+                    t[0] = buf.data[k];
+                    t[1] = (buf.data[k] >> 5) | (buf.data[k + 1] << 3);
+                    t[2] = buf.data[k + 1] >> 2;
+                    t[3] = (buf.data[k + 1] >> 7) | (buf.data[k + 2] << 1);
+                    t[4] = (buf.data[k + 2] >> 4) | (buf.data[k + 3] << 4);
+                    t[5] = buf.data[k + 3] >> 1;
+                    t[6] = (buf.data[k + 3] >> 6) | (buf.data[k + 4] << 2);
+                    t[7] = buf.data[k + 4] >> 3;
+                    k += 5;
+
+                    for j in 0..8 {
+                        self.coeffs[8 * i + j] =
+                            ((((t[j] as u32) & 31) * (Q as u32) + 16) >> 5) as i16;
+                    }
+                }
+            }
+            _ => panic!("Invalid compressed poly bytes size."),
+        }
+    }
 }

@@ -2,7 +2,7 @@
 mod buffer_tests {
     use crate::{buffer::*, params::*, poly::*};
     use rand::Rng;
-    
+
     impl Buffer {
         pub fn generate_random(size: usize) -> Buffer {
             let mut rng = rand::thread_rng();
@@ -15,7 +15,6 @@ mod buffer_tests {
             Buffer { data, pointer: 0 }
         }
     }
-
 
     #[test]
     fn new_test() {

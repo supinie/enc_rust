@@ -98,7 +98,7 @@ impl Poly {
         }
     }
 
-    pub fn decompress(&mut self, buf: Buffer, compressed_bytes: usize) {
+    pub fn decompress(&mut self, buf: &Buffer, compressed_bytes: usize) {
         let mut k = 0usize;
 
         match compressed_bytes {

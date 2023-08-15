@@ -1,6 +1,21 @@
 #[cfg(test)]
 mod buffer_tests {
     use crate::{buffer::*, params::*, poly::*};
+    use rand::Rng;
+    
+    impl Buffer {
+        pub fn generate_random(size: usize) -> Buffer {
+            let mut rng = rand::thread_rng();
+            let mut data = Vec::with_capacity(size);
+
+            for _ in 0..size {
+                data.push(rng.gen::<u8>());
+            }
+
+            Buffer { data, pointer: 0 }
+        }
+    }
+
 
     #[test]
     fn new_test() {
@@ -45,5 +60,18 @@ mod buffer_tests {
         comp_p.unpack(buffer);
 
         assert_eq!(comp_p.coeffs, p.coeffs);
+    }
+
+    #[test]
+    fn compress_decompress_test() {
+        let buf = Buffer::generate_random(Params::sec_level_512().poly_compressed_bytes());
+        let mut buf_comp = Buffer::zero_initialise(Params::sec_level_512().poly_compressed_bytes());
+
+        let mut poly = Poly::new();
+
+        poly.decompress(&buf, Params::sec_level_512().poly_compressed_bytes());
+        buf_comp.compress(poly, Params::sec_level_512().poly_compressed_bytes());
+
+        assert_eq!(buf_comp.data, buf.data);
     }
 }

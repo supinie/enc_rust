@@ -3,6 +3,8 @@ use more_asserts::assert_ge;
 use crate::params::*;
 
 // given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
+// Example:
+// let x = montgomery_reduce(y);
 pub fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;
     let m = x.wrapping_mul(QPRIME) as i16;
@@ -11,6 +13,8 @@ pub fn montgomery_reduce(x: i32) -> i16 {
 }
 
 // given x, return x 2^16 mod q
+// Example:
+// let x = to_mont(y);
 pub fn to_mont(x: i16) -> i16 {
     const R_SQUARED_MOD_Q: i32 = 1353;
     return montgomery_reduce((x as i32) * R_SQUARED_MOD_Q);
@@ -19,6 +23,8 @@ pub fn to_mont(x: i16) -> i16 {
 // given x, find 0 <= y <= q with y = x mod q
 //
 // iff x = -nq for some natural number n, barrett_reduce(x) = q != 0
+// Example:
+// let x = barrett_reduce(y);
 pub fn barrett_reduce(x: i16) -> i16 {
     const APPROXIMATION: usize = 20159;
     // From Cloudflare's circl Kyber implementation:
@@ -38,6 +44,9 @@ pub fn barrett_reduce(x: i16) -> i16 {
     return x.wrapping_sub(inside_floor.wrapping_mul(Q as i16));
 }
 
+// given x, if x < Q return x, otherwise return x - Q
+// Example:
+// let x = cond_sub_q(y);
 pub fn cond_sub_q(x: i16) -> i16 {
     assert_ge!(
         x,

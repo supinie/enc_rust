@@ -7,6 +7,9 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    // Creates a new, empty buffer
+    // Example:
+    // let buf = Buffer::new();
     pub fn new() -> Self {
         Buffer {
             data: Vec::new(),
@@ -14,6 +17,9 @@ impl Buffer {
         }
     }
 
+    // Creates a new buffer of length n, with all elements being 0
+    // Example:
+    // let buf = Buffer::zero_initialise();
     pub fn zero_initialise(n: usize) -> Self {
         Buffer {
             data: vec![0; n],
@@ -22,6 +28,8 @@ impl Buffer {
     }
 
     // Write to our bytes buffer
+    // Example:
+    // buf.push(byte_slice);
     pub fn push(&mut self, bytes: &[u8]) {
         self.data.extend_from_slice(bytes);
     }
@@ -29,6 +37,8 @@ impl Buffer {
     // Read `length` bytes from the buffer starting from current pointer position
     // If there are enough bytes to read, returns a reference to the read slice of bytes
     // If there are not enough bytes, panics
+    // Example:
+    // let bytes = buf.read(5);
     pub fn read(&mut self, length: usize) -> &[u8] {
         if self.pointer + length <= self.data.len() {
             let slice = &self.data[self.pointer..self.pointer + length];
@@ -40,11 +50,15 @@ impl Buffer {
     }
 
     // Set the pointer back to 0
+    // Example:
+    // buf.reset();
     pub fn reset(&mut self) {
         self.pointer = 0;
     }
 
     // Packs given poly into a 384-byte buffer
+    // Example:
+    // buf.pack(poly);
     pub fn pack(&mut self, poly: Poly) {
         for i in 0..N / 2 {
             let t0 = poly.coeffs[2 * i];
@@ -57,6 +71,8 @@ impl Buffer {
     }
 
     // Convert a given polynomial into a 32-byte message
+    // Example:
+    // msg.msg_from_poly(poly);
     pub fn msg_from_poly(&mut self, poly: Poly) {
         const Q_16: i16 = Q as i16;
         for i in 0..N / 8 {
@@ -71,6 +87,8 @@ impl Buffer {
     }
 
     // Compress polynomial to a buffer
+    // Example:
+    // buf.compress(poly);
     pub fn compress(&mut self, poly: Poly, compressed_bytes: usize) {
         let mut k = 0usize;
         let mut t = [0u8; 8];

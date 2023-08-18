@@ -28,6 +28,8 @@ const INV_NTT_REDUCTIONS: [i16; 79] = [
 
 impl Poly {
     // In place Cooley-Tukey radix-2 Decimation in Time (DIT) NTT algorithm
+    // Example:
+    // poly.ntt();
     pub fn ntt(&mut self) {
         let mut k = 0usize;
         let mut l = N / 2;
@@ -51,6 +53,8 @@ impl Poly {
     }
 
     // In place inverse NTT, with montgomery reduction
+    // Example:
+    // poly.inv_ntt();
     pub fn inv_ntt(&mut self) {
         let mut k: usize = 127;
         let mut r: isize = -1;

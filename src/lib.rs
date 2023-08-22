@@ -6,6 +6,7 @@ mod kex;
 mod ntt;
 pub mod params;
 mod poly;
+mod vec;
 
 mod tests {
     mod buffer;
@@ -13,4 +14,5 @@ mod tests {
     mod ntt;
     mod params;
     mod poly;
+    mod vec;
 }

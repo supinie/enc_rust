@@ -113,7 +113,7 @@ impl Buffer {
                     for j in 0..8 {
                         let mut u = poly.coeffs[8 * i + j];
                         u += (u >> 15) & Q as i16;
-                        t[j] = (((((u as u32) << 4) + Q as u32 / 2) / Q as u32) & 31) as u8;
+                        t[j] = (((((u as u32) << 5) + Q as u32 / 2) / Q as u32) & 31) as u8;
                     }
                     self.data[k] = t[0] | (t[1] << 5);
                     self.data[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);

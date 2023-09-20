@@ -65,18 +65,24 @@ mod buffer_tests {
     fn compress_decompress_test() {
         let buf1 = Buffer::generate_random(Params::sec_level_512().poly_compressed_bytes());
         let buf2 = Buffer::generate_random(Params::sec_level_768().poly_compressed_bytes());
+        let buf3 = Buffer::generate_random(Params::sec_level_1024().poly_compressed_bytes());
         let mut buf_comp1 = Buffer::zero_initialise(Params::sec_level_512().poly_compressed_bytes());
         let mut buf_comp2 = Buffer::zero_initialise(Params::sec_level_768().poly_compressed_bytes());
+        let mut buf_comp3 = Buffer::zero_initialise(Params::sec_level_1024().poly_compressed_bytes());
 
         let mut poly1 = Poly::new();
         let mut poly2 = Poly::new();
+        let mut poly3 = Poly::new();
 
         poly1.decompress(&buf1, Params::sec_level_512().poly_compressed_bytes());
         poly2.decompress(&buf2, Params::sec_level_768().poly_compressed_bytes());
+        poly3.decompress(&buf3, Params::sec_level_1024().poly_compressed_bytes());
         buf_comp1.compress(poly1, Params::sec_level_512().poly_compressed_bytes());
         buf_comp2.compress(poly2, Params::sec_level_768().poly_compressed_bytes());
+        buf_comp3.compress(poly3, Params::sec_level_1024().poly_compressed_bytes());
 
         assert_eq!(buf_comp1.data, buf1.data);
         assert_eq!(buf_comp2.data, buf2.data);
+        assert_eq!(buf_comp3.data, buf3.data);
     }
 }

@@ -71,22 +71,22 @@ impl Poly {
         let mut j: usize = 64;
 
         for i in (0..N).step_by(4) {
-            let zeta = ZETAS[j] as i32;
+            let zeta = i32::from(ZETAS[j]);
             j += 1;
 
-            let mut p0 = montgomery_reduce((self.coeffs[i + 1] as i32) * (x.coeffs[i + 1] as i32));
-            p0 = montgomery_reduce((p0 as i32) * zeta);
-            p0 += montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i] as i32));
+            let mut p0 = montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i + 1]));
+            p0 = montgomery_reduce(i32::from(p0) * zeta);
+            p0 += montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i]));
 
-            let mut p1 = montgomery_reduce((self.coeffs[i] as i32) * (x.coeffs[i + 1] as i32));
-            p1 += montgomery_reduce((self.coeffs[i + 1] as i32) * (x.coeffs[i] as i32));
+            let mut p1 = montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
+            p1 += montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i]));
 
-            let mut p2 = montgomery_reduce((self.coeffs[i + 3] as i32) * (x.coeffs[i + 3] as i32));
-            p2 = -montgomery_reduce((p2 as i32) * zeta);
-            p2 += montgomery_reduce((self.coeffs[i + 2] as i32) * (x.coeffs[i + 2] as i32));
+            let mut p2 = montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 3]));
+            p2 = -montgomery_reduce(i32::from(p2) * zeta);
+            p2 += montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 2]));
 
-            let mut p3 = montgomery_reduce((self.coeffs[i + 2] as i32) * (x.coeffs[i + 3] as i32));
-            p3 += montgomery_reduce((self.coeffs[i + 3] as i32) * (x.coeffs[i + 2] as i32));
+            let mut p3 = montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 3]));
+            p3 += montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 2]));
 
             self.coeffs[i] = p0;
             self.coeffs[i + 1] = p1;
@@ -101,9 +101,9 @@ impl Poly {
     pub fn unpack(&mut self, buf: Buffer) {
         for i in 0..N / 2 {
             self.coeffs[2 * i] =
-                (buf.data[3 * i] as i16) | (((buf.data[3 * i + 1] as i16) << 8) & 0xfff);
+                i16::from(buf.data[3 * i]) | ((i16::from(buf.data[3 * i + 1]) << 8) & 0xfff);
             self.coeffs[2 * i + 1] =
-                ((buf.data[3 * i + 1] >> 4) as i16) | ((buf.data[3 * i + 2] as i16) << 4);
+                i16::from(buf.data[3 * i + 1] >> 4) | (i16::from(buf.data[3 * i + 2]) << 4);
         }
     }
 
@@ -113,7 +113,7 @@ impl Poly {
     pub fn from_msg(&mut self, msg: Buffer) {
         for i in 0..N / 8 {
             for j in 0..8 {
-                let mask = (((msg.data[i] as i16) >> j) & 1).wrapping_neg();
+                let mask = ((i16::from(msg.data[i]) >> j) & 1).wrapping_neg();
                 self.coeffs[8 * i + j] = mask & ((Q + 1) / 2) as i16;
             }
         }
@@ -149,7 +149,7 @@ impl Poly {
 
                     for j in 0..8 {
                         self.coeffs[8 * i + j] =
-                            ((((t[j] as u32) & 31) * (Q as u32) + 16) >> 5) as i16;
+                            (((u32::from(t[j]) & 31) * (Q as u32) + 16) >> 5) as i16;
                     }
                 }
             }

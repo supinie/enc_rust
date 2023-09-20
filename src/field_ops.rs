@@ -8,8 +8,8 @@ use crate::params::*;
 pub fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;
     let m = x.wrapping_mul(QPRIME) as i16;
-    let t = (x - (m as i32).wrapping_mul(Q as i32)) >> 16;
-    return t as i16;
+    let t = (x - i32::from(m).wrapping_mul(Q as i32)) >> 16;
+    t as i16
 }
 
 // given x, return x 2^16 mod q
@@ -17,7 +17,7 @@ pub fn montgomery_reduce(x: i32) -> i16 {
 // let x = to_mont(y);
 pub fn to_mont(x: i16) -> i16 {
     const R_SQUARED_MOD_Q: i32 = 1353;
-    return montgomery_reduce((x as i32) * R_SQUARED_MOD_Q);
+    montgomery_reduce(i32::from(x) * R_SQUARED_MOD_Q)
 }
 
 // given x, find 0 <= y <= q with y = x mod q
@@ -40,8 +40,8 @@ pub fn barrett_reduce(x: i16) -> i16 {
     //                        [ q        if x=-nq for pos. integer n
     //  x - ⌊x 20156/2²⁶⌋ q = [
     //                        [ x mod q  otherwise
-    let inside_floor = ((x as i32).wrapping_mul(APPROXIMATION as i32) >> 26) as i16;
-    return x.wrapping_sub(inside_floor.wrapping_mul(Q as i16));
+    let inside_floor = (i32::from(x).wrapping_mul(APPROXIMATION as i32) >> 26) as i16;
+    x.wrapping_sub(inside_floor.wrapping_mul(Q as i16))
 }
 
 // given x, if x < Q return x, otherwise return x - Q
@@ -56,5 +56,5 @@ pub fn cond_sub_q(x: i16) -> i16 {
     const Q_16: i16 = Q as i16;
     let mut result = x - Q_16;
     result += (result >> 15) & Q_16;
-    return result;
+    result
 }

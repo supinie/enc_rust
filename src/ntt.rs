@@ -37,11 +37,11 @@ impl Poly {
             let mut offset = 0;
             while offset < N - l {
                 k += 1;
-                let zeta = ZETAS[k] as i32;
+                let zeta = i32::from(ZETAS[k]);
 
                 let mut j = offset;
                 while j < offset + l {
-                    let t = montgomery_reduce(zeta * (self.coeffs[j + l] as i32));
+                    let t = montgomery_reduce(zeta * i32::from(self.coeffs[j + l]));
                     self.coeffs[j + l] = self.coeffs[j] - t;
                     self.coeffs[j] += t;
                     j += 1;
@@ -62,13 +62,13 @@ impl Poly {
 
         while l < N {
             for offset in (0..N - 1).step_by(2 * l) {
-                let min_zeta = ZETAS[k] as i32;
+                let min_zeta = i32::from(ZETAS[k]);
                 k -= 1;
 
                 for j in offset..offset + l {
                     let t = self.coeffs[j + l] - self.coeffs[j];
                     self.coeffs[j] += self.coeffs[j + l];
-                    self.coeffs[j + l] = montgomery_reduce(min_zeta * (t as i32));
+                    self.coeffs[j + l] = montgomery_reduce(min_zeta * i32::from(t));
                 }
             }
 
@@ -84,7 +84,7 @@ impl Poly {
         }
 
         for j in 0..N {
-            self.coeffs[j] = montgomery_reduce(1441 * (self.coeffs[j] as i32));
+            self.coeffs[j] = montgomery_reduce(1441 * i32::from(self.coeffs[j]));
         }
     }
 }

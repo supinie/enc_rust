@@ -43,7 +43,7 @@ impl Buffer {
         if self.pointer + length <= self.data.len() {
             let slice = &self.data[self.pointer..self.pointer + length];
             self.pointer += length;
-            return slice;
+            slice
         } else {
             panic!("Not enough bytes to read");
         }

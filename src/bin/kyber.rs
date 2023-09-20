@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use clap::{arg, command};
 use kyber_rust::params::Params;
 

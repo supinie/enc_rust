@@ -2,6 +2,12 @@
 mod buffer_tests {
     use crate::{buffer::*, params::*, poly::*};
     use rand::Rng;
+ 
+    static TEST_PARAMS: [Params; 3] = [
+        Params::sec_level_512(),
+        Params::sec_level_768(),
+        Params::sec_level_1024(),
+    ];
 
     impl Buffer {
         pub fn generate_random(size: usize) -> Buffer {
@@ -63,26 +69,18 @@ mod buffer_tests {
 
     #[test]
     fn compress_decompress_test() {
-        let buf1 = Buffer::generate_random(Params::sec_level_512().poly_compressed_bytes());
-        let buf2 = Buffer::generate_random(Params::sec_level_768().poly_compressed_bytes());
-        let buf3 = Buffer::generate_random(Params::sec_level_1024().poly_compressed_bytes());
-        let mut buf_comp1 = Buffer::zero_initialise(Params::sec_level_512().poly_compressed_bytes());
-        let mut buf_comp2 = Buffer::zero_initialise(Params::sec_level_768().poly_compressed_bytes());
-        let mut buf_comp3 = Buffer::zero_initialise(Params::sec_level_1024().poly_compressed_bytes());
+        for sec_level in TEST_PARAMS.iter() {
+            let buf = Buffer::generate_random(sec_level.poly_compressed_bytes());
+            let mut buf_comp = Buffer::zero_initialise(sec_level.poly_compressed_bytes());
 
-        let mut poly1 = Poly::new();
-        let mut poly2 = Poly::new();
-        let mut poly3 = Poly::new();
+            let mut poly = Poly::new();
 
-        poly1.decompress(&buf1, Params::sec_level_512().poly_compressed_bytes());
-        poly2.decompress(&buf2, Params::sec_level_768().poly_compressed_bytes());
-        poly3.decompress(&buf3, Params::sec_level_1024().poly_compressed_bytes());
-        buf_comp1.compress(poly1, Params::sec_level_512().poly_compressed_bytes());
-        buf_comp2.compress(poly2, Params::sec_level_768().poly_compressed_bytes());
-        buf_comp3.compress(poly3, Params::sec_level_1024().poly_compressed_bytes());
+            poly.decompress(&buf, sec_level.poly_compressed_bytes());
+            buf_comp.compress(poly, sec_level.poly_compressed_bytes());
 
-        assert_eq!(buf_comp1.data, buf1.data);
-        assert_eq!(buf_comp2.data, buf2.data);
-        assert_eq!(buf_comp3.data, buf3.data);
+            assert_eq!(buf_comp.data, buf.data);
+            assert_eq!(buf_comp.data, buf.data);
+            assert_eq!(buf_comp.data, buf.data);
+        }
     }
 }

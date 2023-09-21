@@ -1,6 +1,6 @@
 use crate::poly::*;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct PolyVec {
     pub polynomials: Vec<Poly>, // Vec of K polynomials, where K is the security level
 }

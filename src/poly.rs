@@ -5,7 +5,7 @@ use crate::{
     params::{N, Q},
 };
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Poly {
     pub coeffs: [i16; N],
 }

@@ -10,11 +10,17 @@ mod vec_tests {
 
     #[test]
     fn add_test() {
-        let mut poly_vec1 = PolyVec {
-            polynomials: vec![ Poly { coeffs: [20; N] }; TEST_PARAMS[0].k ],
-        };
-        let mut poly_vec2 = PolyVec {
-            polynomials: vec![ Poly { coeffs: [30; N] }; TEST_PARAMS[0].k ],
-        };
+        for sec_level in TEST_PARAMS.iter() {
+            let mut poly_vec1 = PolyVec {
+                polynomials: vec![ Poly { coeffs: [20; N] }; sec_level.k ],
+            };
+            let mut poly_vec2 = PolyVec {
+                polynomials: vec![ Poly { coeffs: [30; N] }; sec_level.k ],
+            };
+
+            poly_vec1.add(&poly_vec2);
+
+            assert_eq!(poly_vec1.polynomials, vec![ Poly { coeffs: [50; N] }; sec_level.k ]);
+        }
     }
 }

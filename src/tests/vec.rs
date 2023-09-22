@@ -23,4 +23,15 @@ mod vec_tests {
             assert_eq!(poly_vec1.polynomials, vec![ Poly { coeffs: [50; N] }; sec_level.k ]);
         }
     }
+
+    #[test]
+    fn reduce_test() {
+        for sec_level in TEST_PARAMS.iter() {
+            let mut poly_vec = PolyVec {
+                polynomials: vec![ Poly { coeffs: [i16::MAX; N] }; sec_level.k ],
+            };
+            poly_vec.reduce();
+            assert_eq!(poly_vec.polynomials, vec![ Poly { coeffs: [2806; N] }; sec_level.k]);
+        }
+    }
 }

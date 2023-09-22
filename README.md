@@ -10,7 +10,7 @@
 
 A rust implementation of the IND-CCA2-secure PQC KEM Kyber (https://pq-crystals.org/kyber/).
 
-This package consists of a library (`kyber_rust`), and a binary wrapper (`kyber`).
+This package consists of a library (`kyber_rust`), and (soon:TM:) a binary wrapper (`kyber`).
 
 ### Disclaimer
 

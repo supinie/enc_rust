@@ -12,6 +12,7 @@ mod ntt;
 pub mod params;
 mod poly;
 mod vec;
+mod sample;
 
 mod tests {
     mod buffer;

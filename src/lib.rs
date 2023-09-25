@@ -21,4 +21,5 @@ mod tests {
     mod params;
     mod poly;
     mod vec;
+    mod sample;
 }

@@ -33,7 +33,6 @@ impl Poly {
             }
         }
     }
-
     
     // Sample our polynomial from a centered binomial distribution
     // n = 6, p = 1/2
@@ -49,7 +48,7 @@ impl Poly {
         h.finalize_xof().read(&mut buf);
 
         for i in 0..32 {
-            let t_bytes = &buf[i * 6..(i + 1) * 6];
+            let t_bytes = &buf[i * 6..i * 6 + 8];
             let t = LittleEndian::read_u64(t_bytes);
 
             let mut d = t & 0x249249249249;

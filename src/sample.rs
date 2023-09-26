@@ -64,4 +64,12 @@ impl Poly {
             }
         }
     }
+
+    pub fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) {
+        match eta {
+            2 => self.derive_noise_2(seed, nonce),
+            3 => self.derive_noise_3(seed, nonce),
+            _ => panic!("Invalid eta given to derive_noise"),
+        }
+    }
 }

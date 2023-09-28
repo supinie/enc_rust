@@ -56,9 +56,9 @@ impl Poly {
             d += (t >> 2) & 0x249249249249;
 
             for j in 0..8 {
-                let a = (d as i16) & 0x7;
+                let a = i16::try_from(d) & 0x7;
                 d >>= 3;
-                let b = (d as i16) & 0x7;
+                let b = i16::try_from(d) & 0x7;
                 d >>= 3;
                 self.coeffs[8 * i + j] = a - b;
             }

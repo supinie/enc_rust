@@ -1,9 +1,9 @@
-use std::num::TryFromIntError;
+use core::num::TryFromIntError;
 use crate::{params::*, poly::*};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Buffer {
-    pub data: Vec<u8>,
+    pub data: &[u8],
     pub pointer: usize,
 }
 

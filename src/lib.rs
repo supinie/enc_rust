@@ -18,6 +18,7 @@
     unused_lifetimes,
     unused_qualifications
 )]
+#![no_std]
 
 mod buffer;
 mod field_ops;

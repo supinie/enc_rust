@@ -1,3 +1,4 @@
+use std::num::TryFromIntError;
 use crate::{params::*, poly::*};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -59,21 +60,22 @@ impl Buffer {
     // Packs given poly into a 384-byte buffer
     // Example:
     // buf.pack(poly);
-    pub fn pack(&mut self, poly: Poly) {
+    pub fn pack(&mut self, poly: Poly) -> Result<(), TryFromIntError> {
         for i in 0..N / 2 {
             let t0 = poly.coeffs[2 * i];
             let t1 = poly.coeffs[2 * i + 1];
-
-            self.data[3 * i] = t0 as u8;
+            
+            self.data[3 * i] = (t0) as u8;
             self.data[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
             self.data[3 * i + 2] = (t1 >> 4) as u8;
         }
+        Ok(())
     }
 
     // Convert a given polynomial into a 32-byte message
     // Example:
     // msg.msg_from_poly(poly);
-    pub fn msg_from_poly(&mut self, poly: Poly) {
+    pub fn msg_from_poly(&mut self, poly: Poly) -> Result<(), TryFromIntError> {
         const Q_16: i16 = Q as i16;
         for i in 0..N / 8 {
             self.data[i] = 0;
@@ -81,15 +83,16 @@ impl Buffer {
                 let mut x = poly.coeffs[8 * i + j];
                 x += (x >> 15) & Q_16;
                 x = (((x << 1) + Q_16 / 2) / Q_16) & 1;
-                self.data[i] |= (x << j) as u8;
+                self.data[i] |= u8::try_from(x << j)?;
             }
         }
+        Ok(())
     }
 
     // Compress polynomial to a buffer
     // Example:
     // buf.compress(poly);
-    pub fn compress(&mut self, poly: Poly, compressed_bytes: usize) {
+    pub fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), TryFromIntError>{
         let mut k = 0usize;
         let mut t = [0u8; 8];
 
@@ -98,8 +101,8 @@ impl Buffer {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = poly.coeffs[8 * i + j];
-                        u += (u >> 15) & Q as i16;
-                        t[j] = (((((u as u16) << 4) + Q as u16 / 2) / Q as u16) & 15) as u8;
+                        u += (u >> 15) & i16::try_from(Q).unwrap();
+                        t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q).unwrap() / 2) / u16::try_from(Q).unwrap()) & 15)?;
                     }
                     self.data[k] = t[0] | (t[1] << 4);
                     self.data[k + 1] = t[2] | (t[3] << 4);
@@ -112,8 +115,8 @@ impl Buffer {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = poly.coeffs[8 * i + j];
-                        u += (u >> 15) & Q as i16;
-                        t[j] = (((((u as u32) << 5) + Q as u32 / 2) / Q as u32) & 31) as u8;
+                        u += (u >> 15) & i16::try_from(Q).unwrap();
+                        t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q).unwrap() / 2) / u32::try_from(Q).unwrap()) & 31)?;
                     }
                     self.data[k] = t[0] | (t[1] << 5);
                     self.data[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
@@ -125,5 +128,6 @@ impl Buffer {
             }
             _ => panic!("Invalid compressed poly bytes size."),
         }
+        Ok(())
     }
 }

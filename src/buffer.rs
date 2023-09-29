@@ -7,7 +7,7 @@ pub trait Buffer {
     fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), TryFromIntError>;
 }
 
-impl Buffer for &[u8] {
+impl Buffer for [u8] {
     // Packs given poly into a 384-byte buffer
     // Example:
     // buf.pack(poly);
@@ -27,7 +27,7 @@ impl Buffer for &[u8] {
     // Example:
     // msg.msg_from_poly(poly);
     fn msg_from_poly(&mut self, poly: Poly) -> Result<(), TryFromIntError> {
-        const Q_16: i16 = i16::try_from(Q).unwrap();
+        const Q_16: i16 = Q as i16;
         for i in 0..N / 8 {
             self[i] = 0;
             for j in 0..8 {

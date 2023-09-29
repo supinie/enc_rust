@@ -7,8 +7,6 @@ pub const SHAREDSECRETBYTES: usize = 32;
 
 pub const POLYBYTES: usize = 384;
 
-pub const POLYCOMPRESSEDBYTES: usize = 128;
-
 #[derive(Debug, PartialEq)]
 pub struct Params {
     pub k: usize,

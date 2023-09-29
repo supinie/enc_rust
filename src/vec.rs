@@ -1,42 +1,69 @@
 use crate::poly::*;
 
 #[derive(Clone, PartialEq)]
-pub struct PolyVec {
-    pub polynomials: Vec<Poly>, // Vec of K polynomials, where K is the security level
+pub enum PolyVec {
+    PolyVec512([Poly; 2]),
+    PolyVec768([Poly; 3]),
+    PolyVec1024([Poly; 4]),
 }
 
 impl PolyVec {
+    pub fn len(&self) -> usize {
+        match self {
+            PolyVec::PolyVec512(_) => 2,
+            PolyVec::PolyVec768(_) => 3,
+            PolyVec::PolyVec1024(_) => 4,
+        }
+    }
+
+
+    pub fn polys_mut(&mut self) -> &mut [Poly] {
+        match self {
+            PolyVec::PolyVec512(ref mut polys) => polys,
+            PolyVec::PolyVec768(ref mut polys) => polys,
+            PolyVec::PolyVec1024(ref mut polys) => polys,
+        }
+    }
+
+    pub fn polys(&self) -> &[Poly] {
+        match self {
+            PolyVec::PolyVec512(ref polys) => polys,
+            PolyVec::PolyVec768(ref polys) => polys,
+            PolyVec::PolyVec1024(ref polys) => polys,
+        }
+    }
+            
     // Adds the given vector of polynomial and sets self to be the sum
     // Example:
     // vec1.add(vec2);
     pub fn add(&mut self, x: &PolyVec) {
-        assert_eq!(self.polynomials.len(), x.polynomials.len());
-        for i in 0..self.polynomials.len() {
-            self.polynomials[i].add(&x.polynomials[i]);
+        assert_eq!(self.len(), x.len());
+        for i in 0..self.len() {
+            self.polys_mut()[i].add(&x.polys()[i]);
         }
     }
 
     pub fn reduce(&mut self) {
-        for i in 0..self.polynomials.len() {
-            self.polynomials[i].reduce();
+        for i in 0..self.len() {
+            self.polys_mut()[i].reduce();
         }
     }
 
     pub fn normalise(&mut self) {
-        for i in 0..self.polynomials.len() {
-            self.polynomials[i].reduce();
+        for i in 0..self.len() {
+            self.polys_mut()[i].normalise();
         }
     }
 
     pub fn ntt(&mut self) {
-        for i in 0..self.polynomials.len() {
-            self.polynomials[i].ntt();
+        for i in 0..self.len() {
+            self.polys_mut()[i].ntt();
         }
     }
 
     pub fn inv_ntt(&mut self) {
-        for i in 0..self.polynomials.len() {
-            self.polynomials[i].inv_ntt();
+        for i in 0..self.len() {
+            self.polys_mut()[i].inv_ntt();
         }
     }
 }

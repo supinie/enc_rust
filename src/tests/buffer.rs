@@ -32,11 +32,11 @@ pub(in crate::tests) mod buffer_tests {
     #[test]
     fn pack_unpack_test() {
         let p = Poly { coeffs: [20; N] };
-        let mut buffer = zero_initialise_buffer(3 * 128).as_slice();
-        buffer.pack(p);
+        let mut buffer = [0; 3 * 128];
+        &buffer.pack(p);
 
         let mut comp_p = Poly::new();
-        comp_p.unpack(buffer);
+        comp_p.unpack(&buffer);
 
         assert_eq!(comp_p.coeffs, p.coeffs);
     }
@@ -44,8 +44,8 @@ pub(in crate::tests) mod buffer_tests {
     #[test]
     fn compress_decompress_test() {
         for sec_level in TEST_PARAMS.iter() {
-            let buf = generate_random_buffer(sec_level.poly_compressed_bytes()).as_slice();
-            let mut buf_comp = zero_initialise_buffer(sec_level.poly_compressed_bytes()).as_slice();
+            let buf = generate_random_buffer(sec_level.poly_compressed_bytes());
+            let mut buf_comp = zero_initialise_buffer(sec_level.poly_compressed_bytes());
 
             let mut poly = Poly::new();
 

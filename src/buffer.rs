@@ -2,7 +2,7 @@ use core::num::TryFromIntError;
 use crate::{params::*, poly::*};
 
 pub trait Buffer {
-    fn pack(&mut self, poly: Poly) -> Result<(), TryFromIntError>;
+    fn pack(&mut self, poly: Poly);
     fn msg_from_poly(&mut self, poly: Poly) -> Result<(), TryFromIntError>;
     fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), TryFromIntError>;
 }
@@ -11,16 +11,16 @@ impl Buffer for [u8] {
     // Packs given poly into a 384-byte buffer
     // Example:
     // buf.pack(poly);
-    fn pack(&mut self, poly: Poly) -> Result<(), TryFromIntError> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn pack(&mut self, poly: Poly) {
         for i in 0..N / 2 {
             let t0 = poly.coeffs[2 * i];
             let t1 = poly.coeffs[2 * i + 1];
             
-            self[3 * i] = u8::try_from(t0)?;
-            self[3 * i + 1] = u8::try_from((t0 >> 8) | (t1 << 4))?;
-            self[3 * i + 2] = u8::try_from(t1 >> 4)?;
+            self[3 * i] = t0 as u8;
+            self[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
+            self[3 * i + 2] = (t1 >> 4) as u8;
         }
-        Ok(())
     }
 
     // Convert a given polynomial into a 32-byte message

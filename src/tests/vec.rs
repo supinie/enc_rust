@@ -15,7 +15,7 @@ mod vec_tests {
             let mut poly_vec2 = PolyVec::new(&[Poly { coeffs: [20; N] }; 4][0..sec_level.k]).unwrap();
             poly_vec1.add(&poly_vec2);
 
-            assert_eq!(poly_vec1.polys(), &[Poly { coeffs: [20; N] }; 4][0..sec_level.k]);
+            assert_eq!(poly_vec1.polys(), &[Poly { coeffs: [40; N] }; 4][0..sec_level.k]);
         }
     }
 

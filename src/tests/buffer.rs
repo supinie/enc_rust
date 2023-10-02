@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod buffer_tests {
+pub(in crate::tests) mod buffer_tests {
     use crate::{buffer::*, params::*, poly::*};
     use rand::Rng;
     extern crate std;
@@ -11,7 +11,7 @@ mod buffer_tests {
         Params::sec_level_1024(),
     ];
 
-    fn zero_initialise_buffer(size: usize) -> Vec<u8> {
+    pub fn zero_initialise_buffer(size: usize) -> Vec<u8> {
         let mut data = Vec::with_capacity(size);
         for _ in 0..size {
             data.push(0u8);

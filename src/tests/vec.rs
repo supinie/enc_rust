@@ -11,38 +11,29 @@ mod vec_tests {
     #[test]
     fn add_test() {
         for sec_level in TEST_PARAMS.iter() {
-            let mut poly_vec1 = PolyVec {
-                polynomials: vec![ Poly { coeffs: [20; N] }; sec_level.k ],
-            };
-            let mut poly_vec2 = PolyVec {
-                polynomials: vec![ Poly { coeffs: [30; N] }; sec_level.k ],
-            };
-
+            let mut poly_vec1 = PolyVec::new(&[Poly { coeffs: [20; N] }; 4][0..sec_level.k]).unwrap();
+            let mut poly_vec2 = PolyVec::new(&[Poly { coeffs: [20; N] }; 4][0..sec_level.k]).unwrap();
             poly_vec1.add(&poly_vec2);
 
-            assert_eq!(poly_vec1.polynomials, vec![ Poly { coeffs: [50; N] }; sec_level.k ]);
+            assert_eq!(poly_vec1.polys(), &[Poly { coeffs: [20; N] }; 4][0..sec_level.k]);
         }
     }
 
     #[test]
     fn reduce_test() {
         for sec_level in TEST_PARAMS.iter() {
-            let mut poly_vec = PolyVec {
-                polynomials: vec![ Poly { coeffs: [i16::MAX; N] }; sec_level.k ],
-            };
+            let mut poly_vec = PolyVec::new(&[Poly{ coeffs: [i16::MAX; N] }; 4][0..sec_level.k]).unwrap();
             poly_vec.reduce();
-            assert_eq!(poly_vec.polynomials, vec![ Poly { coeffs: [2806; N] }; sec_level.k]);
+            assert_eq!(poly_vec.polys(), &[Poly { coeffs: [2806; N] }; 4][0..sec_level.k]);
         }
     }
 
     #[test]
     fn normalise_test() {
         for sec_level in TEST_PARAMS.iter() {
-            let mut poly_vec = PolyVec {
-                polynomials: vec![ Poly { coeffs: [i16::MAX; N] }; sec_level.k ],
-            };
+            let mut poly_vec = PolyVec::new(&[Poly{ coeffs: [i16::MAX; N] }; 4][0..sec_level.k]).unwrap();
             poly_vec.normalise();
-            assert_eq!(poly_vec.polynomials, vec![ Poly { coeffs: [cond_sub_q(barrett_reduce(i16::MAX)); N] }; sec_level.k ]);
+            assert_eq!(poly_vec.polys(), &[Poly { coeffs: [cond_sub_q(barrett_reduce(i16::MAX)); N] }; 4][0..sec_level.k]);
         }
     }
 
@@ -50,9 +41,7 @@ mod vec_tests {
     #[test]
     fn ntt_invntt_test() {
         for sec_level in TEST_PARAMS.iter() {
-            let mut input_vec = PolyVec {
-                polynomials: vec![ Poly {coeffs: [20; N] }; sec_level.k ],
-            };
+            let mut input_vec = PolyVec::new(&[Poly {coeffs: [20; N] }; 4][0..sec_level.k ]).unwrap();
             let mut original_input = input_vec.clone();
             original_input.normalise();
             
@@ -63,8 +52,8 @@ mod vec_tests {
 
             for i in 0..sec_level.k {
                 for j in 0..N {
-                    let p: i32 = input_vec.polynomials[i].coeffs[j] as i32;
-                    let q: i32 = original_input.polynomials[i].coeffs[j] as i32;
+                    let p: i32 = input_vec.polys()[i].coeffs[j] as i32;
+                    let q: i32 = original_input.polys()[i].coeffs[j] as i32;
                     assert_eq!(
                         p,
                         (q * (1 << 16)) % (Q as i32),

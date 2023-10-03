@@ -5,6 +5,7 @@ use crate::params::*;
 // given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
 // Example:
 // let x = montgomery_reduce(y);
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;
     let m = x.wrapping_mul(QPRIME) as i16;
@@ -25,8 +26,9 @@ pub fn to_mont(x: i16) -> i16 {
 // iff x = -nq for some natural number n, barrett_reduce(x) = q != 0
 // Example:
 // let x = barrett_reduce(y);
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub fn barrett_reduce(x: i16) -> i16 {
-    const APPROXIMATION: usize = 20159;
+    const APPROXIMATION: i32 = 20159;
     // From Cloudflare's circl Kyber implementation:
     //
     // For any x we have x mod q = x - ⌊x/q⌋ q.  We will use 20159/2²⁶ as
@@ -40,13 +42,14 @@ pub fn barrett_reduce(x: i16) -> i16 {
     //                        [ q        if x=-nq for pos. integer n
     //  x - ⌊x 20156/2²⁶⌋ q = [
     //                        [ x mod q  otherwise
-    let inside_floor = (i32::from(x).wrapping_mul(APPROXIMATION as i32) >> 26) as i16;
+    let inside_floor = (i32::from(x).wrapping_mul(APPROXIMATION) >> 26) as i16;
     x.wrapping_sub(inside_floor.wrapping_mul(Q as i16))
 }
 
 // given x, if x < Q return x, otherwise return x - Q
 // Example:
 // let x = cond_sub_q(y);
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub fn cond_sub_q(x: i16) -> i16 {
     assert_ge!(
         x,

@@ -1,17 +1,32 @@
 use core::num::TryFromIntError;
 use crate::{params::*, poly::*};
 
+
+pub enum CompressError {
+    TryFromIntError,
+    InvalidCompressedBytes,
+}
+
+
+impl From<TryFromIntError> for CompressError {
+    fn from(_err: TryFromIntError) -> Self {
+        CompressError::TryFromIntError
+    }
+}
+
+
 pub trait Buffer {
     fn pack(&mut self, poly: Poly);
     fn msg_from_poly(&mut self, poly: Poly) -> Result<(), TryFromIntError>;
-    fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), TryFromIntError>;
+    fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), DecompressError>;
 }
+
 
 impl Buffer for [u8] {
     // Packs given poly into a 384-byte buffer
     // Example:
     // buf.pack(poly);
-    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     fn pack(&mut self, poly: Poly) {
         for i in 0..N / 2 {
             let t0 = poly.coeffs[2 * i];
@@ -27,13 +42,14 @@ impl Buffer for [u8] {
     // Example:
     // msg.msg_from_poly(poly);
     fn msg_from_poly(&mut self, poly: Poly) -> Result<(), TryFromIntError> {
-        const Q_16: i16 = Q as i16;
+        #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+        let q_16 = i16::try_from(Q)?;
         for i in 0..N / 8 {
             self[i] = 0;
             for j in 0..8 {
                 let mut x = poly.coeffs[8 * i + j];
-                x += (x >> 15) & Q_16;
-                x = (((x << 1) + Q_16 / 2) / Q_16) & 1;
+                x += (x >> 15) & q_16;
+                x = (((x << 1) + q_16 / 2) / q_16) & 1;
                 self[i] |= u8::try_from(x << j)?;
             }
         }
@@ -43,7 +59,7 @@ impl Buffer for [u8] {
     // Compress polynomial to a buffer
     // Example:
     // buf.compress(poly);
-    fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), TryFromIntError>{
+    fn compress(&mut self, poly: Poly, compressed_bytes: usize) -> Result<(), DecompressError>{
         let mut k = 0usize;
         let mut t = [0u8; 8];
 
@@ -52,8 +68,8 @@ impl Buffer for [u8] {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = poly.coeffs[8 * i + j];
-                        u += (u >> 15) & i16::try_from(Q).unwrap();
-                        t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q).unwrap() / 2) / u16::try_from(Q).unwrap()) & 15)?;
+                        u += (u >> 15) & i16::try_from(Q)?;
+                        t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q)? / 2) / u16::try_from(Q)?) & 15)?;
                     }
                     self[k] = t[0] | (t[1] << 4);
                     self[k + 1] = t[2] | (t[3] << 4);
@@ -61,13 +77,14 @@ impl Buffer for [u8] {
                     self[k + 3] = t[6] | (t[7] << 4);
                     k += 4;
                 }
+                Ok(())
             }
             160 => {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = poly.coeffs[8 * i + j];
-                        u += (u >> 15) & i16::try_from(Q).unwrap();
-                        t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q).unwrap() / 2) / u32::try_from(Q).unwrap()) & 31)?;
+                        u += (u >> 15) & i16::try_from(Q)?;
+                        t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 31)?;
                     }
                     self[k] = t[0] | (t[1] << 5);
                     self[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
@@ -76,9 +93,9 @@ impl Buffer for [u8] {
                     self[k + 4] = (t[6] >> 2) | (t[7] << 3);
                     k += 5;
                 }
+                Ok(())
             }
-            _ => panic!("Invalid compressed poly bytes size."),
+            _ => Err(DecompressError::InvalidCompressedBytes)
         }
-        Ok(())
     }
 }

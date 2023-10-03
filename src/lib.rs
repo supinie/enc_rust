@@ -11,7 +11,7 @@
     clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
-    // clippy::panic,
+    clippy::panic,
     clippy::panic_in_result_fn,
     clippy::unwrap_used,
     rust_2018_idioms,
@@ -19,6 +19,7 @@
     unused_qualifications
 )]
 #![no_std]
+#![allow(clippy::needless_range_loop)]
 
 mod buffer;
 mod field_ops;

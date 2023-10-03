@@ -32,9 +32,9 @@ mod params_tests {
 
     #[test]
     fn poly_compressed_bytes_test() {
-        assert_eq!(Params::sec_level_512().poly_compressed_bytes(), 128);
-        assert_eq!(Params::sec_level_768().poly_compressed_bytes(), 128);
-        assert_eq!(Params::sec_level_1024().poly_compressed_bytes(), 160);
+        assert_eq!(Params::sec_level_512().poly_compressed_bytes().unwrap(), 128);
+        assert_eq!(Params::sec_level_768().poly_compressed_bytes().unwrap(), 128);
+        assert_eq!(Params::sec_level_1024().poly_compressed_bytes().unwrap(), 160);
     }
 
     #[test]
@@ -46,9 +46,9 @@ mod params_tests {
 
     #[test]
     fn poly_vec_compressed_bytes_test() {
-        assert_eq!(Params::sec_level_512().poly_vec_compressed_bytes(), 640);
-        assert_eq!(Params::sec_level_768().poly_vec_compressed_bytes(), 960);
-        assert_eq!(Params::sec_level_1024().poly_vec_compressed_bytes(), 1408);
+        assert_eq!(Params::sec_level_512().poly_vec_compressed_bytes().unwrap(), 640);
+        assert_eq!(Params::sec_level_768().poly_vec_compressed_bytes().unwrap(), 960);
+        assert_eq!(Params::sec_level_1024().poly_vec_compressed_bytes().unwrap(), 1408);
     }
 
     #[test]

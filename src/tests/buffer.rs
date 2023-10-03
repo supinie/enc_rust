@@ -11,19 +11,19 @@ pub(in crate::tests) mod buffer_tests {
         Params::sec_level_1024(),
     ];
 
-    pub fn zero_initialise_buffer(size: usize) -> Vec<u8> {
-        let mut data = Vec::with_capacity(size);
-        for _ in 0..size {
+    pub fn zero_initialise_buffer(size: Option<usize>) -> Vec<u8> {
+        let mut data = Vec::with_capacity(size.unwrap());
+        for _ in 0..size.unwrap() {
             data.push(0u8);
         }
         data
     }
 
-    fn generate_random_buffer(size: usize) -> Vec<u8> {
+    fn generate_random_buffer(size: Option<usize>) -> Vec<u8> {
         let mut rng = rand::thread_rng();
-        let mut data = Vec::with_capacity(size);
+        let mut data = Vec::with_capacity(size.unwrap());
 
-        for _ in 0..size {
+        for _ in 0..size.unwrap() {
             data.push(rng.gen::<u8>());
         }
         data

@@ -121,7 +121,7 @@ mod poly_tests {
             coeffs: INPUT_COEFFS,
         };
 
-        let mut msg = zero_initialise_buffer(32);
+        let mut msg = zero_initialise_buffer(Some(32));
         msg.msg_from_poly(poly_original);
         poly_original.from_msg(&msg);
 

@@ -15,8 +15,8 @@ pub fn montgomery_reduce(x: i32) -> i16 {
 
 // given x, return x 2^16 mod q
 // Example:
-// let x = to_mont(y);
-pub fn to_mont(x: i16) -> i16 {
+// let x = mont_form(y);
+pub fn mont_form(x: i16) -> i16 {
     const R_SQUARED_MOD_Q: i32 = 1353;
     montgomery_reduce(i32::from(x) * R_SQUARED_MOD_Q)
 }

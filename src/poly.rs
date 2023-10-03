@@ -73,10 +73,10 @@ impl Poly {
 
     // Converts all coefficients of the given polynomial to Mongomery form
     // Example:
-    // poly.to_mont();
-    pub fn to_mont(&mut self) {
+    // poly.mont_form();
+    pub fn mont_form(&mut self) {
         for coeff in self.coeffs.iter_mut() {
-            *coeff = to_mont(*coeff);
+            *coeff = mont_form(*coeff);
         }
     }
 
@@ -126,8 +126,8 @@ impl Poly {
 
     // Converts a message buffer into a polynomial
     // Example:
-    // poly.from_msg(msg_buf);
-    pub fn from_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
+    // poly.load_msg(msg_buf);
+    pub fn load_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
         for i in 0..N / 8 {
             for j in 0..8 {
                 let mask = ((i16::from(msg[i]) >> j) & 1).wrapping_neg();

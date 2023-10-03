@@ -9,9 +9,9 @@ mod field_tests {
     }
 
     #[test]
-    pub fn to_mont_test() {
-        assert_eq!(to_mont(i16::MAX), 56);
-        assert_eq!(to_mont(i16::MIN), 988);
+    pub fn mont_form_test() {
+        assert_eq!(mont_form(i16::MAX), 56);
+        assert_eq!(mont_form(i16::MIN), 988);
     }
 
     #[test]

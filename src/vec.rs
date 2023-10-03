@@ -19,9 +19,9 @@ impl PolyVec {
 
     pub fn new(poly_array: &[Poly]) -> Option<Self>  {
         match poly_array.len() {
-            2 => Some(PolyVec::PolyVec512(poly_array.try_into().unwrap())),
-            3 => Some(PolyVec::PolyVec768(poly_array.try_into().unwrap())),
-            4 => Some(PolyVec::PolyVec1024(poly_array.try_into().unwrap())),
+            2 => Some(PolyVec::PolyVec512(poly_array.try_into().expect("invalid poly array"))),
+            3 => Some(PolyVec::PolyVec768(poly_array.try_into().expect("invalid poly array"))),
+            4 => Some(PolyVec::PolyVec1024(poly_array.try_into().expect("invalid poly array"))),
             _ => None,
         }
     }

@@ -15,10 +15,12 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 byteorder = "1.4.3"
-clap = { version = "4.3.12", features = ["cargo"] }
+# clap = { version = "4.3.12", features = ["cargo"] }
 more-asserts = "0.3.1"
-rand = "0.8.5"
 sha3 = "0.10.8"
+
+[dev-dependencies]
+rand = "0.8.5"
 
 # [workspace]
 # members = ["src/kyber"]

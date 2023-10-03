@@ -57,7 +57,7 @@ impl Poly {
     // poly.inv_ntt();
     pub fn inv_ntt(&mut self) {
         let mut k: usize = 127;
-        let mut r: isize = -1;
+        let mut r: usize = 0;
         let mut l = 2;
 
         while l < N {
@@ -72,9 +72,11 @@ impl Poly {
                 }
             }
 
+            #[allow(clippy::cast_sign_loss)] // i cannot be negative if we reach where its value is
+                                             // cast
             loop {
+                let i = INV_NTT_REDUCTIONS[r];
                 r += 1;
-                let i = INV_NTT_REDUCTIONS[r as usize];
                 if i < 0 {
                     break;
                 }

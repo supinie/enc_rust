@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod sample_tests {
     use crate::{params::*, poly::*};
+    extern crate std;
     use std::{ops::Range, collections::HashMap};
     use rand::{Rng, SeedableRng};
     use rand::rngs::StdRng;
@@ -29,7 +30,6 @@ mod sample_tests {
         poly.derive_noise_2(&seed, nonce);
 
         for coeff in poly.coeffs.iter() {
-            println!("{}", coeff);
             assert!(range.contains(coeff), "coefficient {} not in valid range", coeff);
         }
     }
@@ -45,7 +45,6 @@ mod sample_tests {
         poly.derive_noise_3(&seed, nonce);
 
         for coeff in poly.coeffs.iter() {
-            println!("{}", coeff);
             assert!(range.contains(coeff), "coefficient {} not in valid range", coeff);
         }
     }

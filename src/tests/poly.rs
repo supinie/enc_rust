@@ -5,6 +5,7 @@ mod poly_tests {
         field_ops::{barrett_reduce, montgomery_reduce},
         params::*,
         poly::*,
+        tests::buffer::buffer_tests::zero_initialise_buffer,
     };
 
     const INPUT_COEFFS: [i16; N] = [
@@ -120,9 +121,9 @@ mod poly_tests {
             coeffs: INPUT_COEFFS,
         };
 
-        let mut msg = Buffer::zero_initialise(32);
+        let mut msg = zero_initialise_buffer(Some(32));
         msg.msg_from_poly(poly_original);
-        poly_original.from_msg(msg);
+        poly_original.load_msg(&msg);
 
         assert_eq!(poly_original.coeffs, OUTPUT_COEFFS);
     }

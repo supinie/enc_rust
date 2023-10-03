@@ -4,11 +4,28 @@ use crate::{
     ntt::ZETAS,
     params::{N, Q},
 };
+use core::num::TryFromIntError;
+
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Poly {
     pub coeffs: [i16; N],
 }
+
+
+#[derive(Debug)]
+pub enum DecompressError {
+    TryFromIntError,
+    InvalidCompressedBytes,
+}
+
+
+impl From<TryFromIntError> for DecompressError {
+    fn from(_err: TryFromIntError) -> Self {
+        DecompressError::TryFromIntError
+    }
+}
+
 
 impl Poly {
     // We can't use default, as that is only supported for arrays of length 32 or less
@@ -56,10 +73,10 @@ impl Poly {
 
     // Converts all coefficients of the given polynomial to Mongomery form
     // Example:
-    // poly.to_mont();
-    pub fn to_mont(&mut self) {
+    // poly.mont_form();
+    pub fn mont_form(&mut self) {
         for coeff in self.coeffs.iter_mut() {
-            *coeff = to_mont(*coeff);
+            *coeff = mont_form(*coeff);
         }
     }
 
@@ -98,62 +115,69 @@ impl Poly {
     // Unpacks a buffer of bytes into a polynomial
     // Example:
     // poly.unpack(buf);
-    pub fn unpack(&mut self, buf: Buffer) {
+    pub fn unpack(&mut self, buf: &[u8]) {
         for i in 0..N / 2 {
             self.coeffs[2 * i] =
-                i16::from(buf.data[3 * i]) | ((i16::from(buf.data[3 * i + 1]) << 8) & 0xfff);
+                i16::from(buf[3 * i]) | ((i16::from(buf[3 * i + 1]) << 8) & 0xfff);
             self.coeffs[2 * i + 1] =
-                i16::from(buf.data[3 * i + 1] >> 4) | (i16::from(buf.data[3 * i + 2]) << 4);
+                i16::from(buf[3 * i + 1] >> 4) | (i16::from(buf[3 * i + 2]) << 4);
         }
     }
 
     // Converts a message buffer into a polynomial
     // Example:
-    // poly.from_msg(msg_buf);
-    pub fn from_msg(&mut self, msg: Buffer) {
+    // poly.load_msg(msg_buf);
+    pub fn load_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
         for i in 0..N / 8 {
             for j in 0..8 {
-                let mask = ((i16::from(msg.data[i]) >> j) & 1).wrapping_neg();
-                self.coeffs[8 * i + j] = mask & ((Q + 1) / 2) as i16;
+                let mask = ((i16::from(msg[i]) >> j) & 1).wrapping_neg();
+                self.coeffs[8 * i + j] = mask & i16::try_from((Q + 1) / 2)?;
             }
         }
+        Ok(())
     }
+
 
     // Decompresses buffer into a polynomial
     // is dependent on the security level
     // Example:
     // poly.decompress(buf, k);
-    pub fn decompress(&mut self, buf: &Buffer, compressed_bytes: usize) {
+    pub fn decompress(&mut self, buf: &[u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
         let mut k = 0usize;
 
         match compressed_bytes {
-            128 => {
-                for i in 0..N / 2 {
-                    self.coeffs[2 * i] = ((((buf.data[k] & 15) as usize) * Q + 8) >> 4) as i16;
-                    self.coeffs[2 * i + 1] = ((((buf.data[k] >> 4) as usize) * Q + 8) >> 4) as i16;
-                    k += 1;
+            Some(size) => match size {
+                128 => {
+                    for i in 0..N / 2 {
+                        self.coeffs[2 * i] = i16::try_from((usize::from(buf[k] & 15) * Q + 8) >> 4)?;
+                        self.coeffs[2 * i + 1] = i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
+                        k += 1;
+                    };
+                    Ok(())
                 }
-            }
-            160 => {
-                let mut t = [0u8; 8];
-                for i in 0..N / 8 {
-                    t[0] = buf.data[k];
-                    t[1] = (buf.data[k] >> 5) | (buf.data[k + 1] << 3);
-                    t[2] = buf.data[k + 1] >> 2;
-                    t[3] = (buf.data[k + 1] >> 7) | (buf.data[k + 2] << 1);
-                    t[4] = (buf.data[k + 2] >> 4) | (buf.data[k + 3] << 4);
-                    t[5] = buf.data[k + 3] >> 1;
-                    t[6] = (buf.data[k + 3] >> 6) | (buf.data[k + 4] << 2);
-                    t[7] = buf.data[k + 4] >> 3;
-                    k += 5;
+                160 => {
+                    let mut t = [0u8; 8];
+                    for i in 0..N / 8 {
+                        t[0] = buf[k];
+                        t[1] = (buf[k] >> 5) | (buf[k + 1] << 3);
+                        t[2] = buf[k + 1] >> 2;
+                        t[3] = (buf[k + 1] >> 7) | (buf[k + 2] << 1);
+                        t[4] = (buf[k + 2] >> 4) | (buf[k + 3] << 4);
+                        t[5] = buf[k + 3] >> 1;
+                        t[6] = (buf[k + 3] >> 6) | (buf[k + 4] << 2);
+                        t[7] = buf[k + 4] >> 3;
+                        k += 5;
 
-                    for j in 0..8 {
-                        self.coeffs[8 * i + j] =
-                            (((u32::from(t[j]) & 31) * (Q as u32) + 16) >> 5) as i16;
-                    }
+                        for (j, t_elem) in t.iter().enumerate() {
+                            self.coeffs[8 * i + j] =
+                                i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+                        }
+                    };
+                    Ok(())
                 }
+                _ => Err(DecompressError::InvalidCompressedBytes)
             }
-            _ => panic!("Invalid compressed poly bytes size."),
+            None => Err(DecompressError::InvalidCompressedBytes)
         }
     }
 }

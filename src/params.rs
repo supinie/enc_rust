@@ -7,8 +7,6 @@ pub const SHAREDSECRETBYTES: usize = 32;
 
 pub const POLYBYTES: usize = 384;
 
-pub const POLYCOMPRESSEDBYTES: usize = 128;
-
 #[derive(Debug, PartialEq)]
 pub struct Params {
     pub k: usize,
@@ -41,11 +39,11 @@ impl Params {
         }
     }
 
-    pub fn poly_compressed_bytes(&self) -> usize {
+    pub fn poly_compressed_bytes(&self) -> Option<usize> {
         match self.k {
-            2 | 3 => 128,
-            4 => 160,
-            _ => panic!("Invalid security level passed to poly_compressed_bytes"),
+            2 | 3 => Some(128),
+            4 => Some(160),
+            _ => None,
         }
     }
 
@@ -53,11 +51,11 @@ impl Params {
         self.k * POLYBYTES
     }
 
-    pub fn poly_vec_compressed_bytes(&self) -> usize {
+    pub fn poly_vec_compressed_bytes(&self) -> Option<usize> {
         match self.k {
-            2 | 3 => self.k * 320,
-            4 => self.k * 352,
-            _ => panic!("Invalid security level passed to poly_vec_compressed_bytes"),
+            2 | 3 => Some(self.k * 320),
+            4 => Some(self.k * 352),
+            _ => None,
         }
     }
 
@@ -70,7 +68,7 @@ impl Params {
     }
 
     pub fn indcpa_bytes(&self) -> usize {
-        self.poly_vec_compressed_bytes() + self.poly_compressed_bytes()
+        self.poly_vec_compressed_bytes().expect("invalid poly_vec_compressed_bytes") + self.poly_compressed_bytes().expect("invalid poly_compressed_bytes")
     }
 
     pub fn public_key_bytes(&self) -> usize {

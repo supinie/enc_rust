@@ -21,7 +21,6 @@
 #![no_std]
 #![allow(clippy::needless_range_loop)]
 
-mod buffer;
 mod field_ops;
 mod indcpa;
 pub mod kem;

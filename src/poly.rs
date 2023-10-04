@@ -1,5 +1,4 @@
 use crate::{
-    buffer::Buffer,
     field_ops::*,
     ntt::ZETAS,
     params::{N, Q},
@@ -111,6 +110,22 @@ impl Poly {
             self.coeffs[i + 3] = p3;
         }
     }
+    
+    
+    // Packs given poly into a 384-byte buffer
+    // Example:
+    // poly.pack(buf);
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    pub fn pack(&self, buf: &mut [u8]) {
+        for i in 0..N / 2 {
+            let t0 = self.coeffs[2 * i];
+            let t1 = self.coeffs[2 * i + 1];
+            
+            buf[3 * i] = t0 as u8;
+            buf[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
+            buf[3 * i + 2] = (t1 >> 4) as u8;
+        }
+    }
 
     // Unpacks a buffer of bytes into a polynomial
     // Example:
@@ -126,12 +141,31 @@ impl Poly {
 
     // Converts a message buffer into a polynomial
     // Example:
-    // poly.load_msg(msg_buf);
-    pub fn load_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
+    // poly.read_msg(msg_buf);
+    pub fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
         for i in 0..N / 8 {
             for j in 0..8 {
                 let mask = ((i16::from(msg[i]) >> j) & 1).wrapping_neg();
                 self.coeffs[8 * i + j] = mask & i16::try_from((Q + 1) / 2)?;
+            }
+        }
+        Ok(())
+    }
+
+
+    // Convert a given polynomial into a 32-byte message
+    // Example:
+    // poly.write_msg(msg_buf);
+    pub fn write_msg(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+        let q_16 = i16::try_from(Q)?;
+        for i in 0..N / 8 {
+            buf[i] = 0;
+            for j in 0..8 {
+                let mut x = self.coeffs[8 * i + j];
+                x += (x >> 15) & q_16;
+                x = (((x << 1) + q_16 / 2) / q_16) & 1;
+                buf[i] |= u8::try_from(x << j)?;
             }
         }
         Ok(())

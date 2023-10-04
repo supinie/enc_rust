@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub(in crate::tests) mod buffer_tests {
-    use crate::{buffer::*, params::*, poly::*};
+    use crate::{params::*, poly::*};
     use rand::Rng;
     extern crate std;
     use std::vec::Vec;
@@ -33,7 +33,7 @@ pub(in crate::tests) mod buffer_tests {
     fn pack_unpack_test() {
         let p = Poly { coeffs: [20; N] };
         let mut buffer = [0; 3 * 128];
-        &buffer.pack(p);
+        &p.pack(&mut buffer);
 
         let mut comp_p = Poly::new();
         comp_p.unpack(&buffer);

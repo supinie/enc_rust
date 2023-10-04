@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod poly_tests {
     use crate::{
-        buffer::*,
         field_ops::{barrett_reduce, montgomery_reduce},
         params::*,
         poly::*,
@@ -122,8 +121,8 @@ mod poly_tests {
         };
 
         let mut msg = zero_initialise_buffer(Some(32));
-        msg.msg_from_poly(poly_original);
-        poly_original.load_msg(&msg);
+        poly_original.write_msg(&mut msg);
+        poly_original.read_msg(&msg);
 
         assert_eq!(poly_original.coeffs, OUTPUT_COEFFS);
     }

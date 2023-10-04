@@ -50,7 +50,7 @@ pub(in crate::tests) mod buffer_tests {
             let mut poly = Poly::new();
 
             poly.decompress(&buf, sec_level.poly_compressed_bytes());
-            buf_comp.compress(poly, sec_level.poly_compressed_bytes());
+            poly.compress(&mut buf_comp, sec_level.poly_compressed_bytes());
 
             assert_eq!(buf_comp, buf);
             assert_eq!(buf_comp, buf);

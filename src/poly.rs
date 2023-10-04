@@ -180,4 +180,50 @@ impl Poly {
             None => Err(DecompressError::InvalidCompressedBytes)
         }
     }
+
+    // Compress selfnomial to a buffer
+    // Example:
+    // buf.compress(self);
+    pub fn compress(& self, buf: &mut [u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
+        let mut k = 0usize;
+        let mut t = [0u8; 8];
+
+        match compressed_bytes {
+            Some(size) => match size {
+                128 => {
+                    for i in 0..N / 8 {
+                        for j in 0..8 {
+                            let mut u = self.coeffs[8 * i + j];
+                            u += (u >> 15) & i16::try_from(Q)?;
+                            t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q)? / 2) / u16::try_from(Q)?) & 15)?;
+                        }
+                        buf[k] = t[0] | (t[1] << 4);
+                        buf[k + 1] = t[2] | (t[3] << 4);
+                        buf[k + 2] = t[4] | (t[5] << 4);
+                        buf[k + 3] = t[6] | (t[7] << 4);
+                        k += 4;
+                    }
+                    Ok(())
+                },
+                160 => {
+                    for i in 0..N / 8 {
+                        for j in 0..8 {
+                            let mut u = self.coeffs[8 * i + j];
+                            u += (u >> 15) & i16::try_from(Q)?;
+                            t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 31)?;
+                        }
+                        buf[k] = t[0] | (t[1] << 5);
+                        buf[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
+                        buf[k + 2] = (t[3] >> 1) | (t[4] << 4);
+                        buf[k + 3] = (t[4] >> 4) | (t[5] << 1) | (t[6] << 6);
+                        buf[k + 4] = (t[6] >> 2) | (t[7] << 3);
+                        k += 5;
+                    }
+                    Ok(())
+                },
+                _ => Err(DecompressError::InvalidCompressedBytes)
+            },
+            None => Err(DecompressError::InvalidCompressedBytes)
+        }
+    }
 }

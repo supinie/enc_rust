@@ -53,26 +53,33 @@ impl PolyVec {
     }
 
     pub fn reduce(&mut self) {
-        for i in 0..self.len() {
-            self.polys_mut()[i].reduce();
+        for poly in self.polys_mut().iter_mut() {
+            poly.reduce();
         }
     }
 
     pub fn normalise(&mut self) {
-        for i in 0..self.len() {
-            self.polys_mut()[i].normalise();
+        for poly in self.polys_mut().iter_mut() {
+            poly.normalise();
         }
     }
 
     pub fn ntt(&mut self) {
-        for i in 0..self.len() {
-            self.polys_mut()[i].ntt();
+        for poly in self.polys_mut().iter_mut() {
+            poly.ntt();
         }
     }
 
     pub fn inv_ntt(&mut self) {
-        for i in 0..self.len() {
-            self.polys_mut()[i].inv_ntt();
+        for poly in self.polys_mut().iter_mut() {
+            poly.inv_ntt();
         }
+    }
+
+    pub fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str> {
+        for poly in self.polys_mut().iter_mut() {
+            poly.derive_noise(seed, nonce, eta)?;
+        }
+        Ok(())
     }
 }

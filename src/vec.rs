@@ -76,14 +76,25 @@ impl PolyVec {
         }
     }
 
-    pub fn inner_product_pointwise(&mut self, a: &PolyVec, b: &PolyVec) {
-        todo!();
-    }
 
     pub fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str> {
         for poly in self.polys_mut().iter_mut() {
             poly.derive_noise(seed, nonce, eta)?;
         }
         Ok(())
+    }
+}
+
+
+impl Poly {
+    pub fn inner_product_pointwise(&mut self, a: &PolyVec, b: &PolyVec) {
+        assert_eq!(a.len(), b.len());
+        let mut temp = Poly::new();
+        *self = Poly::new();    // Zero our output Poly
+        for i in 0..a.len() {
+            temp = a.polys()[i];
+            temp.pointwise_mul(&b.polys()[i]);
+            self.add(&temp);
+        }
     }
 }

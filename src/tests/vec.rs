@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod vec_tests {
     use crate::{params::*, poly::*, vec::*, field_ops::*}; 
+    use crate::tests::sample::sample_tests::*;
 
     static TEST_PARAMS: [Params; 3] = [
         Params::sec_level_512(),
@@ -65,5 +66,32 @@ mod vec_tests {
         }
     }
 
-    // fn derive_noise_range_test() {
+    #[test]
+    fn derive_noise_range_test() {
+        for sec_level in TEST_PARAMS.iter() {
+            let mut poly_vec = PolyVec::new(&[Poly::new(); 4][0..sec_level.k ]).unwrap();
+            let seed = generate_random_seed();
+            let nonce = generate_random_nonce();
+
+            poly_vec.derive_noise(&seed, nonce, sec_level.eta1);
+            for poly in poly_vec.polys().iter() {
+                range_test(&poly, sec_level.eta1 as i16);
+            }
+        }
+    }
+
+
+    #[test]
+    fn derive_noise_dist_test() {
+        for sec_level in TEST_PARAMS.iter() {
+            let mut poly_vec = PolyVec::new(&[Poly::new(); 4][0..sec_level.k ]).unwrap();
+            let seed = generate_random_seed();
+            let nonce = generate_random_nonce();
+
+            poly_vec.derive_noise(&seed, nonce, sec_level.eta1);
+            for poly in poly_vec.polys().iter() {
+                dist_test(&poly, sec_level.eta1);
+            }
+        }
+    }
 }

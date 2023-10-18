@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod sample_tests {
+pub(in crate::tests) mod sample_tests {
     use crate::{params::*, poly::*};
     extern crate std;
     use std::{ops::Range, collections::HashMap};
@@ -8,19 +8,19 @@ mod sample_tests {
 
     const EPSILON: f64 = 0.1;
 
-    fn generate_random_seed() -> [u8; 32] {
+    pub fn generate_random_seed() -> [u8; 32] {
         let mut rng = StdRng::from_entropy();
         let mut seed = [0u8; 32];
         rng.fill(&mut seed);
         seed
     }
 
-    fn generate_random_nonce() -> u8 {
+    pub fn generate_random_nonce() -> u8 {
         let mut rng =StdRng::from_entropy();
         rng.gen::<u8>()
     }
 
-    fn range_test(poly: &Poly, eta: i16) {
+    pub fn range_test(poly: &Poly, eta: i16) {
         let range: Range<i16> = -eta..eta + 1;
         
         for coeff in poly.coeffs.iter() {
@@ -29,7 +29,7 @@ mod sample_tests {
     }
 
 
-    fn dist_test(poly: &Poly, eta: usize) {
+    pub fn dist_test(poly: &Poly, eta: usize) {
         let expected_probabilities: HashMap<i16, f64>;
         match eta {
             2 => {

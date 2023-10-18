@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod vec_tests {
-    use crate::{params::*, poly::*, vec::*, field_ops::*};
+    use crate::{params::*, poly::*, vec::*, field_ops::*}; 
 
     static TEST_PARAMS: [Params; 3] = [
         Params::sec_level_512(),
@@ -64,4 +64,6 @@ mod vec_tests {
             }
         }
     }
+
+    // fn derive_noise_range_test() {
 }

@@ -69,6 +69,18 @@ mod poly_tests {
         assert_eq!(poly1.coeffs, [2; N]);
     }
 
+    #[test]
+    fn mont_form_test() {
+        let mut poly1 = Poly { coeffs: [i16::MAX; N] };
+        let mut poly2 = Poly { coeffs: [i16::MIN; N] };
+
+        poly1.mont_form();
+        poly2.mont_form();
+
+        assert_eq!(poly1.coeffs, [56; N]);
+        assert_eq!(poly2.coeffs, [988; N]);
+    }
+
     // Test Poly::pointwise_mul()
     #[test]
     fn pointwise_mul_test() {

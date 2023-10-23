@@ -57,4 +57,22 @@ pub(in crate::tests) mod buffer_tests {
             assert_eq!(buf_comp, buf);
         }
     }
+
+    #[test]
+    fn decompress_fail_test() {
+        for sec_level in TEST_PARAMS.iter() {
+            let buf = generate_random_buffer(sec_level.poly_compressed_bytes());
+            let mut buf_comp = zero_initialise_buffer(sec_level.poly_compressed_bytes());
+
+            let mut poly = Poly::new();
+            // We only need test the match statements, as it is not possible for the try_from to
+            // return an error.
+
+            let err = poly.decompress(&buf, Some(120));
+            assert_eq!(err.unwrap_err(), DecompressError::InvalidCompressedBytes);
+
+            let err = poly.decompress(&buf, None);
+            assert_eq!(err.unwrap_err(), DecompressError::InvalidCompressedBytes);
+        }
+    }
 }

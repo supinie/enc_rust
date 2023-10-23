@@ -76,7 +76,6 @@ impl PolyVec {
         }
     }
 
-
     pub fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str> {
         for poly in self.polys_mut().iter_mut() {
             poly.derive_noise(seed, nonce, eta)?;

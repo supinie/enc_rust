@@ -12,7 +12,7 @@ pub struct Poly {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DecompressError {
     TryFromIntError,
     InvalidCompressedBytes,
@@ -209,7 +209,9 @@ impl Poly {
                     };
                     Ok(())
                 }
-                _ => Err(DecompressError::InvalidCompressedBytes)
+                _ => {
+                    Err(DecompressError::InvalidCompressedBytes)
+                }
             }
             None => Err(DecompressError::InvalidCompressedBytes)
         }

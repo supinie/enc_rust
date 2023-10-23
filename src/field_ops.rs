@@ -6,7 +6,7 @@ use crate::params::*;
 // Example:
 // let x = montgomery_reduce(y);
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-pub fn montgomery_reduce(x: i32) -> i16 {
+pub(crate) fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;
     let m = x.wrapping_mul(QPRIME) as i16;
     let t = (x - i32::from(m).wrapping_mul(Q as i32)) >> 16;
@@ -16,7 +16,7 @@ pub fn montgomery_reduce(x: i32) -> i16 {
 // given x, return x 2^16 mod q
 // Example:
 // let x = mont_form(y);
-pub fn mont_form(x: i16) -> i16 {
+pub(crate) fn mont_form(x: i16) -> i16 {
     const R_SQUARED_MOD_Q: i32 = 1353;
     montgomery_reduce(i32::from(x) * R_SQUARED_MOD_Q)
 }
@@ -27,7 +27,7 @@ pub fn mont_form(x: i16) -> i16 {
 // Example:
 // let x = barrett_reduce(y);
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-pub fn barrett_reduce(x: i16) -> i16 {
+pub(crate) fn barrett_reduce(x: i16) -> i16 {
     const APPROXIMATION: i32 = 20159;
     // From Cloudflare's circl Kyber implementation:
     //
@@ -50,7 +50,7 @@ pub fn barrett_reduce(x: i16) -> i16 {
 // Example:
 // let x = cond_sub_q(y);
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-pub fn cond_sub_q(x: i16) -> i16 {
+pub(crate) fn cond_sub_q(x: i16) -> i16 {
     assert_ge!(
         x,
         -29439,

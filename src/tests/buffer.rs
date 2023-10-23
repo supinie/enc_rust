@@ -11,7 +11,7 @@ pub(in crate::tests) mod buffer_tests {
         Params::sec_level_1024(),
     ];
 
-    pub fn zero_initialise_buffer(size: Option<usize>) -> Vec<u8> {
+    pub(in crate::tests) fn zero_initialise_buffer(size: Option<usize>) -> Vec<u8> {
         let mut data = Vec::with_capacity(size.unwrap());
         for _ in 0..size.unwrap() {
             data.push(0u8);

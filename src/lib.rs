@@ -23,10 +23,10 @@
 
 mod field_ops;
 mod indcpa;
-pub mod kem;
+pub(crate) mod kem;
 mod kex;
 mod ntt;
-pub mod params;
+pub(crate) mod params;
 mod poly;
 mod vec;
 mod sample;

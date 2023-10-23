@@ -7,13 +7,13 @@ use core::num::TryFromIntError;
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Poly {
-    pub coeffs: [i16; N],
+pub(crate) struct Poly {
+    pub(crate) coeffs: [i16; N],
 }
 
 
 #[derive(Debug, PartialEq)]
-pub enum DecompressError {
+pub(crate) enum DecompressError {
     TryFromIntError,
     InvalidCompressedBytes,
 }
@@ -30,14 +30,14 @@ impl Poly {
     // We can't use default, as that is only supported for arrays of length 32 or less
     // Example:
     // let poly = Poly::new();
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Poly { coeffs: [0; N] }
     }
 
     // Sets self to self + x
     // Example:
     // poly1.add(&poly2);
-    pub fn add(&mut self, x: &Poly) {
+    pub(crate) fn add(&mut self, x: &Poly) {
         for i in 0..N {
             self.coeffs[i] += x.coeffs[i];
         }
@@ -46,7 +46,7 @@ impl Poly {
     // Sets self to self - x
     // Example:
     // poly1.sub(&poly2);
-    pub fn sub(&mut self, x: &Poly) {
+    pub(crate) fn sub(&mut self, x: &Poly) {
         for i in 0..N {
             self.coeffs[i] -= x.coeffs[i];
         }
@@ -55,7 +55,7 @@ impl Poly {
     // Normalise coefficients of given polynomial
     // Example:
     // poly.normalise();
-    pub fn normalise(&mut self) {
+    pub(crate) fn normalise(&mut self) {
         for coeff in self.coeffs.iter_mut() {
             *coeff = cond_sub_q(barrett_reduce(*coeff));
         }
@@ -64,7 +64,7 @@ impl Poly {
     // Barrett reduces all coefficients of given polynomial
     // Example:
     // poly.reduce();
-    pub fn reduce(&mut self) {
+    pub(crate) fn reduce(&mut self) {
         for coeff in self.coeffs.iter_mut() {
             *coeff = barrett_reduce(*coeff);
         }
@@ -73,7 +73,7 @@ impl Poly {
     // Converts all coefficients of the given polynomial to Mongomery form
     // Example:
     // poly.mont_form();
-    pub fn mont_form(&mut self) {
+    pub(crate) fn mont_form(&mut self) {
         for coeff in self.coeffs.iter_mut() {
             *coeff = mont_form(*coeff);
         }
@@ -83,7 +83,7 @@ impl Poly {
     // assumes inputs are of montgomery form.
     // Example:
     // poly1.pointwise_mul(&poly2);
-    pub fn pointwise_mul(&mut self, x: &Poly) {
+    pub(crate) fn pointwise_mul(&mut self, x: &Poly) {
         let mut j: usize = 64;
 
         for i in (0..N).step_by(4) {
@@ -116,7 +116,7 @@ impl Poly {
     // Example:
     // poly.pack(buf);
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    pub fn pack(&self, buf: &mut [u8]) {
+    pub(crate) fn pack(&self, buf: &mut [u8]) {
         for i in 0..N / 2 {
             let t0 = self.coeffs[2 * i];
             let t1 = self.coeffs[2 * i + 1];
@@ -130,7 +130,7 @@ impl Poly {
     // Unpacks a buffer of bytes into a polynomial
     // Example:
     // poly.unpack(buf);
-    pub fn unpack(&mut self, buf: &[u8]) {
+    pub(crate) fn unpack(&mut self, buf: &[u8]) {
         for i in 0..N / 2 {
             self.coeffs[2 * i] =
                 i16::from(buf[3 * i]) | ((i16::from(buf[3 * i + 1]) << 8) & 0xfff);
@@ -142,7 +142,7 @@ impl Poly {
     // Converts a message buffer into a polynomial
     // Example:
     // poly.read_msg(msg_buf);
-    pub fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
+    pub(crate) fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
         for i in 0..N / 8 {
             for j in 0..8 {
                 let mask = ((i16::from(msg[i]) >> j) & 1).wrapping_neg();
@@ -156,7 +156,7 @@ impl Poly {
     // Convert a given polynomial into a 32-byte message
     // Example:
     // poly.write_msg(msg_buf);
-    pub fn write_msg(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
+    pub(crate) fn write_msg(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
         let q_16 = i16::try_from(Q)?;
         for i in 0..N / 8 {
@@ -176,7 +176,7 @@ impl Poly {
     // is dependent on the security level
     // Example:
     // poly.decompress(buf, k);
-    pub fn decompress(&mut self, buf: &[u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
+    pub(crate) fn decompress(&mut self, buf: &[u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
         let mut k = 0usize;
 
         match compressed_bytes {
@@ -220,7 +220,7 @@ impl Poly {
     // Compress selfnomial to a buffer
     // Example:
     // buf.compress(self);
-    pub fn compress(& self, buf: &mut [u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
+    pub(crate) fn compress(& self, buf: &mut [u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
         let mut k = 0usize;
         let mut t = [0u8; 8];
 

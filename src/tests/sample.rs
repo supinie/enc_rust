@@ -7,20 +7,19 @@ pub(in crate::tests) mod sample_tests {
     use rand::rngs::StdRng;
 
     const EPSILON: f64 = 0.1;
-
-    pub fn generate_random_seed() -> [u8; 32] {
+    pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
         let mut rng = StdRng::from_entropy();
         let mut seed = [0u8; 32];
         rng.fill(&mut seed);
         seed
     }
 
-    pub fn generate_random_nonce() -> u8 {
+    pub(in crate::tests) fn generate_random_nonce() -> u8 {
         let mut rng =StdRng::from_entropy();
         rng.gen::<u8>()
     }
 
-    pub fn range_test(poly: &Poly, eta: i16) {
+    pub(in crate::tests) fn range_test(poly: &Poly, eta: i16) {
         let range: Range<i16> = -eta..eta + 1;
         
         for coeff in poly.coeffs.iter() {
@@ -29,7 +28,7 @@ pub(in crate::tests) mod sample_tests {
     }
 
 
-    pub fn dist_test(poly: &Poly, eta: usize) {
+    pub(in crate::tests) fn dist_test(poly: &Poly, eta: usize) {
         let expected_probabilities: HashMap<i16, f64>;
         match eta {
             2 => {

@@ -94,4 +94,15 @@ mod vec_tests {
             }
         }
     }
+
+
+    #[test]
+    #[should_panic]
+    fn inner_product_pointwise_mismatch_lengths_test() {
+        let mut result = Poly::new();
+        let poly1 = PolyVec::PolyVec512([Poly::new(); 2]);
+        let poly2 = PolyVec::PolyVec768([Poly::new(); 3]);
+
+        result.inner_product_pointwise(&poly1, &poly2);
+    }
 }

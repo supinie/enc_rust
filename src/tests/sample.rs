@@ -1,6 +1,7 @@
+#![allow(warnings)]
 #[cfg(test)]
 pub(in crate::tests) mod sample_tests {
-    use crate::{params::*, poly::*};
+    use crate::{params::*, polynomials::*};
     extern crate std;
     use std::{ops::Range, collections::HashMap};
     use rand::{Rng, SeedableRng};

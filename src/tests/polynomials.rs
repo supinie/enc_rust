@@ -1,9 +1,10 @@
+#![allow(warnings)]
 #[cfg(test)]
 mod poly_tests {
     use crate::{
-        field_ops::{barrett_reduce, montgomery_reduce},
+        field_operations::{barrett_reduce, montgomery_reduce},
         params::*,
-        poly::*,
+        polynomials::*,
         tests::buffer::buffer_tests::zero_initialise_buffer,
     };
 

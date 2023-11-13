@@ -1,6 +1,7 @@
+#![allow(warnings)]
 #[cfg(test)]
 mod vec_tests {
-    use crate::{params::*, poly::*, vec::*, field_ops::*}; 
+    use crate::{params::*, polynomials::*, vectors::*, field_operations::*};
     use crate::tests::sample::sample_tests::*;
 
     static TEST_PARAMS: [Params; 3] = [
@@ -34,7 +35,7 @@ mod vec_tests {
         for sec_level in TEST_PARAMS.iter() {
             let mut poly_vec = PolyVec::new(&[Poly{ coeffs: [i16::MAX; N] }; 4][0..sec_level.k]).unwrap();
             poly_vec.normalise();
-            assert_eq!(poly_vec.polys(), &[Poly { coeffs: [cond_sub_q(barrett_reduce(i16::MAX)); N] }; 4][0..sec_level.k]);
+            assert_eq!(poly_vec.polys(), &[Poly { coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N] }; 4][0..sec_level.k]);
         }
     }
 

@@ -1,6 +1,7 @@
+#![allow(warnings)]
 #[cfg(test)]
 pub(in crate::tests) mod buffer_tests {
-    use crate::{params::*, poly::*};
+    use crate::{params::*, polynomials::*};
     use rand::Rng;
     extern crate std;
     use std::vec::Vec;

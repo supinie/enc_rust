@@ -1,5 +1,5 @@
 use crate::{
-    field_ops::*,
+    field_operations::*,
     ntt::ZETAS,
     params::{N, Q},
 };
@@ -57,7 +57,7 @@ impl Poly {
     // poly.normalise();
     pub(crate) fn normalise(&mut self) {
         for coeff in self.coeffs.iter_mut() {
-            *coeff = cond_sub_q(barrett_reduce(*coeff));
+            *coeff = conditional_sub_q(barrett_reduce(*coeff));
         }
     }
 

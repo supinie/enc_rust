@@ -1,4 +1,4 @@
-use crate::{field_ops::*, params::N, poly::*};
+use crate::{field_operations::*, params::N, polynomials::*};
 
 #[rustfmt::skip]
 pub(crate) const ZETAS: [i16; 128] = [

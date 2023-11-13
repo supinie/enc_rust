@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #[cfg(test)]
 mod params_tests {
     use crate::params::*;

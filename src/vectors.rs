@@ -1,4 +1,4 @@
-use crate::poly::*;
+use crate::polynomials::*;
 
 #[derive(Clone, PartialEq)]
 pub(crate) enum PolyVec {

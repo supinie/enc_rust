@@ -48,9 +48,9 @@ pub(crate) fn barrett_reduce(x: i16) -> i16 {
 
 // given x, if x < Q return x, otherwise return x - Q
 // Example:
-// let x = cond_sub_q(y);
+// let x = conditional_sub_q(y);
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-pub(crate) fn cond_sub_q(x: i16) -> i16 {
+pub(crate) fn conditional_sub_q(x: i16) -> i16 {
     assert_ge!(
         x,
         -29439,

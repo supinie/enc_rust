@@ -1,6 +1,7 @@
+#![allow(warnings)]
 #[cfg(test)]
 mod ntt_tests {
-    use crate::{params::*, poly::*};
+    use crate::{params::*, polynomials::*};
     use more_asserts::{assert_gt, assert_lt};
 
     // Test Poly::ntt() and Poly::inv_ntt()

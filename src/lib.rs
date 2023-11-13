@@ -14,29 +14,31 @@
     clippy::panic,
     clippy::panic_in_result_fn,
     clippy::unwrap_used,
+    clippy::pedantic,
+    clippy::nursery,
     rust_2018_idioms,
     unused_lifetimes,
     unused_qualifications
 )]
+// pedantic
 #![no_std]
 #![allow(clippy::needless_range_loop)]
 
-mod field_ops;
+mod field_operations;
 mod indcpa;
-pub(crate) mod kem;
-mod kex;
+pub mod kem;
 mod ntt;
 pub(crate) mod params;
-mod poly;
-mod vec;
+mod polynomials;
+mod vectors;
 mod sample;
 
 mod tests {
     mod buffer;
-    mod field;
+    mod field_operations;
     mod ntt;
     mod params;
-    mod poly;
-    mod vec;
+    mod polynomials;
+    mod vectors;
     mod sample;
 }

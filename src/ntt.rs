@@ -1,7 +1,7 @@
-use crate::{field_operations::*, params::N, polynomials::*};
+use crate::{field_operations::{barrett_reduce, montgomery_reduce}, params::N, polynomials::Poly};
 
 #[rustfmt::skip]
-pub(crate) const ZETAS: [i16; 128] = [
+pub const ZETAS: [i16; 128] = [
     2285, 2571, 2970, 1812, 1493, 1422, 287, 202, 3158, 622, 1577, 182,
 	962, 2127, 1855, 1468, 573, 2004, 264, 383, 2500, 1458, 1727, 3199,
 	2648, 1017, 732, 608, 1787, 411, 3124, 1758, 1223, 652, 2777, 1015,

@@ -1,19 +1,19 @@
 use crate::{
-    field_operations::*,
+    field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
     ntt::ZETAS,
     params::{N, Q},
 };
 use core::num::TryFromIntError;
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) struct Poly {
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct Poly {
     pub(crate) coeffs: [i16; N],
 }
 
 
-#[derive(Debug, PartialEq)]
-pub(crate) enum DecompressError {
+#[derive(Debug, PartialEq, Eq)]
+pub enum DecompressError {
     TryFromIntError,
     InvalidCompressedBytes,
 }
@@ -21,7 +21,7 @@ pub(crate) enum DecompressError {
 
 impl From<TryFromIntError> for DecompressError {
     fn from(_err: TryFromIntError) -> Self {
-        DecompressError::TryFromIntError
+        Self::TryFromIntError
     }
 }
 
@@ -30,14 +30,14 @@ impl Poly {
     // We can't use default, as that is only supported for arrays of length 32 or less
     // Example:
     // let poly = Poly::new();
-    pub(crate) fn new() -> Self {
-        Poly { coeffs: [0; N] }
+    pub(crate) const fn new() -> Self {
+        Self { coeffs: [0; N] }
     }
 
     // Sets self to self + x
     // Example:
     // poly1.add(&poly2);
-    pub(crate) fn add(&mut self, x: &Poly) {
+    pub(crate) fn add(&mut self, x: &Self) {
         for i in 0..N {
             self.coeffs[i] += x.coeffs[i];
         }
@@ -46,7 +46,7 @@ impl Poly {
     // Sets self to self - x
     // Example:
     // poly1.sub(&poly2);
-    pub(crate) fn sub(&mut self, x: &Poly) {
+    pub(crate) fn sub(&mut self, x: &Self) {
         for i in 0..N {
             self.coeffs[i] -= x.coeffs[i];
         }
@@ -83,7 +83,7 @@ impl Poly {
     // assumes inputs are of montgomery form.
     // Example:
     // poly1.pointwise_mul(&poly2);
-    pub(crate) fn pointwise_mul(&mut self, x: &Poly) {
+    pub(crate) fn pointwise_mul(&mut self, x: &Self) {
         let mut j: usize = 64;
 
         for i in (0..N).step_by(4) {

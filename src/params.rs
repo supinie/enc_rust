@@ -44,6 +44,22 @@ impl SecurityLevel {
        } 
     }
 
+    pub const fn eta_1_value(self) -> usize {
+        match self {
+            Self::FiveOneTwo { eta_1, .. }
+            | Self::SevenSixEight { eta_1, .. }
+            | Self::TenTwoFour { eta_1, .. } => eta_1 as usize,
+        }
+    }
+
+    pub const fn eta_2_value(self) -> usize {
+        match self {
+            Self::FiveOneTwo { eta_2, .. }
+            | Self::SevenSixEight { eta_2, .. }
+            | Self::TenTwoFour { eta_2, .. } => eta_2 as usize,
+        }
+    }
+
     pub const fn poly_compressed_bytes(self) -> usize {
         match self {
             Self::FiveOneTwo { .. }
@@ -88,7 +104,7 @@ impl SecurityLevel {
         self.indcpa_private_key_bytes() + self.indcpa_public_key_bytes() + 2 * SYMBYTES
     }
 
-    pub const fn ciper_text_bytes(self) -> usize {
+    pub const fn cipher_text_bytes(self) -> usize {
         self.indcpa_bytes()
     }
 }

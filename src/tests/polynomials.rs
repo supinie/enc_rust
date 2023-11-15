@@ -133,7 +133,7 @@ mod poly_tests {
             coeffs: INPUT_COEFFS,
         };
 
-        let mut msg = zero_initialise_buffer(Some(32));
+        let mut msg = zero_initialise_buffer(32);
         poly_original.write_msg(&mut msg);
         poly_original.read_msg(&msg);
 

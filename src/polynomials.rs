@@ -176,90 +176,84 @@ impl Poly {
     // is dependent on the security level
     // Example:
     // poly.decompress(buf, k);
-    pub(crate) fn decompress(&mut self, buf: &[u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
+    pub(crate) fn decompress(&mut self, buf: &[u8], compressed_bytes: usize) -> Result<(), DecompressError> {
         let mut k = 0usize;
 
         match compressed_bytes {
-            Some(size) => match size {
-                128 => {
-                    for i in 0..N / 2 {
-                        self.coeffs[2 * i] = i16::try_from((usize::from(buf[k] & 15) * Q + 8) >> 4)?;
-                        self.coeffs[2 * i + 1] = i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
-                        k += 1;
-                    };
-                    Ok(())
-                }
-                160 => {
-                    let mut t = [0u8; 8];
-                    for i in 0..N / 8 {
-                        t[0] = buf[k];
-                        t[1] = (buf[k] >> 5) | (buf[k + 1] << 3);
-                        t[2] = buf[k + 1] >> 2;
-                        t[3] = (buf[k + 1] >> 7) | (buf[k + 2] << 1);
-                        t[4] = (buf[k + 2] >> 4) | (buf[k + 3] << 4);
-                        t[5] = buf[k + 3] >> 1;
-                        t[6] = (buf[k + 3] >> 6) | (buf[k + 4] << 2);
-                        t[7] = buf[k + 4] >> 3;
-                        k += 5;
-
-                        for (j, t_elem) in t.iter().enumerate() {
-                            self.coeffs[8 * i + j] =
-                                i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
-                        }
-                    };
-                    Ok(())
-                }
-                _ => {
-                    Err(DecompressError::InvalidCompressedBytes)
-                }
+            128 => {
+                for i in 0..N / 2 {
+                    self.coeffs[2 * i] = i16::try_from((usize::from(buf[k] & 15) * Q + 8) >> 4)?;
+                    self.coeffs[2 * i + 1] = i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
+                    k += 1;
+                };
+                Ok(())
             }
-            None => Err(DecompressError::InvalidCompressedBytes)
+            160 => {
+                let mut t = [0u8; 8];
+                for i in 0..N / 8 {
+                    t[0] = buf[k];
+                    t[1] = (buf[k] >> 5) | (buf[k + 1] << 3);
+                    t[2] = buf[k + 1] >> 2;
+                    t[3] = (buf[k + 1] >> 7) | (buf[k + 2] << 1);
+                    t[4] = (buf[k + 2] >> 4) | (buf[k + 3] << 4);
+                    t[5] = buf[k + 3] >> 1;
+                    t[6] = (buf[k + 3] >> 6) | (buf[k + 4] << 2);
+                    t[7] = buf[k + 4] >> 3;
+                    k += 5;
+
+                    for (j, t_elem) in t.iter().enumerate() {
+                        self.coeffs[8 * i + j] =
+                            i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+                    }
+                };
+                Ok(())
+            }
+            _ => {
+                Err(DecompressError::InvalidCompressedBytes)
+            }
         }
     }
 
     // Compress selfnomial to a buffer
     // Example:
     // buf.compress(self);
-    pub(crate) fn compress(& self, buf: &mut [u8], compressed_bytes: Option<usize>) -> Result<(), DecompressError> {
+    pub(crate) fn compress(& self, buf: &mut [u8], compressed_bytes: usize) -> Result<(), DecompressError> {
         let mut k = 0usize;
         let mut t = [0u8; 8];
 
         match compressed_bytes {
-            Some(size) => match size {
-                128 => {
-                    for i in 0..N / 8 {
-                        for j in 0..8 {
-                            let mut u = self.coeffs[8 * i + j];
-                            u += (u >> 15) & i16::try_from(Q)?;
-                            t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q)? / 2) / u16::try_from(Q)?) & 15)?;
-                        }
-                        buf[k] = t[0] | (t[1] << 4);
-                        buf[k + 1] = t[2] | (t[3] << 4);
-                        buf[k + 2] = t[4] | (t[5] << 4);
-                        buf[k + 3] = t[6] | (t[7] << 4);
-                        k += 4;
+            128 => {
+                for i in 0..N / 8 {
+                    for j in 0..8 {
+                        let mut u = self.coeffs[8 * i + j];
+                        u += (u >> 15) & i16::try_from(Q)?;
+                        t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q)? / 2) / u16::try_from(Q)?) & 15)?;
                     }
-                    Ok(())
-                },
-                160 => {
-                    for i in 0..N / 8 {
-                        for j in 0..8 {
-                            let mut u = self.coeffs[8 * i + j];
-                            u += (u >> 15) & i16::try_from(Q)?;
-                            t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 31)?;
-                        }
-                        buf[k] = t[0] | (t[1] << 5);
-                        buf[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
-                        buf[k + 2] = (t[3] >> 1) | (t[4] << 4);
-                        buf[k + 3] = (t[4] >> 4) | (t[5] << 1) | (t[6] << 6);
-                        buf[k + 4] = (t[6] >> 2) | (t[7] << 3);
-                        k += 5;
-                    }
-                    Ok(())
-                },
-                _ => Err(DecompressError::InvalidCompressedBytes)
+                    buf[k] = t[0] | (t[1] << 4);
+                    buf[k + 1] = t[2] | (t[3] << 4);
+                    buf[k + 2] = t[4] | (t[5] << 4);
+                    buf[k + 3] = t[6] | (t[7] << 4);
+                    k += 4;
+                }
+                Ok(())
             },
-            None => Err(DecompressError::InvalidCompressedBytes)
+            160 => {
+                for i in 0..N / 8 {
+                    for j in 0..8 {
+                        let mut u = self.coeffs[8 * i + j];
+                        u += (u >> 15) & i16::try_from(Q)?;
+                        t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 31)?;
+                    }
+                    buf[k] = t[0] | (t[1] << 5);
+                    buf[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
+                    buf[k + 2] = (t[3] >> 1) | (t[4] << 4);
+                    buf[k + 3] = (t[4] >> 4) | (t[5] << 1) | (t[6] << 6);
+                    buf[k + 4] = (t[6] >> 2) | (t[7] << 3);
+                    k += 5;
+                }
+                Ok(())
+            },
+            _ => Err(DecompressError::InvalidCompressedBytes)
         }
     }
 }

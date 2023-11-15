@@ -6,25 +6,25 @@ pub(in crate::tests) mod buffer_tests {
     extern crate std;
     use std::vec::Vec;
  
-    static TEST_PARAMS: [Params; 3] = [
-        Params::sec_level_512(),
-        Params::sec_level_768(),
-        Params::sec_level_1024(),
+    static TEST_PARAMS: [SecurityLevel; 3] = [
+        SecurityLevel::new(K::Two),
+        SecurityLevel::new(K::Three),
+        SecurityLevel::new(K::Four),
     ];
 
-    pub(in crate::tests) fn zero_initialise_buffer(size: Option<usize>) -> Vec<u8> {
-        let mut data = Vec::with_capacity(size.unwrap());
-        for _ in 0..size.unwrap() {
+    pub(in crate::tests) fn zero_initialise_buffer(size: usize) -> Vec<u8> {
+        let mut data = Vec::with_capacity(size);
+        for _ in 0..size {
             data.push(0u8);
         }
         data
     }
 
-    fn generate_random_buffer(size: Option<usize>) -> Vec<u8> {
+    fn generate_random_buffer(size: usize) -> Vec<u8> {
         let mut rng = rand::thread_rng();
-        let mut data = Vec::with_capacity(size.unwrap());
+        let mut data = Vec::with_capacity(size);
 
-        for _ in 0..size.unwrap() {
+        for _ in 0..size {
             data.push(rng.gen::<u8>());
         }
         data
@@ -69,10 +69,7 @@ pub(in crate::tests) mod buffer_tests {
             // We only need test the match statements, as it is not possible for the try_from to
             // return an error.
 
-            let err = poly.decompress(&buf, Some(120));
-            assert_eq!(err.unwrap_err(), DecompressError::InvalidCompressedBytes);
-
-            let err = poly.decompress(&buf, None);
+            let err = poly.decompress(&buf, 120);
             assert_eq!(err.unwrap_err(), DecompressError::InvalidCompressedBytes);
         }
     }
@@ -89,10 +86,7 @@ pub(in crate::tests) mod buffer_tests {
 
             poly.decompress(&buf, sec_level.poly_compressed_bytes());
 
-            let err = poly.compress(&mut buf_comp, Some(120));
-            assert_eq!(err.unwrap_err(), DecompressError::InvalidCompressedBytes);
-
-            let err = poly.decompress(&buf, None);
+            let err = poly.compress(&mut buf_comp, 120);
             assert_eq!(err.unwrap_err(), DecompressError::InvalidCompressedBytes);
         }
     }

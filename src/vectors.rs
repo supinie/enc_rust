@@ -1,98 +1,70 @@
 use crate::polynomials::Poly;
+use arrayvec::ArrayVec;
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum PolyVec {
-    PolyVec512([Poly; 2]),
-    PolyVec768([Poly; 3]),
-    PolyVec1024([Poly; 4]),
+pub(crate) type PolyVec = ArrayVec<Poly, 4>;
+
+trait PolyVecMethods{
+    fn add(&mut self, addend: &Self);
+
+    fn reduce(&mut self);
+
+    fn normalise(&mut self);
+
+    fn ntt(&mut self);
+
+    fn inv_ntt(&mut self);
+
+    fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str>;
 }
 
-impl PolyVec {
-    pub(crate) const fn len(&self) -> usize {
-        match self {
-            Self::PolyVec512(_) => 2,
-            Self::PolyVec768(_) => 3,
-            Self::PolyVec1024(_) => 4,
+impl PolyVecMethods for PolyVec {
+    fn add(&mut self, addend: &Self) {
+        assert_eq!(self.len(), addend.len());
+        for (augend_poly, addend_poly) in self.iter_mut().zip(addend.iter()) {
+            augend_poly.add(&addend_poly);
         }
     }
 
-
-    pub(crate) fn new(poly_array: &[Poly]) -> Option<Self>  {
-        match poly_array.len() {
-            2 => Some(Self::PolyVec512(poly_array.try_into().expect("invalid poly array"))),
-            3 => Some(Self::PolyVec768(poly_array.try_into().expect("invalid poly array"))),
-            4 => Some(Self::PolyVec1024(poly_array.try_into().expect("invalid poly array"))),
-            _ => None,
-        }
-    }
-
-    pub(crate) fn polys_mut(&mut self) -> &mut [Poly] {
-        match self {
-            Self::PolyVec512(ref mut polys) => polys,
-            Self::PolyVec768(ref mut polys) => polys,
-            Self::PolyVec1024(ref mut polys) => polys,
-        }
-    }
-
-    pub(crate) const fn polys(&self) -> &[Poly] {
-        match self {
-            Self::PolyVec512(ref polys) => polys,
-            Self::PolyVec768(ref polys) => polys,
-            Self::PolyVec1024(ref polys) => polys,
-        }
-    }
-            
-    // Adds the given vector of polynomial and sets self to be the sum
-    // Example:
-    // vec1.add(vec2);
-    pub(crate) fn add(&mut self, x: &Self) {
-        assert_eq!(self.len(), x.len());
-        for i in 0..self.len() {
-            self.polys_mut()[i].add(&x.polys()[i]);
-        }
-    }
-
-    pub(crate) fn reduce(&mut self) {
-        for poly in self.polys_mut().iter_mut() {
+    fn reduce(&mut self) {
+        for poly in self.iter_mut() {
             poly.reduce();
         }
     }
 
-    pub(crate) fn normalise(&mut self) {
-        for poly in self.polys_mut().iter_mut() {
-            poly.normalise();
+    fn normalise(&mut self) {
+        for poly in self.iter_mut() {
+            poly.reduce();
         }
     }
 
-    pub(crate) fn ntt(&mut self) {
-        for poly in self.polys_mut().iter_mut() {
+    fn ntt(&mut self) {
+        for poly in self.iter_mut() {
             poly.ntt();
         }
     }
 
-    pub(crate) fn inv_ntt(&mut self) {
-        for poly in self.polys_mut().iter_mut() {
+    fn inv_ntt(&mut self) {
+        for poly in self.iter_mut() {
             poly.inv_ntt();
         }
     }
 
-    pub(crate) fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str> {
-        for poly in self.polys_mut().iter_mut() {
-            poly.derive_noise(seed, nonce, eta)?;
+    fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str> {
+        for poly in self.iter_mut() {
+            poly.derive_noise(seed, nonce, eta);
         }
         Ok(())
     }
 }
 
-
 impl Poly {
-    pub(crate) fn inner_product_pointwise(&mut self, a: &PolyVec, b: &PolyVec) {
-        assert_eq!(a.len(), b.len());
+    pub(crate) fn inner_product_pointwise(&mut self, multiplicand: &PolyVec, multiplier: &PolyVec) {
+        assert_eq!(multiplicand.len(), multiplier.len());
         let mut temp = Self::new();
-        *self = Self::new();    // Zero our output Poly
-        for i in 0..a.len() {
-            temp = a.polys()[i];
-            temp.pointwise_mul(&b.polys()[i]);
+        *self = Self::new();    // Zero output Poly
+        for (multiplicand_poly, multiplier_poly) in multiplicand.iter().zip(multiplier.iter()) {
+            temp = *multiplicand_poly;
+            temp.pointwise_mul(&multiplier_poly);
             self.add(&temp);
         }
     }

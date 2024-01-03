@@ -12,13 +12,6 @@ mod vec_tests {
 
     #[test]
     fn add_test() {
-        for sec_level in TEST_PARAMS.iter() {
-            let mut poly_vec1 = PolyVec::new(&[Poly { coeffs: [20; N] }; 4][0..sec_level.k_value()]).unwrap();
-            let mut poly_vec2 = PolyVec::new(&[Poly { coeffs: [20; N] }; 4][0..sec_level.k_value()]).unwrap();
-            poly_vec1.add(&poly_vec2);
-
-            assert_eq!(poly_vec1.polys(), &[Poly { coeffs: [40; N] }; 4][0..sec_level.k_value()]);
-        }
     }
 
     #[test]

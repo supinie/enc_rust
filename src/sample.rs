@@ -69,17 +69,14 @@ impl Poly {
     }
 
 
-    pub(crate) fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: usize) -> Result<(), &str> {
+    pub(crate) fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: Eta) {
         match eta {
-            2 => {
+            Eta::Two => {
                 self.derive_noise_2(seed, nonce);
-                Ok(())
             },
-            3 => {
+            Eta::Three => {
                 self.derive_noise_3(seed, nonce);
-                Ok(())
             },
-            _ => Err("Invalid ETA given"),
         }
     }
 }

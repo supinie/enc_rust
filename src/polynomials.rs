@@ -1,7 +1,7 @@
 use crate::{
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
     ntt::ZETAS,
-    params::{N, Q},
+    params::{N, Q, SecurityLevel},
 };
 use core::num::TryFromIntError;
 
@@ -15,7 +15,6 @@ pub struct Poly {
 #[derive(Debug, PartialEq, Eq)]
 pub enum DecompressError {
     TryFromIntError,
-    InvalidCompressedBytes,
 }
 
 
@@ -176,11 +175,12 @@ impl Poly {
     // is dependent on the security level
     // Example:
     // poly.decompress(buf, k);
-    pub(crate) fn decompress(&mut self, buf: &[u8], compressed_bytes: usize) -> Result<(), DecompressError> {
+    pub(crate) fn decompress(&mut self, buf: &[u8], sec_level: &SecurityLevel) -> Result<(), DecompressError> {
         let mut k = 0usize;
 
-        match compressed_bytes {
-            128 => {
+        match sec_level {
+            SecurityLevel::FiveOneTwo { .. }
+            | SecurityLevel::SevenSixEight { .. }=> {
                 for i in 0..N / 2 {
                     self.coeffs[2 * i] = i16::try_from((usize::from(buf[k] & 15) * Q + 8) >> 4)?;
                     self.coeffs[2 * i + 1] = i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
@@ -188,7 +188,7 @@ impl Poly {
                 };
                 Ok(())
             }
-            160 => {
+            SecurityLevel::TenTwoFour { .. } => {
                 let mut t = [0u8; 8];
                 for i in 0..N / 8 {
                     t[0] = buf[k];
@@ -208,21 +208,19 @@ impl Poly {
                 };
                 Ok(())
             }
-            _ => {
-                Err(DecompressError::InvalidCompressedBytes)
-            }
         }
     }
 
     // Compress selfnomial to a buffer
     // Example:
     // buf.compress(self);
-    pub(crate) fn compress(& self, buf: &mut [u8], compressed_bytes: usize) -> Result<(), DecompressError> {
+    pub(crate) fn compress(& self, buf: &mut [u8], sec_level: &SecurityLevel) -> Result<(), DecompressError> {
         let mut k = 0usize;
         let mut t = [0u8; 8];
 
-        match compressed_bytes {
-            128 => {
+        match sec_level {
+            SecurityLevel::FiveOneTwo { .. }
+            | SecurityLevel::SevenSixEight { .. } => {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = self.coeffs[8 * i + j];
@@ -237,7 +235,7 @@ impl Poly {
                 }
                 Ok(())
             },
-            160 => {
+            SecurityLevel::TenTwoFour { .. } => {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = self.coeffs[8 * i + j];
@@ -253,7 +251,6 @@ impl Poly {
                 }
                 Ok(())
             },
-            _ => Err(DecompressError::InvalidCompressedBytes)
         }
     }
 }

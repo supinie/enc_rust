@@ -1,16 +1,16 @@
 ![kyber_rust_ferris](./kyber_rust_ferris.png)
 
-# Kyber_Rust _(WIP)_
+# enc_rust _(WIP)_
 
-[![codecov](https://codecov.io/github/supinie/kyber_rust/branch/main/graph/badge.svg?token=S7UTUFQ8M5)](https://codecov.io/github/supinie/kyber_rust)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![dependency status](https://deps.rs/repo/github/supinie/kyber_rust/status.svg?path=.%2F)](https://deps.rs/repo/github/supinie/kyber_rust?path=.%2F)
+[![codecov](https://codecov.io/github/supinie/enc_rust/branch/main/graph/badge.svg?token=S7UTUFQ8M5)](https://codecov.io/github/supinie/enc_rust)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![dependency status](https://deps.rs/repo/github/supinie/enc_rust/status.svg)](https://deps.rs/repo/github/supinie/enc_rust)
 
 ### About
 
-A rust implementation of the IND-CCA2-secure PQC KEM Kyber (https://pq-crystals.org/kyber/).
+A rust implementation of the PQC scheme Crystals (https://pq-crystals.org/).
 
-This package consists of a library (`kyber_rust`), and (soon :TM:) a binary wrapper (`kyber`).
+This package consists of a library (`enc_rust`), and (soon :TM:) a binary wrapper. The library contains implementations for both Kyber and Dilithium.
 
 ### Disclaimer
 

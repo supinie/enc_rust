@@ -1,13 +1,13 @@
 [package]
-name = "kyber_rust"
+name = "enc_rust"
 version = "0.1.0"
 edition = "2021"
 authors = ["supinie <joshua@supinie.com>"]
 
-description = "A rust implementation of the IND-CCA2-secure PQC KEM Kyber (https://pq-crystals.org/kyber/)"
+description = "A rust implementation of the PQC scheme Crystals (https://pq-crystals.org/)"
 readme = "README.md"
 
-repository = "https://github.com/supinie/kyber_rust"
+repository = "https://github.com/supinie/enc_rust"
 
 license = "GPL-3.0-or-later"
 

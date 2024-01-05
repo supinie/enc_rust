@@ -10,8 +10,8 @@ pub const SHAREDSECRETBYTES: usize = 32;
 pub const POLYBYTES: usize = 384;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
-#[repr(u8)]
-// Get the u8 repr using .into()
+#[repr(usize)]
+// Get the usize repr using .into()
 pub enum K {
     Two = 2,
     Three = 3,
@@ -19,7 +19,7 @@ pub enum K {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
-#[repr(u8)]
+#[repr(usize)]
 pub enum Eta {
     Two = 2,
     Three = 3,
@@ -38,6 +38,30 @@ impl SecurityLevel {
             K::Two => Self::FiveOneTwo { k, eta_1: Eta::Three, eta_2: Eta::Two },
             K::Three => Self::SevenSixEight { k, eta_1: Eta::Two, eta_2: Eta::Two },
             K::Four => Self::TenTwoFour { k, eta_1: Eta::Two, eta_2: Eta::Two },
+        }
+    }
+
+    pub const fn k(self) -> K {
+        match self {
+            Self::FiveOneTwo { k, .. }
+            | Self::SevenSixEight { k, .. }
+            | Self::TenTwoFour { k, .. } => k,
+        }
+    }
+
+    pub const fn eta_1(self) -> Eta {
+        match self {
+            Self::FiveOneTwo { eta_1, .. }
+            | Self::SevenSixEight { eta_1, .. }
+            | Self::TenTwoFour { eta_1, .. } => eta_1,
+        }
+    }
+
+    pub const fn eta_2(self) -> Eta {
+        match self {
+            Self::FiveOneTwo { eta_2, .. }
+            | Self::SevenSixEight { eta_2, .. }
+            | Self::TenTwoFour { eta_2, .. } => eta_2,
         }
     }
 

@@ -20,8 +20,9 @@ pub(in crate::tests) mod sample_tests {
         rng.gen::<u8>()
     }
 
-    pub(in crate::tests) fn range_test(poly: &Poly, eta: i16) {
-        let range: Range<i16> = -eta..eta + 1;
+    pub(in crate::tests) fn range_test(poly: &Poly, eta: usize) {
+        let range_lim = eta as i16;
+        let range: Range<i16> = -range_lim..range_lim + 1;
         
         for coeff in poly.coeffs.iter() {
             assert!(range.contains(coeff), "coefficient {} not in valid range", coeff);
@@ -72,26 +73,12 @@ pub(in crate::tests) mod sample_tests {
 
 
     #[test]
-    fn derive_noise_invalid_eta_test() {
-        let seed = generate_random_seed();
-        let nonce = generate_random_nonce();
-
-        let mut poly = Poly::new(); 
-
-        match poly.derive_noise(&seed, nonce, 0) {
-            Ok(_) => panic!("Expected an error for eta 0 on polyx"),
-            Err(err) => assert_eq!(err, "Invalid ETA given"),
-        }
-    }    
-
-
-    #[test]
     fn derive_noise_2_range_test() {
         let seed = generate_random_seed();
         let nonce = generate_random_nonce();
 
         let mut poly = Poly::new(); 
-        poly.derive_noise(&seed, nonce, 2);
+        poly.derive_noise(&seed, nonce, Eta::Two);
 
         range_test(&poly, 2);
     }    
@@ -103,7 +90,7 @@ pub(in crate::tests) mod sample_tests {
         let nonce = generate_random_nonce();
 
         let mut poly = Poly::new(); 
-        poly.derive_noise(&seed, nonce, 3);
+        poly.derive_noise(&seed, nonce, Eta::Three);
 
         range_test(&poly, 3);
     }    
@@ -115,7 +102,7 @@ pub(in crate::tests) mod sample_tests {
         let nonce = generate_random_nonce();
 
         let mut poly = Poly::new(); 
-        poly.derive_noise(&seed, nonce, 2);
+        poly.derive_noise(&seed, nonce, Eta::Two);
 
         dist_test(&poly, 2);
     }    
@@ -127,7 +114,7 @@ pub(in crate::tests) mod sample_tests {
         let nonce = generate_random_nonce();
 
         let mut poly = Poly::new(); 
-        poly.derive_noise(&seed, nonce, 3);
+        poly.derive_noise(&seed, nonce, Eta::Three);
 
         dist_test(&poly, 3);
     }    

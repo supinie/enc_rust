@@ -1,14 +1,14 @@
 use crate::polynomials::Poly;
 use crate::params::{K, Eta};
-pub(crate) use arrayvec::ArrayVec as PolyVec;
+pub use arrayvec::ArrayVec as PolyVec;
 
-pub(crate) type PolyVec512 = PolyVec<Poly, 2>;
-pub(crate) type PolyVec768 = PolyVec<Poly, 3>;
-pub(crate) type PolyVec1024 = PolyVec<Poly, 4>;
+pub type PolyVec512 = PolyVec<Poly, 2>;
+pub type PolyVec768 = PolyVec<Poly, 3>;
+pub type PolyVec1024 = PolyVec<Poly, 4>;
 
 trait SameSecLevel {}
 
-pub(crate) trait PolyVecOperations {
+pub trait PolyVecOperations {
     fn add(&mut self, addend: Self);
     fn reduce(&mut self);
     fn normalise(&mut self);
@@ -68,9 +68,9 @@ impl_polyvec!(PolyVec1024);
 
 
 impl Poly {
-    pub(crate) fn inner_product_pointwise<T>(&mut self, multiplicand: T, multiplier: T)
+    pub fn inner_product_pointwise<T>(&mut self, multiplicand: T, multiplier: T)
     where
-        T: PolyVecOperations + IntoIterator<Item = Poly>,
+        T: PolyVecOperations + IntoIterator<Item = Self>,
     {
         let mut temp = Self::new();
         *self = Self::new();    // Zero output Poly

@@ -55,7 +55,7 @@ impl Poly {
     // Example:
     // poly.normalise();
     pub(crate) fn normalise(&mut self) {
-        for coeff in self.coeffs.iter_mut() {
+        for coeff in &mut self.coeffs {
             *coeff = conditional_sub_q(barrett_reduce(*coeff));
         }
     }
@@ -64,7 +64,7 @@ impl Poly {
     // Example:
     // poly.reduce();
     pub(crate) fn reduce(&mut self) {
-        for coeff in self.coeffs.iter_mut() {
+        for coeff in &mut self.coeffs {
             *coeff = barrett_reduce(*coeff);
         }
     }
@@ -73,7 +73,7 @@ impl Poly {
     // Example:
     // poly.mont_form();
     pub(crate) fn mont_form(&mut self) {
-        for coeff in self.coeffs.iter_mut() {
+        for coeff in &mut self.coeffs {
             *coeff = mont_form(*coeff);
         }
     }

@@ -1,4 +1,4 @@
-use crate::{params::*, polynomials::Poly};
+use crate::{params::Eta, polynomials::Poly};
 use core::num::TryFromIntError;
 use sha3::{digest::{Update, ExtendableOutput, XofReader}, Shake256};
 use byteorder::{ByteOrder, LittleEndian};

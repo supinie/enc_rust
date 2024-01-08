@@ -5,7 +5,7 @@ pub(in crate::tests) mod buffer_tests {
     use rand::Rng;
     extern crate std;
     use std::vec::Vec;
- 
+
     static TEST_PARAMS: [SecurityLevel; 3] = [
         SecurityLevel::new(K::Two),
         SecurityLevel::new(K::Three),

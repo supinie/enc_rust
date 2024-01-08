@@ -7,10 +7,10 @@ mod params_tests {
     fn sec_level_test() {
         assert_eq!(
             SecurityLevel::new(K::Two),
-            SecurityLevel::FiveOneTwo { 
-                k: K::Two, 
-                eta_1: Eta::Three, 
-                eta_2: Eta::Two, 
+            SecurityLevel::FiveOneTwo {
+                k: K::Two,
+                eta_1: Eta::Three,
+                eta_2: Eta::Two,
             }
         );
         assert_eq!(
@@ -48,8 +48,14 @@ mod params_tests {
     #[test]
     fn poly_vec_compressed_bytes_test() {
         assert_eq!(SecurityLevel::new(K::Two).poly_vec_compressed_bytes(), 640);
-        assert_eq!(SecurityLevel::new(K::Three).poly_vec_compressed_bytes(), 960);
-        assert_eq!(SecurityLevel::new(K::Four).poly_vec_compressed_bytes(), 1408);
+        assert_eq!(
+            SecurityLevel::new(K::Three).poly_vec_compressed_bytes(),
+            960
+        );
+        assert_eq!(
+            SecurityLevel::new(K::Four).poly_vec_compressed_bytes(),
+            1408
+        );
     }
 
     #[test]
@@ -62,7 +68,10 @@ mod params_tests {
     #[test]
     fn indcpa_private_key_bytes_test() {
         assert_eq!(SecurityLevel::new(K::Two).indcpa_private_key_bytes(), 768);
-        assert_eq!(SecurityLevel::new(K::Three).indcpa_private_key_bytes(), 1152);
+        assert_eq!(
+            SecurityLevel::new(K::Three).indcpa_private_key_bytes(),
+            1152
+        );
         assert_eq!(SecurityLevel::new(K::Four).indcpa_private_key_bytes(), 1536);
     }
 

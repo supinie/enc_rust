@@ -1,4 +1,8 @@
-use crate::{field_operations::{barrett_reduce, montgomery_reduce}, params::N, polynomials::Poly};
+use crate::{
+    field_operations::{barrett_reduce, montgomery_reduce},
+    params::N,
+    polynomials::Poly,
+};
 
 #[rustfmt::skip]
 pub const ZETAS: [i16; 128] = [
@@ -73,7 +77,7 @@ impl Poly {
             }
 
             #[allow(clippy::cast_sign_loss)] // i cannot be negative if we reach where its value is
-                                             // cast
+            // cast
             loop {
                 let i = INV_NTT_REDUCTIONS[r];
                 r += 1;

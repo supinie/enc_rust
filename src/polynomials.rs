@@ -1,29 +1,14 @@
 use crate::{
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
     ntt::ZETAS,
-    params::{N, Q, SecurityLevel},
+    params::{SecurityLevel, N, POLYBYTES, Q},
 };
 use core::num::TryFromIntError;
-
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Poly {
     pub(crate) coeffs: [i16; N],
 }
-
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum DecompressError {
-    TryFromIntError,
-}
-
-
-impl From<TryFromIntError> for DecompressError {
-    fn from(_err: TryFromIntError) -> Self {
-        Self::TryFromIntError
-    }
-}
-
 
 impl Poly {
     // We can't use default, as that is only supported for arrays of length 32 or less
@@ -89,18 +74,21 @@ impl Poly {
             let zeta = i32::from(ZETAS[j]);
             j += 1;
 
-            let mut p0 = montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i + 1]));
+            let mut p0 =
+                montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i + 1]));
             p0 = montgomery_reduce(i32::from(p0) * zeta);
             p0 += montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i]));
 
             let mut p1 = montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
             p1 += montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i]));
 
-            let mut p2 = montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 3]));
+            let mut p2 =
+                montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 3]));
             p2 = -montgomery_reduce(i32::from(p2) * zeta);
             p2 += montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 2]));
 
-            let mut p3 = montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 3]));
+            let mut p3 =
+                montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 3]));
             p3 += montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 2]));
 
             self.coeffs[i] = p0;
@@ -109,9 +97,8 @@ impl Poly {
             self.coeffs[i + 3] = p3;
         }
     }
-    
-    
-    // Packs given poly into a 384-byte buffer
+
+    // Packs given poly into a 384-byte (POLYBYTES size) buffer
     // Example:
     // poly.pack(buf);
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -119,7 +106,7 @@ impl Poly {
         for i in 0..N / 2 {
             let t0 = self.coeffs[2 * i];
             let t1 = self.coeffs[2 * i + 1];
-            
+
             buf[3 * i] = t0 as u8;
             buf[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
             buf[3 * i + 2] = (t1 >> 4) as u8;
@@ -131,8 +118,7 @@ impl Poly {
     // poly.unpack(buf);
     pub(crate) fn unpack(&mut self, buf: &[u8]) {
         for i in 0..N / 2 {
-            self.coeffs[2 * i] =
-                i16::from(buf[3 * i]) | ((i16::from(buf[3 * i + 1]) << 8) & 0xfff);
+            self.coeffs[2 * i] = i16::from(buf[3 * i]) | ((i16::from(buf[3 * i + 1]) << 8) & 0xfff);
             self.coeffs[2 * i + 1] =
                 i16::from(buf[3 * i + 1] >> 4) | (i16::from(buf[3 * i + 2]) << 4);
         }
@@ -150,7 +136,6 @@ impl Poly {
         }
         Ok(())
     }
-
 
     // Convert a given polynomial into a 32-byte message
     // Example:
@@ -170,22 +155,25 @@ impl Poly {
         Ok(())
     }
 
-
     // Decompresses buffer into a polynomial
     // is dependent on the security level
     // Example:
     // poly.decompress(buf, k);
-    pub(crate) fn decompress(&mut self, buf: &[u8], sec_level: &SecurityLevel) -> Result<(), DecompressError> {
+    pub(crate) fn decompress(
+        &mut self,
+        buf: &[u8],
+        sec_level: &SecurityLevel,
+    ) -> Result<(), TryFromIntError> {
         let mut k = 0usize;
 
         match sec_level {
-            SecurityLevel::FiveOneTwo { .. }
-            | SecurityLevel::SevenSixEight { .. }=> {
+            SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
                 for i in 0..N / 2 {
                     self.coeffs[2 * i] = i16::try_from((usize::from(buf[k] & 15) * Q + 8) >> 4)?;
-                    self.coeffs[2 * i + 1] = i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
+                    self.coeffs[2 * i + 1] =
+                        i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
                     k += 1;
-                };
+                }
                 Ok(())
             }
             SecurityLevel::TenTwoFour { .. } => {
@@ -202,10 +190,11 @@ impl Poly {
                     k += 5;
 
                     for (j, t_elem) in t.iter().enumerate() {
-                        self.coeffs[8 * i + j] =
-                            i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+                        self.coeffs[8 * i + j] = i16::try_from(
+                            ((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5,
+                        )?;
                     }
-                };
+                }
                 Ok(())
             }
         }
@@ -213,19 +202,26 @@ impl Poly {
 
     // Compress selfnomial to a buffer
     // Example:
-    // buf.compress(self);
-    pub(crate) fn compress(& self, buf: &mut [u8], sec_level: &SecurityLevel) -> Result<(), DecompressError> {
+    // self.compress(buf);
+    pub(crate) fn compress(
+        &self,
+        buf: &mut [u8],
+        sec_level: &SecurityLevel,
+    ) -> Result<(), TryFromIntError> {
         let mut k = 0usize;
         let mut t = [0u8; 8];
 
         match sec_level {
-            SecurityLevel::FiveOneTwo { .. }
-            | SecurityLevel::SevenSixEight { .. } => {
+            SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = self.coeffs[8 * i + j];
                         u += (u >> 15) & i16::try_from(Q)?;
-                        t[j] = u8::try_from(((((u16::try_from(u)?) << 4) + u16::try_from(Q)? / 2) / u16::try_from(Q)?) & 15)?;
+                        t[j] = u8::try_from(
+                            ((((u16::try_from(u)?) << 4) + u16::try_from(Q)? / 2)
+                                / u16::try_from(Q)?)
+                                & 15,
+                        )?;
                     }
                     buf[k] = t[0] | (t[1] << 4);
                     buf[k + 1] = t[2] | (t[3] << 4);
@@ -234,13 +230,17 @@ impl Poly {
                     k += 4;
                 }
                 Ok(())
-            },
+            }
             SecurityLevel::TenTwoFour { .. } => {
                 for i in 0..N / 8 {
                     for j in 0..8 {
                         let mut u = self.coeffs[8 * i + j];
                         u += (u >> 15) & i16::try_from(Q)?;
-                        t[j] = u8::try_from(((((u32::try_from(u)?) << 5) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 31)?;
+                        t[j] = u8::try_from(
+                            ((((u32::try_from(u)?) << 5) + u32::try_from(Q)? / 2)
+                                / u32::try_from(Q)?)
+                                & 31,
+                        )?;
                     }
                     buf[k] = t[0] | (t[1] << 5);
                     buf[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
@@ -250,7 +250,7 @@ impl Poly {
                     k += 5;
                 }
                 Ok(())
-            },
+            }
         }
     }
 }

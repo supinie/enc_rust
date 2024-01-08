@@ -2,7 +2,6 @@
 #![allow(unused)]
 // REMOVE BEFORE FINAL, DEVELOPMENT ONLY
 #![forbid(unsafe_code)]
-
 #![warn(
     clippy::cast_lossless,
     clippy::cast_possible_truncation,
@@ -30,8 +29,8 @@ pub mod kem;
 mod ntt;
 pub(crate) mod params;
 mod polynomials;
-mod vectors;
 mod sample;
+mod vectors;
 
 mod tests {
     mod buffer;
@@ -39,6 +38,6 @@ mod tests {
     mod ntt;
     mod params;
     mod polynomials;
-    mod vectors;
     mod sample;
+    mod vectors;
 }

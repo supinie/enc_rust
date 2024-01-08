@@ -1,8 +1,8 @@
 #![allow(warnings)]
 #[cfg(test)]
 mod vec_tests {
-    use crate::{params::*, polynomials::*, vectors::*, field_operations::*};
     use crate::tests::sample::sample_tests::*;
+    use crate::{field_operations::*, params::*, polynomials::*, vectors::*};
 
     static TEST_PARAMS: [SecurityLevel; 3] = [
         SecurityLevel::new(K::Two),
@@ -10,10 +10,9 @@ mod vec_tests {
         SecurityLevel::new(K::Four),
     ];
 
-
     #[test]
     fn add_test() {
-        let poly = Poly{ coeffs: [20; N] };
+        let poly = Poly { coeffs: [20; N] };
         for sec_level in TEST_PARAMS.iter() {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec512::from([poly; 2]);
@@ -21,7 +20,7 @@ mod vec_tests {
 
                 poly_vec_1.add(poly_vec_2);
 
-                assert_eq!(poly_vec_1, PolyVec512::from([Poly{ coeffs: [40; N] }; 2]));
+                assert_eq!(poly_vec_1, PolyVec512::from([Poly { coeffs: [40; N] }; 2]));
             }
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec768::from([poly; 3]);
@@ -29,7 +28,7 @@ mod vec_tests {
 
                 poly_vec_1.add(poly_vec_2);
 
-                assert_eq!(poly_vec_1, PolyVec768::from([Poly{ coeffs: [40; N] }; 3]));
+                assert_eq!(poly_vec_1, PolyVec768::from([Poly { coeffs: [40; N] }; 3]));
             }
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec1024::from([poly; 4]);
@@ -37,71 +36,104 @@ mod vec_tests {
 
                 poly_vec_1.add(poly_vec_2);
 
-                assert_eq!(poly_vec_1, PolyVec1024::from([Poly{ coeffs: [40; N] }; 4]));
+                assert_eq!(poly_vec_1, PolyVec1024::from([Poly { coeffs: [40; N] }; 4]));
             }
         }
     }
 
     #[test]
     fn reduce_test() {
-        let poly = Poly{ coeffs: [i16::MAX; N]};
+        let poly = Poly {
+            coeffs: [i16::MAX; N],
+        };
         for sec_level in TEST_PARAMS.iter() {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec512::from([poly; 2]);
 
                 poly_vec_1.reduce();
 
-                assert_eq!(poly_vec_1, PolyVec512::from([Poly{ coeffs: [2806; N] }; 2]));
+                assert_eq!(
+                    poly_vec_1,
+                    PolyVec512::from([Poly { coeffs: [2806; N] }; 2])
+                );
             }
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec768::from([poly; 3]);
 
                 poly_vec_1.reduce();
 
-                assert_eq!(poly_vec_1, PolyVec768::from([Poly{ coeffs: [2806; N] }; 3]));
+                assert_eq!(
+                    poly_vec_1,
+                    PolyVec768::from([Poly { coeffs: [2806; N] }; 3])
+                );
             }
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec1024::from([poly; 4]);
 
                 poly_vec_1.reduce();
 
-                assert_eq!(poly_vec_1, PolyVec1024::from([Poly{ coeffs: [2806; N] }; 4]));
+                assert_eq!(
+                    poly_vec_1,
+                    PolyVec1024::from([Poly { coeffs: [2806; N] }; 4])
+                );
             }
         }
     }
 
     #[test]
     fn normalise_test() {
-        let poly = Poly{ coeffs: [i16::MAX; N]};
+        let poly = Poly {
+            coeffs: [i16::MAX; N],
+        };
         for sec_level in TEST_PARAMS.iter() {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec512::from([poly; 2]);
 
                 poly_vec_1.normalise();
 
-                assert_eq!(poly_vec_1, PolyVec512::from([Poly{ coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N] }; 2]));
+                assert_eq!(
+                    poly_vec_1,
+                    PolyVec512::from(
+                        [Poly {
+                            coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N]
+                        }; 2]
+                    )
+                );
             }
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec768::from([poly; 3]);
 
                 poly_vec_1.normalise();
 
-                assert_eq!(poly_vec_1, PolyVec768::from([Poly{ coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N] }; 3]));
+                assert_eq!(
+                    poly_vec_1,
+                    PolyVec768::from(
+                        [Poly {
+                            coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N]
+                        }; 3]
+                    )
+                );
             }
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec1024::from([poly; 4]);
 
                 poly_vec_1.normalise();
 
-                assert_eq!(poly_vec_1, PolyVec1024::from([Poly{ coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N] }; 4]));
+                assert_eq!(
+                    poly_vec_1,
+                    PolyVec1024::from(
+                        [Poly {
+                            coeffs: [conditional_sub_q(barrett_reduce(i16::MAX)); N]
+                        }; 4]
+                    )
+                );
             }
         }
     }
 
-
     #[test]
     fn ntt_invntt_test() {
-        let poly = Poly{ coeffs: [20; N]};
+        let poly = Poly { coeffs: [20; N] };
         for sec_level in TEST_PARAMS.iter() {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec512::from([poly; 2]);
@@ -121,7 +153,9 @@ mod vec_tests {
                         assert_eq!(
                             p,
                             (q * (1 << 16) % (Q as i32)),
-                            "testing equality with original in poly {}, index {}", i, j
+                            "testing equality with original in poly {}, index {}",
+                            i,
+                            j
                         );
                     }
                 }
@@ -144,7 +178,9 @@ mod vec_tests {
                         assert_eq!(
                             p,
                             (q * (1 << 16) % (Q as i32)),
-                            "testing equality with original in poly {}, index {}", i, j
+                            "testing equality with original in poly {}, index {}",
+                            i,
+                            j
                         );
                     }
                 }
@@ -167,7 +203,9 @@ mod vec_tests {
                         assert_eq!(
                             p,
                             (q * (1 << 16) % (Q as i32)),
-                            "testing equality with original in poly {}, index {}", i, j
+                            "testing equality with original in poly {}, index {}",
+                            i,
+                            j
                         );
                     }
                 }
@@ -210,7 +248,6 @@ mod vec_tests {
             }
         }
     }
-
 
     #[test]
     fn derive_noise_dist_test() {

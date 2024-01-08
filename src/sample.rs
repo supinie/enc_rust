@@ -1,8 +1,10 @@
 use crate::{params::Eta, polynomials::Poly};
-use core::num::TryFromIntError;
-use sha3::{digest::{Update, ExtendableOutput, XofReader}, Shake256};
 use byteorder::{ByteOrder, LittleEndian};
-
+use core::num::TryFromIntError;
+use sha3::{
+    digest::{ExtendableOutput, Update, XofReader},
+    Shake256,
+};
 
 impl Poly {
     // Sample our polynomial from a centered binomial distribution
@@ -21,7 +23,7 @@ impl Poly {
         for i in 0..16 {
             let coeff_bytes = &entropy_buf[i * 8..(i + 1) * 8];
             let coeff_sum = LittleEndian::read_u64(coeff_bytes);
-            
+
             let mut accumulated_sum = coeff_sum & 0x5555_5555_5555_5555;
             accumulated_sum += (coeff_sum >> 1) & 0x5555_5555_5555_5555;
 
@@ -35,7 +37,7 @@ impl Poly {
             }
         }
     }
-    
+
     // Sample our polynomial from a centered binomial distribution
     // n = 6, p = 1/2
     // ie. coefficients are in {-3, -2, -1, 0, 1, 2, 3}
@@ -68,15 +70,14 @@ impl Poly {
         }
     }
 
-
     pub(crate) fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: Eta) {
         match eta {
             Eta::Two => {
                 self.derive_noise_2(seed, nonce);
-            },
+            }
             Eta::Three => {
                 self.derive_noise_3(seed, nonce);
-            },
+            }
         }
     }
 }

@@ -35,9 +35,21 @@ pub enum SecurityLevel {
 impl SecurityLevel {
     pub const fn new(k: K) -> Self {
         match k {
-            K::Two => Self::FiveOneTwo { k, eta_1: Eta::Three, eta_2: Eta::Two },
-            K::Three => Self::SevenSixEight { k, eta_1: Eta::Two, eta_2: Eta::Two },
-            K::Four => Self::TenTwoFour { k, eta_1: Eta::Two, eta_2: Eta::Two },
+            K::Two => Self::FiveOneTwo {
+                k,
+                eta_1: Eta::Three,
+                eta_2: Eta::Two,
+            },
+            K::Three => Self::SevenSixEight {
+                k,
+                eta_1: Eta::Two,
+                eta_2: Eta::Two,
+            },
+            K::Four => Self::TenTwoFour {
+                k,
+                eta_1: Eta::Two,
+                eta_2: Eta::Two,
+            },
         }
     }
 
@@ -67,8 +79,7 @@ impl SecurityLevel {
 
     pub const fn poly_compressed_bytes(self) -> usize {
         match self {
-            Self::FiveOneTwo { .. }
-            | Self::SevenSixEight { .. } => 128,
+            Self::FiveOneTwo { .. } | Self::SevenSixEight { .. } => 128,
             Self::TenTwoFour { .. } => 160,
         }
     }
@@ -83,8 +94,7 @@ impl SecurityLevel {
 
     pub const fn poly_vec_compressed_bytes(self) -> usize {
         match self {
-            Self::FiveOneTwo { k, .. }
-            | Self::SevenSixEight { k, .. } => (k as usize) * 320,
+            Self::FiveOneTwo { k, .. } | Self::SevenSixEight { k, .. } => (k as usize) * 320,
             Self::TenTwoFour { k, .. } => (k as usize) * 352,
         }
     }

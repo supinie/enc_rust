@@ -72,8 +72,12 @@ mod poly_tests {
 
     #[test]
     fn mont_form_test() {
-        let mut poly1 = Poly { coeffs: [i16::MAX; N] };
-        let mut poly2 = Poly { coeffs: [i16::MIN; N] };
+        let mut poly1 = Poly {
+            coeffs: [i16::MAX; N],
+        };
+        let mut poly2 = Poly {
+            coeffs: [i16::MIN; N],
+        };
 
         poly1.mont_form();
         poly2.mont_form();

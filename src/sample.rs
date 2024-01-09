@@ -1,9 +1,12 @@
-use crate::{params::Eta, polynomials::Poly};
+use crate::{
+    params::{Eta, N, Q},
+    polynomials::Poly,
+};
 use byteorder::{ByteOrder, LittleEndian};
 use core::num::TryFromIntError;
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
-    Shake256,
+    Shake128, Shake256,
 };
 
 impl Poly {
@@ -77,6 +80,46 @@ impl Poly {
             }
             Eta::Three => {
                 self.derive_noise_3(seed, nonce);
+            }
+        }
+    }
+
+    pub(crate) fn derive_uniform(&mut self, seed: &[u8], x: u8, y: u8) {
+        let mut seed_suffix = [x, y];
+        let mut buf = [0u8; 168];
+
+        let mut hash = Shake128::default();
+        hash.update(seed);
+        hash.update(&seed_suffix);
+
+        let mut i = 0;
+        while let Some(chunk) = buf.chunks_exact_mut(3).next() {
+            hash.clone().finalize_xof().read(chunk);
+
+            for t in chunk.chunks_exact(2) {
+                let t1 = (u16::from(t[0]) | (u16::from(t[1]) << 8)) & 0xfff;
+                let t2 = (u16::from(t[1] >> 4) | (u16::from(t[2]) << 4)) & 0xfff;
+
+                #[allow(clippy::cast_possible_wrap)]
+                if usize::from(t1) < Q {
+                    self.coeffs[i] = t1 as i16;
+                    i += 1;
+                    if i == N {
+                        break;
+                    }
+                }
+
+                #[allow(clippy::cast_possible_wrap)]
+                if usize::from(t2) < Q {
+                    self.coeffs[i] = t2 as i16;
+                    i += 1;
+                    if i == N {
+                        break;
+                    }
+                }
+                if i == N {
+                    break;
+                }
             }
         }
     }

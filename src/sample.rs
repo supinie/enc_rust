@@ -88,24 +88,25 @@ impl Poly {
         let mut seed_suffix = [x, y];
         let mut buf = [0u8; 168];
 
-        let mut hash = Shake128::default();
-        hash.update(seed);
-        hash.update(&seed_suffix);
-
         let mut i = 0;
-        while let Some(chunk) = buf.chunks_exact_mut(3).next() {
-            hash.clone().finalize_xof().read(chunk);
+        'outer: loop {
+            let mut hash = Shake128::default();
+            hash.update(seed);
+            hash.update(&seed_suffix);
+            let mut reader = hash.finalize_xof();
+            reader.read(&mut buf);
 
-            for t in chunk.chunks_exact(2) {
-                let t1 = (u16::from(t[0]) | (u16::from(t[1]) << 8)) & 0xfff;
-                let t2 = (u16::from(t[1] >> 4) | (u16::from(t[2]) << 4)) & 0xfff;
+            let mut chunk_iter = buf.chunks_exact_mut(3);
+            for chunk in chunk_iter {
+                let t1 = (u16::from(chunk[0]) | (u16::from(chunk[1]) << 8)) & 0xfff;
+                let t2 = ((u16::from(chunk[1]) >> 4) | (u16::from(chunk[2]) << 4)) & 0xfff;
 
                 #[allow(clippy::cast_possible_wrap)]
                 if usize::from(t1) < Q {
                     self.coeffs[i] = t1 as i16;
                     i += 1;
                     if i == N {
-                        break;
+                        break 'outer;
                     }
                 }
 
@@ -114,11 +115,11 @@ impl Poly {
                     self.coeffs[i] = t2 as i16;
                     i += 1;
                     if i == N {
-                        break;
+                        break 'outer;
                     }
                 }
                 if i == N {
-                    break;
+                    break 'outer;
                 }
             }
         }

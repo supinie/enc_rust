@@ -3,9 +3,10 @@
 pub(in crate::tests) mod sample_tests {
     use crate::{params::*, polynomials::*};
     extern crate std;
+    use more_asserts::assert_lt;
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
-    use std::{collections::HashMap, ops::Range};
+    use std::{collections::HashMap, ops::Range, println};
 
     const EPSILON: f64 = 0.1;
     pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
@@ -85,6 +86,26 @@ pub(in crate::tests) mod sample_tests {
         }
     }
 
+    pub(in crate::tests) fn uniform_dist_test(poly: &Poly) {
+        let expected_freq = (N as f64) / (i16::MAX as f64);
+        let mut observed_freq = HashMap::new();
+
+        for &value in &poly.coeffs {
+            *observed_freq.entry(value).or_insert(0) += 1;
+        }
+
+        let chi_sq_stat: f64 = observed_freq
+            .values()
+            .map(|&count| {
+                ((count as f64 - expected_freq * (N as f64)).powi(2)) / (expected_freq * (N as f64))
+            })
+            .sum();
+
+        let critical_value: f64 = 55.0;
+
+        assert_lt!(chi_sq_stat, critical_value);
+    }
+
     #[test]
     fn derive_noise_2_range_test() {
         let seed = generate_random_seed();
@@ -127,5 +148,17 @@ pub(in crate::tests) mod sample_tests {
         poly.derive_noise(&seed, nonce, Eta::Three);
 
         dist_test(&poly, 3);
+    }
+
+    #[test]
+    fn derive_uniform_test() {
+        let seed = generate_random_seed();
+        let x = generate_random_nonce();
+        let y = generate_random_nonce();
+        println!("{} {}", x, y);
+        let mut poly = Poly::new();
+        poly.derive_uniform(&seed, x, y);
+
+        uniform_dist_test(&poly);
     }
 }

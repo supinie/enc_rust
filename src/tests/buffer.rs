@@ -93,4 +93,38 @@ pub(in crate::tests) mod buffer_tests {
             }
         }
     }
+
+    #[test]
+    fn compress_decompress_vec_test() {
+        for sec_level in TEST_PARAMS.iter() {
+            let k_value: usize = sec_level.k().into();
+            let buf = generate_random_buffer(k_value * sec_level.poly_compressed_bytes());
+            let mut buf_comp = zero_initialise_buffer(k_value * sec_level.poly_compressed_bytes());
+
+            if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
+                let mut poly_vec = PolyVec512::from([Poly::new(); 2]);
+
+                poly_vec.decompress(&buf, sec_level);
+                poly_vec.compress(&mut buf_comp, sec_level);
+
+                assert_eq!(buf_comp, buf);
+            }
+            if let &SecurityLevel::SevenSixEight { .. } = sec_level {
+                let mut poly_vec = PolyVec768::from([Poly::new(); 3]);
+
+                poly_vec.decompress(&buf, sec_level);
+                poly_vec.compress(&mut buf_comp, sec_level);
+
+                assert_eq!(buf_comp, buf);
+            }
+            if let &SecurityLevel::TenTwoFour { .. } = sec_level {
+                let mut poly_vec = PolyVec1024::from([Poly::new(); 4]);
+
+                poly_vec.decompress(&buf, sec_level);
+                poly_vec.compress(&mut buf_comp, sec_level);
+
+                assert_eq!(buf_comp, buf);
+            }
+        }
+    }
 }

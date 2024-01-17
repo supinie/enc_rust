@@ -114,7 +114,7 @@ impl_polyvec!(PolyVec768);
 impl_polyvec!(PolyVec1024);
 
 impl Poly {
-    pub fn hadamard_flatten<T>(&mut self, multiplicand: T, multiplier: T)
+    pub fn inner_product_pointwise<T>(&mut self, multiplicand: T, multiplier: T)
     where
         T: PolyVecOperations + IntoIterator<Item = Self>,
     {

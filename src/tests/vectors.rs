@@ -286,7 +286,7 @@ mod vec_tests {
     }
 
     #[test]
-    fn hadamard_flatten_test() {
+    fn inner_product_pointwise_test() {
         let mut poly = Poly::new();
         for sec_level in TEST_PARAMS.iter() {
             if let SecurityLevel::FiveOneTwo { .. } = sec_level {
@@ -294,7 +294,7 @@ mod vec_tests {
                 let poly_vec_1 = PolyVec512::from([Poly { coeffs: [20; N] }; 2]);
                 let poly_vec_2 = PolyVec512::from([Poly { coeffs: [30; N] }; 2]);
 
-                poly.hadamard_flatten(poly_vec_1.clone(), poly_vec_2.clone());
+                poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
                 
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
@@ -310,7 +310,7 @@ mod vec_tests {
                 let poly_vec_1 = PolyVec768::from([Poly { coeffs: [20; N] }; 3]);
                 let poly_vec_2 = PolyVec768::from([Poly { coeffs: [20; N] }; 3]);
                 
-                poly.hadamard_flatten(poly_vec_1.clone(), poly_vec_2.clone());
+                poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
                 
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
@@ -326,7 +326,7 @@ mod vec_tests {
                 let poly_vec_1 = PolyVec1024::from([Poly { coeffs: [20; N] }; 4]);
                 let poly_vec_2 = PolyVec1024::from([Poly { coeffs: [20; N] }; 4]);
                 
-                poly.hadamard_flatten(poly_vec_1.clone(), poly_vec_2.clone());
+                poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
                 
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {

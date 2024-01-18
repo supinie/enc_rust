@@ -31,6 +31,7 @@ pub(crate) mod params;
 mod polynomials;
 mod sample;
 mod vectors;
+mod matrix;
 
 mod tests {
     mod buffer;

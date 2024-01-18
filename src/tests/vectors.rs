@@ -295,7 +295,7 @@ mod vec_tests {
                 let poly_vec_2 = PolyVec512::from([Poly { coeffs: [30; N] }; 2]);
 
                 poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
-                
+
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
                     temp = poly_vec_2[i].clone();
@@ -309,9 +309,9 @@ mod vec_tests {
                 let mut comp_poly = Poly::new();
                 let poly_vec_1 = PolyVec768::from([Poly { coeffs: [20; N] }; 3]);
                 let poly_vec_2 = PolyVec768::from([Poly { coeffs: [20; N] }; 3]);
-                
+
                 poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
-                
+
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
                     temp = poly_vec_2[i].clone();
@@ -325,9 +325,9 @@ mod vec_tests {
                 let mut comp_poly = Poly::new();
                 let poly_vec_1 = PolyVec1024::from([Poly { coeffs: [20; N] }; 4]);
                 let poly_vec_2 = PolyVec1024::from([Poly { coeffs: [20; N] }; 4]);
-                
+
                 poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
-                
+
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
                     temp = poly_vec_2[i].clone();

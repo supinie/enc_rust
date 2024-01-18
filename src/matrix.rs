@@ -1,4 +1,7 @@
-use crate::{vectors::{PolyVec512, PolyVec768, PolyVec1024}, params::{SecurityLevel, K, GetSecLevel}};
+use crate::{
+    params::{GetSecLevel, SecurityLevel, K},
+    vectors::{PolyVec1024, PolyVec512, PolyVec768},
+};
 
 pub type Mat512 = [PolyVec512; 2];
 pub type Mat768 = [PolyVec768; 3];
@@ -39,7 +42,7 @@ macro_rules! impl_matrix {
                                 polynomial.derive_uniform(seed, i as u8, j as u8);
                             }
                         }
-                    },
+                    }
                     false => {
                         for (i, vector) in self.iter_mut().enumerate() {
                             for (j, polynomial) in vector.iter_mut().enumerate() {

@@ -1,6 +1,6 @@
 use core::num::TryFromIntError;
 
-use crate::params::{Eta, SecurityLevel, K, POLYBYTES, GetSecLevel};
+use crate::params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES};
 use crate::polynomials::Poly;
 pub use arrayvec::ArrayVec as PolyVec;
 
@@ -95,28 +95,24 @@ macro_rules! impl_polyvec {
             }
 
             // buf should be of length k * poly_compressed_bytes
-            fn compress(
-                &self,
-                buf: &mut [u8],
-            ) -> Result<(), TryFromIntError> {
+            fn compress(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
                 for (k, poly) in self.iter().enumerate() {
                     poly.compress(
                         &mut buf[k * <$variant as GetSecLevel>::sec_level().poly_compressed_bytes()
-                            ..(k + 1) * <$variant as GetSecLevel>::sec_level().poly_compressed_bytes()],
+                            ..(k + 1)
+                                * <$variant as GetSecLevel>::sec_level().poly_compressed_bytes()],
                         &<$variant as GetSecLevel>::sec_level(),
                     )?;
                 }
                 Ok(())
             }
 
-            fn decompress(
-                &mut self,
-                buf: &[u8],
-            ) -> Result<(), TryFromIntError> {
+            fn decompress(&mut self, buf: &[u8]) -> Result<(), TryFromIntError> {
                 for (k, poly) in self.iter_mut().enumerate() {
                     poly.decompress(
                         &buf[k * <$variant as GetSecLevel>::sec_level().poly_compressed_bytes()
-                            ..(k + 1) * <$variant as GetSecLevel>::sec_level().poly_compressed_bytes()],
+                            ..(k + 1)
+                                * <$variant as GetSecLevel>::sec_level().poly_compressed_bytes()],
                         &<$variant as GetSecLevel>::sec_level(),
                     )?;
                 }

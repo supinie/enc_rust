@@ -32,6 +32,10 @@ pub enum SecurityLevel {
     TenTwoFour { k: K, eta_1: Eta, eta_2: Eta },
 }
 
+pub trait GetSecLevel {
+    fn sec_level() -> SecurityLevel;
+}
+
 impl SecurityLevel {
     pub const fn new(k: K) -> Self {
         match k {

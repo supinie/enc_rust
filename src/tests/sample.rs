@@ -21,8 +21,9 @@ pub(in crate::tests) mod sample_tests {
         rng.gen::<u8>()
     }
 
-    pub(in crate::tests) fn range_test(poly: &Poly, eta: usize) {
-        let range_lim = eta as i16;
+    pub(in crate::tests) fn range_test(poly: &Poly, eta: Eta) {
+        let eta_val: usize = eta.into();
+        let range_lim = eta_val as i16;
         let range: Range<i16> = -range_lim..range_lim + 1;
 
         for coeff in poly.coeffs.iter() {
@@ -34,10 +35,10 @@ pub(in crate::tests) mod sample_tests {
         }
     }
 
-    pub(in crate::tests) fn dist_test(poly: &Poly, eta: usize) {
+    pub(in crate::tests) fn dist_test(poly: &Poly, eta: Eta) {
         let expected_probabilities: HashMap<i16, f64>;
         match eta {
-            2 => {
+            Eta::Two => {
                 expected_probabilities = [
                     (-2, 1.0 / 16.0),
                     (-1, 1.0 / 4.0),
@@ -49,7 +50,7 @@ pub(in crate::tests) mod sample_tests {
                 .cloned()
                 .collect();
             }
-            3 => {
+            Eta::Three => {
                 expected_probabilities = [
                     (-3, 1.0 / 64.0),
                     (-2, 3.0 / 32.0),
@@ -63,7 +64,6 @@ pub(in crate::tests) mod sample_tests {
                 .cloned()
                 .collect();
             }
-            _ => panic!("invalid eta in test"),
         }
 
         let mut actual_counts: HashMap<i16, usize> = HashMap::new();
@@ -114,7 +114,7 @@ pub(in crate::tests) mod sample_tests {
         let mut poly = Poly::new();
         poly.derive_noise(&seed, nonce, Eta::Two);
 
-        range_test(&poly, 2);
+        range_test(&poly, Eta::Two);
     }
 
     #[test]
@@ -125,7 +125,7 @@ pub(in crate::tests) mod sample_tests {
         let mut poly = Poly::new();
         poly.derive_noise(&seed, nonce, Eta::Three);
 
-        range_test(&poly, 3);
+        range_test(&poly, Eta::Three);
     }
 
     #[test]
@@ -136,7 +136,7 @@ pub(in crate::tests) mod sample_tests {
         let mut poly = Poly::new();
         poly.derive_noise(&seed, nonce, Eta::Two);
 
-        dist_test(&poly, 2);
+        dist_test(&poly, Eta::Two);
     }
 
     #[test]
@@ -147,7 +147,7 @@ pub(in crate::tests) mod sample_tests {
         let mut poly = Poly::new();
         poly.derive_noise(&seed, nonce, Eta::Three);
 
-        dist_test(&poly, 3);
+        dist_test(&poly, Eta::Three);
     }
 
     #[test]

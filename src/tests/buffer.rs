@@ -1,9 +1,9 @@
-#![allow(warnings)]
 #[cfg(test)]
 pub(in crate::tests) mod buffer_tests {
     use crate::{params::*, polynomials::*, vectors::*};
     use rand::Rng;
     extern crate std;
+    use std::vec;
     use std::vec::Vec;
 
     static TEST_PARAMS: [SecurityLevel; 3] = [
@@ -13,10 +13,7 @@ pub(in crate::tests) mod buffer_tests {
     ];
 
     pub(in crate::tests) fn zero_initialise_buffer(size: usize) -> Vec<u8> {
-        let mut data = Vec::with_capacity(size);
-        for _ in 0..size {
-            data.push(0u8);
-        }
+        let mut data = vec![0u8; size];
         data
     }
 
@@ -34,7 +31,7 @@ pub(in crate::tests) mod buffer_tests {
     fn pack_unpack_poly_test() {
         let poly = Poly { coeffs: [20; N] };
         let mut buffer = [0; POLYBYTES];
-        &poly.pack(&mut buffer);
+        poly.pack(&mut buffer);
 
         let mut comp_poly = Poly::new();
         comp_poly.unpack(&buffer);
@@ -44,7 +41,7 @@ pub(in crate::tests) mod buffer_tests {
 
     #[test]
     fn compress_decompress_poly_test() {
-        for sec_level in TEST_PARAMS.iter() {
+        for sec_level in &TEST_PARAMS {
             let buf = generate_random_buffer(sec_level.poly_compressed_bytes());
             let mut buf_comp = zero_initialise_buffer(sec_level.poly_compressed_bytes());
 
@@ -60,11 +57,11 @@ pub(in crate::tests) mod buffer_tests {
     #[test]
     fn pack_unpack_vec_test() {
         let poly = Poly { coeffs: [20; N] };
-        for sec_level in TEST_PARAMS.iter() {
+        for sec_level in &TEST_PARAMS {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut buffer = [0; 2 * POLYBYTES];
                 let poly_vec = PolyVec512::from([poly; 2]);
-                &poly_vec.pack(&mut buffer);
+                poly_vec.pack(&mut buffer);
 
                 let mut comp_poly_vec = PolyVec512::from([Poly::new(); 2]);
                 comp_poly_vec.unpack(&buffer);
@@ -74,7 +71,7 @@ pub(in crate::tests) mod buffer_tests {
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut buffer = [0; 3 * POLYBYTES];
                 let poly_vec = PolyVec768::from([poly; 3]);
-                &poly_vec.pack(&mut buffer);
+                poly_vec.pack(&mut buffer);
 
                 let mut comp_poly_vec = PolyVec768::from([Poly::new(); 3]);
                 comp_poly_vec.unpack(&buffer);
@@ -84,7 +81,7 @@ pub(in crate::tests) mod buffer_tests {
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut buffer = [0; 4 * POLYBYTES];
                 let poly_vec = PolyVec1024::from([poly; 4]);
-                &poly_vec.pack(&mut buffer);
+                poly_vec.pack(&mut buffer);
 
                 let mut comp_poly_vec = PolyVec1024::from([Poly::new(); 4]);
                 comp_poly_vec.unpack(&buffer);
@@ -96,7 +93,7 @@ pub(in crate::tests) mod buffer_tests {
 
     #[test]
     fn compress_decompress_vec_test() {
-        for sec_level in TEST_PARAMS.iter() {
+        for sec_level in &TEST_PARAMS {
             let k_value: usize = sec_level.k().into();
             let buf = generate_random_buffer(k_value * sec_level.poly_compressed_bytes());
             let mut buf_comp = zero_initialise_buffer(k_value * sec_level.poly_compressed_bytes());

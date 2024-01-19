@@ -36,6 +36,7 @@ mod vectors;
 mod tests {
     mod buffer;
     mod field_operations;
+    mod matrix;
     mod ntt;
     mod params;
     mod polynomials;

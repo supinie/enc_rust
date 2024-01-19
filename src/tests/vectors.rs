@@ -159,9 +159,11 @@ mod vec_tests {
                         assert_eq!(
                             p,
                             (q * (1 << 16) % (Q as i32)),
-                            "{}", format_args!("testing equality with original in poly {}, index {}",
-                            i,
-                            j)
+                            "{}",
+                            format_args!(
+                                "testing equality with original in poly {}, index {}",
+                                i, j
+                            )
                         );
                     }
                 }
@@ -186,9 +188,11 @@ mod vec_tests {
                         assert_eq!(
                             p,
                             (q * (1 << 16) % (Q as i32)),
-                            "{}", format_args!("testing equality with original in poly {}, index {}",
-                            i,
-                            j)
+                            "{}",
+                            format_args!(
+                                "testing equality with original in poly {}, index {}",
+                                i, j
+                            )
                         );
                     }
                 }
@@ -213,9 +217,11 @@ mod vec_tests {
                         assert_eq!(
                             p,
                             (q * (1 << 16) % (Q as i32)),
-                            "{}", format_args!("testing equality with original in poly {}, index {}",
-                            i,
-                            j)
+                            "{}",
+                            format_args!(
+                                "testing equality with original in poly {}, index {}",
+                                i, j
+                            )
                         );
                     }
                 }

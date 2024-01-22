@@ -4,8 +4,10 @@ mod matrix_tests {
 
     use crate::{
         matrix::*,
-        params::{SecurityLevel, K, N}, polynomials::Poly, vectors::{PolyVec512, PolyVec768, PolyVec1024},
+        params::{SecurityLevel, K, N},
+        polynomials::Poly,
         tests::sample::sample_tests::{generate_random_seed, uniform_dist_test},
+        vectors::{PolyVec1024, PolyVec512, PolyVec768},
     };
 
     static TEST_PARAMS: [SecurityLevel; 3] = [
@@ -58,19 +60,50 @@ mod matrix_tests {
     fn transpose_test() {
         for sec_level in &TEST_PARAMS {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
-                let mut matrix: Mat512 = [PolyVec512::from([Poly { coeffs: [1; N] }, Poly {coeffs: [2; N] }]); 2];
+                let mut matrix: Mat512 =
+                    [PolyVec512::from([Poly { coeffs: [1; N] }, Poly { coeffs: [2; N] }]); 2];
                 matrix.transpose();
-                assert_eq!(matrix, [PolyVec512::from([Poly { coeffs: [1; N]}; 2]), PolyVec512::from([Poly { coeffs: [2; N]}; 2])]);
-            } 
+                assert_eq!(
+                    matrix,
+                    [
+                        PolyVec512::from([Poly { coeffs: [1; N] }; 2]),
+                        PolyVec512::from([Poly { coeffs: [2; N] }; 2])
+                    ]
+                );
+            }
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
-                let mut matrix: Mat768 = [PolyVec768::from([Poly { coeffs: [1; N] }, Poly {coeffs: [2; N] }, Poly { coeffs: [3; N] }]); 3];
+                let mut matrix: Mat768 = [PolyVec768::from([
+                    Poly { coeffs: [1; N] },
+                    Poly { coeffs: [2; N] },
+                    Poly { coeffs: [3; N] },
+                ]); 3];
                 matrix.transpose();
-                assert_eq!(matrix, [PolyVec768::from([Poly { coeffs: [1; N]}; 3]), PolyVec768::from([Poly { coeffs: [2; N]}; 3]), PolyVec768::from([Poly { coeffs: [3; N]}; 3])]);
+                assert_eq!(
+                    matrix,
+                    [
+                        PolyVec768::from([Poly { coeffs: [1; N] }; 3]),
+                        PolyVec768::from([Poly { coeffs: [2; N] }; 3]),
+                        PolyVec768::from([Poly { coeffs: [3; N] }; 3])
+                    ]
+                );
             }
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
-                let mut matrix: Mat1024 = [PolyVec1024::from([Poly { coeffs: [1; N] }, Poly {coeffs: [2; N] }, Poly { coeffs: [3; N] }, Poly { coeffs: [4; N] }]); 4];
+                let mut matrix: Mat1024 = [PolyVec1024::from([
+                    Poly { coeffs: [1; N] },
+                    Poly { coeffs: [2; N] },
+                    Poly { coeffs: [3; N] },
+                    Poly { coeffs: [4; N] },
+                ]); 4];
                 matrix.transpose();
-                assert_eq!(matrix, [PolyVec1024::from([Poly { coeffs: [1; N]}; 4]), PolyVec1024::from([Poly { coeffs: [2; N]}; 4]), PolyVec1024::from([Poly { coeffs: [3; N]}; 4]), PolyVec1024::from([Poly { coeffs: [4; N]}; 4])]);
+                assert_eq!(
+                    matrix,
+                    [
+                        PolyVec1024::from([Poly { coeffs: [1; N] }; 4]),
+                        PolyVec1024::from([Poly { coeffs: [2; N] }; 4]),
+                        PolyVec1024::from([Poly { coeffs: [3; N] }; 4]),
+                        PolyVec1024::from([Poly { coeffs: [4; N] }; 4])
+                    ]
+                );
             }
         }
     }

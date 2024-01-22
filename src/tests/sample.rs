@@ -6,7 +6,7 @@ pub(in crate::tests) mod sample_tests {
     use more_asserts::assert_lt;
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
-    use std::{collections::HashMap, ops::Range, println};
+    use std::{collections::HashMap, ops::Range};
 
     const EPSILON: f64 = 0.1;
     pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
@@ -155,7 +155,6 @@ pub(in crate::tests) mod sample_tests {
         let seed = generate_random_seed();
         let x = generate_random_nonce();
         let y = generate_random_nonce();
-        println!("{} {}", x, y);
         let mut poly = Poly::new();
         poly.derive_uniform(&seed, x, y);
 

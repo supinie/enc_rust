@@ -84,6 +84,7 @@ impl Poly {
         }
     }
 
+    //seed should be of length 32
     pub(crate) fn derive_uniform(&mut self, seed: &[u8], x: u8, y: u8) {
         let mut seed_suffix = [x, y];
         let mut buf = [0u8; 168];

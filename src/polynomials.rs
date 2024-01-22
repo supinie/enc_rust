@@ -10,8 +10,14 @@ pub struct Poly {
     pub(crate) coeffs: [i16; N],
 }
 
+impl Default for Poly {
+    fn default() -> Self {
+        Self { coeffs: [0; N] }
+    }
+}
+
 impl Poly {
-    // We can't use default, as that is only supported for arrays of length 32 or less
+    // const function equivelent of default (default is needed for ArrayVec)
     // Example:
     // let poly = Poly::new();
     pub(crate) const fn new() -> Self {

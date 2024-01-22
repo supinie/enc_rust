@@ -45,7 +45,7 @@ macro_rules! impl_polyvec {
     ($variant:ty) => {
         impl PolyVecOperations for $variant {
             fn add(&mut self, addend: Self) {
-                for (augend_poly, addend_poly) in self.as_mut_slice().iter_mut().zip(addend.iter()) {
+                for (augend_poly, addend_poly) in self.iter_mut().zip(addend.iter()) {
                     augend_poly.add(&addend_poly);
                 }
             }

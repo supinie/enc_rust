@@ -141,7 +141,7 @@ mod vec_tests {
         for sec_level in &TEST_PARAMS {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec512::from([poly; 2]);
-                let mut original_input = poly_vec_1.clone();
+                let mut original_input = poly_vec_1;
 
                 original_input.normalise();
 
@@ -170,7 +170,7 @@ mod vec_tests {
             }
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec768::from([poly; 3]);
-                let mut original_input = poly_vec_1.clone();
+                let mut original_input = poly_vec_1;
 
                 original_input.normalise();
 
@@ -199,7 +199,7 @@ mod vec_tests {
             }
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec1024::from([poly; 4]);
-                let mut original_input = poly_vec_1.clone();
+                let mut original_input = poly_vec_1;
 
                 original_input.normalise();
 
@@ -310,7 +310,7 @@ mod vec_tests {
                 let poly_vec_1 = PolyVec512::from([Poly { coeffs: [20; N] }; 2]);
                 let poly_vec_2 = PolyVec512::from([Poly { coeffs: [30; N] }; 2]);
 
-                poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
+                poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
@@ -326,7 +326,7 @@ mod vec_tests {
                 let poly_vec_1 = PolyVec768::from([Poly { coeffs: [20; N] }; 3]);
                 let poly_vec_2 = PolyVec768::from([Poly { coeffs: [20; N] }; 3]);
 
-                poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
+                poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {
@@ -342,7 +342,7 @@ mod vec_tests {
                 let poly_vec_1 = PolyVec1024::from([Poly { coeffs: [20; N] }; 4]);
                 let poly_vec_2 = PolyVec1024::from([Poly { coeffs: [20; N] }; 4]);
 
-                poly.inner_product_pointwise(poly_vec_1.clone(), poly_vec_2.clone());
+                poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
                 let mut temp = Poly::new();
                 for i in 0..sec_level.k().into() {

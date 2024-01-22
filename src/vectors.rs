@@ -2,11 +2,11 @@ use core::num::TryFromIntError;
 
 use crate::params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES};
 use crate::polynomials::Poly;
-pub use arrayvec::ArrayVec as PolyVec;
+use tinyvec::ArrayVec;
 
-pub type PolyVec512 = PolyVec<Poly, 2>;
-pub type PolyVec768 = PolyVec<Poly, 3>;
-pub type PolyVec1024 = PolyVec<Poly, 4>;
+pub type PolyVec512 = ArrayVec<[Poly; 2]>;
+pub type PolyVec768 = ArrayVec<[Poly; 3]>;
+pub type PolyVec1024 = ArrayVec<[Poly; 4]>;
 
 impl GetSecLevel for PolyVec512 {
     fn sec_level() -> SecurityLevel {
@@ -45,8 +45,7 @@ macro_rules! impl_polyvec {
     ($variant:ty) => {
         impl PolyVecOperations for $variant {
             fn add(&mut self, addend: Self) {
-                assert_eq!(self.len(), addend.len());
-                for (augend_poly, addend_poly) in self.iter_mut().zip(addend.iter()) {
+                for (augend_poly, addend_poly) in self.as_mut_slice().iter_mut().zip(addend.iter()) {
                     augend_poly.add(&addend_poly);
                 }
             }

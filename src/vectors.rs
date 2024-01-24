@@ -1,6 +1,10 @@
 use core::num::TryFromIntError;
 
-use crate::{params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES}, polynomials::Poly, matrix::{Mat512, Mat768, Mat1024}};
+use crate::{
+    matrix::{Mat1024, Mat512, Mat768},
+    params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES},
+    polynomials::Poly,
+};
 use tinyvec::ArrayVec;
 
 pub type PolyVec512 = ArrayVec<[Poly; 2]>;

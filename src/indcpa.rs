@@ -12,7 +12,10 @@ pub struct PrivateKey<PV: PolyVecOperations + GetSecLevel + Default> {
 }
 
 #[derive(Default)]
-pub struct PublicKey<PV: PolyVecOperations + GetSecLevel + Default, M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New> {
+pub struct PublicKey<
+    PV: PolyVecOperations + GetSecLevel + Default,
+    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New,
+> {
     rho: [u8; 32],
     noise: PV,
     a_t: M,
@@ -29,7 +32,11 @@ impl<PV: PolyVecOperations + GetSecLevel + Default> PrivateKey<PV> {
     }
 }
 
-impl<PV: PolyVecOperations + GetSecLevel + Default, M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New> PublicKey<PV, M> {
+impl<
+        PV: PolyVecOperations + GetSecLevel + Default,
+        M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New,
+    > PublicKey<PV, M>
+{
     pub fn pack(&self, buf: &mut [u8]) {
         self.noise.pack(buf);
         let k_value: u8 = M::sec_level().k().into();
@@ -55,10 +62,10 @@ where
     let mut pub_key = PublicKey {
         rho: [0u8; 32],
         noise: PV::default(),
-        a_t: M::new()
+        a_t: M::new(),
     };
     let mut priv_key = PrivateKey {
-        secret: PV::default()
+        secret: PV::default(),
     };
 
     let mut expanded_seed = [0u8; 64];
@@ -70,8 +77,10 @@ where
     pub_key.rho[..].copy_from_slice(&expanded_seed[..32]);
     pub_key.a_t = M::derive(&pub_key.rho, false);
     let sigma = &expanded_seed[32..]; // seed for noise
-    
-    priv_key.secret.derive_noise(sigma, 0, PV::sec_level().eta_1());
+
+    priv_key
+        .secret
+        .derive_noise(sigma, 0, PV::sec_level().eta_1());
     priv_key.secret.ntt();
     priv_key.secret.normalise();
 
@@ -92,7 +101,6 @@ where
 
     (priv_key, pub_key)
 }
-    
 
 // fn test() {
 //     let pub_key = PublicKey {

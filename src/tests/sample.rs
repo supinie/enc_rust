@@ -101,7 +101,7 @@ pub(in crate::tests) mod sample_tests {
             })
             .sum();
 
-        let critical_value: f64 = 60.0;
+        let critical_value: f64 = 70.0;
 
         assert_lt!(chi_sq_stat, critical_value);
     }

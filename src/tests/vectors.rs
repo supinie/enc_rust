@@ -150,9 +150,10 @@ mod vec_tests {
                 poly_vec_1.inv_ntt();
                 poly_vec_1.normalise();
 
+                let k_value: u8 = sec_level.k().into();
                 #[allow(clippy::cast_possible_truncation)]
                 #[allow(clippy::cast_possible_wrap)]
-                for i in 0..sec_level.k().into() {
+                for i in 0..usize::from(k_value) {
                     for j in 0..N {
                         let p: i32 = i32::from(poly_vec_1[i].coeffs[j]);
                         let q: i32 = i32::from(original_input[i].coeffs[j]);
@@ -179,9 +180,10 @@ mod vec_tests {
                 poly_vec_1.inv_ntt();
                 poly_vec_1.normalise();
 
+                let k_value: u8 = sec_level.k().into();
                 #[allow(clippy::cast_possible_truncation)]
                 #[allow(clippy::cast_possible_wrap)]
-                for i in 0..sec_level.k().into() {
+                for i in 0..usize::from(k_value) {
                     for j in 0..N {
                         let p: i32 = i32::from(poly_vec_1[i].coeffs[j]);
                         let q: i32 = i32::from(original_input[i].coeffs[j]);
@@ -208,9 +210,10 @@ mod vec_tests {
                 poly_vec_1.inv_ntt();
                 poly_vec_1.normalise();
 
+                let k_value: u8 = sec_level.k().into();
                 #[allow(clippy::cast_possible_truncation)]
                 #[allow(clippy::cast_possible_wrap)]
-                for i in 0..sec_level.k().into() {
+                for i in 0..usize::from(k_value) {
                     for j in 0..N {
                         let p: i32 = i32::from(poly_vec_1[i].coeffs[j]);
                         let q: i32 = i32::from(original_input[i].coeffs[j]);
@@ -313,7 +316,8 @@ mod vec_tests {
                 poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
                 let mut temp = Poly::new();
-                for i in 0..sec_level.k().into() {
+                let k_value: u8 = sec_level.k().into();
+                for i in 0..usize::from(k_value) {
                     temp = poly_vec_2[i];
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
@@ -329,7 +333,8 @@ mod vec_tests {
                 poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
                 let mut temp = Poly::new();
-                for i in 0..sec_level.k().into() {
+                let k_value: u8 = sec_level.k().into();
+                for i in 0..usize::from(k_value) {
                     temp = poly_vec_2[i];
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
@@ -345,7 +350,8 @@ mod vec_tests {
                 poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
                 let mut temp = Poly::new();
-                for i in 0..sec_level.k().into() {
+                let k_value: u8 = sec_level.k().into();
+                for i in 0..usize::from(k_value) {
                     temp = poly_vec_2[i];
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);

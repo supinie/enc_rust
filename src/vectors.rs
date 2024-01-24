@@ -1,7 +1,6 @@
 use core::num::TryFromIntError;
 
-use crate::params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES};
-use crate::polynomials::Poly;
+use crate::{params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES}, polynomials::Poly, matrix::{Mat512, Mat768, Mat1024}};
 use tinyvec::ArrayVec;
 
 pub type PolyVec512 = ArrayVec<[Poly; 2]>;
@@ -125,6 +124,11 @@ macro_rules! impl_polyvec {
 impl_polyvec!(PolyVec512);
 impl_polyvec!(PolyVec768);
 impl_polyvec!(PolyVec1024);
+
+pub trait LinkSecLevel<P: PolyVecOperations> {}
+impl LinkSecLevel<PolyVec512> for Mat512 {}
+impl LinkSecLevel<PolyVec768> for Mat768 {}
+impl LinkSecLevel<PolyVec1024> for Mat1024 {}
 
 impl Poly {
     pub fn inner_product_pointwise<T>(&mut self, multiplicand: T, multiplier: T)

@@ -13,7 +13,7 @@ pub trait New {
     fn new() -> Self;
 }
 
-pub trait Operations {
+pub trait MatOperations {
     // seed length 32
     fn derive(seed: &[u8], transpose: bool) -> Self;
     fn transpose(&mut self);
@@ -57,7 +57,7 @@ impl GetSecLevel for Mat1024 {
 
 macro_rules! impl_matrix {
     ($variant:ty) => {
-        impl Operations for $variant {
+        impl MatOperations for $variant {
             fn derive(seed: &[u8], transpose: bool) -> Self {
                 let mut matrix = Self::new();
                 match transpose {
@@ -80,9 +80,9 @@ macro_rules! impl_matrix {
             }
 
             fn transpose(&mut self) {
-                let k = <$variant as GetSecLevel>::sec_level().k().into();
-                for i in 0..k - 1 {
-                    for j in i + 1..k {
+                let k: u8 = <$variant as GetSecLevel>::sec_level().k().into();
+                for i in 0..usize::from(k - 1) {
+                    for j in i + 1..usize::from(k) {
                         let temp = self[i][j];
                         self[i][j] = self[j][i];
                         self[j][i] = temp;

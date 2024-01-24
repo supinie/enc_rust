@@ -10,7 +10,7 @@ pub const SHAREDSECRETBYTES: usize = 32;
 pub const POLYBYTES: usize = 384;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
-#[repr(usize)]
+#[repr(u8)]
 // Get the usize repr using .into()
 pub enum K {
     Two = 2,

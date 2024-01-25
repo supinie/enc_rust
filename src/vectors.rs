@@ -33,7 +33,7 @@ trait SameSecLevel {}
 
 pub trait PolyVecOperations {
     fn add(&mut self, addend: Self);
-    fn reduce(&mut self);
+    fn barrett_reduce(&mut self);
     fn normalise(&mut self);
     fn ntt(&mut self);
     fn inv_ntt(&mut self);
@@ -53,9 +53,9 @@ macro_rules! impl_polyvec {
                 }
             }
 
-            fn reduce(&mut self) {
+            fn barrett_reduce(&mut self) {
                 for poly in self.iter_mut() {
-                    poly.reduce();
+                    poly.barrett_reduce();
                 }
             }
 

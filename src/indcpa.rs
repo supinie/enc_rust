@@ -1,3 +1,5 @@
+use core::num::TryFromIntError;
+
 use crate::{
     matrix::{Mat512, MatOperations, New},
     params::{GetSecLevel, POLYBYTES},
@@ -7,21 +9,21 @@ use crate::{
 use sha3::{Digest, Sha3_512};
 
 #[derive(Default)]
-pub struct PrivateKey<PV: PolyVecOperations + GetSecLevel + Default> {
+pub struct PrivateKey<PV: PolyVecOperations> {
     secret: PV,
 }
 
 #[derive(Default)]
 pub struct PublicKey<
-    PV: PolyVecOperations + GetSecLevel + Default,
-    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New,
+    PV: PolyVecOperations,
+    M: MatOperations + LinkSecLevel<PV>,
 > {
     rho: [u8; 32],
     noise: PV,
     a_t: M,
 }
 
-impl<PV: PolyVecOperations + GetSecLevel + Default> PrivateKey<PV> {
+impl<PV: PolyVecOperations> PrivateKey<PV> {
     pub fn pack(&self, buf: &mut [u8]) {
         self.secret.pack(buf);
     }
@@ -33,8 +35,8 @@ impl<PV: PolyVecOperations + GetSecLevel + Default> PrivateKey<PV> {
 }
 
 impl<
-        PV: PolyVecOperations + GetSecLevel + Default,
-        M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New,
+        PV: PolyVecOperations,
+        M: MatOperations + GetSecLevel + LinkSecLevel<PV>,
     > PublicKey<PV, M>
 {
     pub fn pack(&self, buf: &mut [u8]) {
@@ -102,6 +104,51 @@ where
     (priv_key, pub_key)
 }
 
+pub fn encrypt<'a, PV, M>(pub_key: &PublicKey<PV, M>, plaintext: &[u8], seed: &[u8], output_buf: &'a mut [u8]) -> Result<&'a [u8], TryFromIntError>
+where
+    PV: PolyVecOperations + GetSecLevel + Default + Iterator<Item = Poly> + Copy,
+    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + Iterator<Item = PV> + Copy,
+{
+    let mut rh = PV::default();
+    rh.derive_noise(seed, 0, PV::sec_level().eta_1());
+    rh.ntt();
+    rh.barrett_reduce();
+
+    let k_value: u8 = PV::sec_level().k().into();
+    let mut error_1 = PV::default();
+    error_1.derive_noise(seed, k_value, PV::sec_level().eta_2());
+    let mut error_2 = Poly::new();
+    error_2.derive_noise(seed, 2*k_value, PV::sec_level().eta_2());
+
+    let mut u = PV::default();
+    for (mut poly, vec) in u.zip(pub_key.a_t) {
+        poly.inner_product_pointwise(vec, rh);
+    }
+    u.barrett_reduce();
+    u.inv_ntt();
+    
+    u.add(error_1);
+    let mut v = Poly::new();
+    v.inner_product_pointwise(pub_key.noise, rh);
+    v.barrett_reduce();
+    v.inv_ntt();
+
+    let mut m = Poly::new();
+    m.read_msg(plaintext)?;
+
+    v.add(&m);
+    v.add(&error_2);
+
+    u.normalise();
+    v.normalise();
+
+    let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
+    let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
+    u.compress(&mut output_buf[..poly_vec_compressed_bytes])?;
+    v.compress(&mut output_buf[poly_vec_compressed_bytes..poly_compressed_bytes], &PV::sec_level())?;
+
+    Ok(&output_buf[..PV::sec_level().cipher_text_bytes()])
+}
 // fn test() {
 //     let pub_key = PublicKey {
 //         rho: [0u8; 32],
@@ -109,9 +156,9 @@ where
 //         a_t: [PolyVec512::from([Poly::new(); 2]); 2]
 //     };
 
-//     let invalid_key = PublicKey {
-//         rho: [0u8; 32],
-//         noise: PolyVec768::from([Poly::new(); 3]),
-//         a_t: [PolyVec512::from([Poly::new(); 2]); 2]
-//     };
+//     // let invalid_key = PublicKey {
+//     //     rho: [0u8; 32],
+//     //     noise: PolyVec768::from([Poly::new(); 3]),
+//     //     a_t: [PolyVec512::from([Poly::new(); 2]); 2]
+//     // };
 // }

@@ -54,7 +54,7 @@ mod vec_tests {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec512::from([poly; 2]);
 
-                poly_vec_1.reduce();
+                poly_vec_1.barrett_reduce();
 
                 assert_eq!(
                     poly_vec_1,
@@ -64,7 +64,7 @@ mod vec_tests {
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec768::from([poly; 3]);
 
-                poly_vec_1.reduce();
+                poly_vec_1.barrett_reduce();
 
                 assert_eq!(
                     poly_vec_1,
@@ -74,7 +74,7 @@ mod vec_tests {
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut poly_vec_1 = PolyVec1024::from([poly; 4]);
 
-                poly_vec_1.reduce();
+                poly_vec_1.barrett_reduce();
 
                 assert_eq!(
                     poly_vec_1,

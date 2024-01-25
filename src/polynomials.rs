@@ -54,7 +54,7 @@ impl Poly {
     // Barrett reduces all coefficients of given polynomial
     // Example:
     // poly.reduce();
-    pub(crate) fn reduce(&mut self) {
+    pub(crate) fn barrett_reduce(&mut self) {
         for coeff in &mut self.coeffs {
             *coeff = barrett_reduce(*coeff);
         }

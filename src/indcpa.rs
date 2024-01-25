@@ -149,6 +149,35 @@ where
 
     Ok(&output_buf[..PV::sec_level().cipher_text_bytes()])
 }
+
+pub fn decrypt<'a, PV>(priv_key: &PrivateKey<PV>, ciphertext: &[u8], output_buf: &'a mut [u8]) -> Result<&'a [u8], TryFromIntError>
+where
+    PV: PolyVecOperations + GetSecLevel + Default + Iterator<Item = Poly> + Copy,
+{
+    let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
+    let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
+
+    let mut u = PV::default();
+    u.decompress(&ciphertext[..poly_vec_compressed_bytes])?;
+    u.ntt();
+
+    let mut v = Poly::new();
+    v.decompress(&ciphertext[poly_vec_compressed_bytes..poly_compressed_bytes], &PV::sec_level())?;
+
+    let mut message = Poly::new();
+    message.inner_product_pointwise(priv_key.secret, u);
+
+    message.barrett_reduce();
+    message.inv_ntt();
+    v.sub(&message);
+    message = v;
+    message.normalise();
+
+    message.write_msg(output_buf);
+
+    Ok(output_buf)
+}
+
 // fn test() {
 //     let pub_key = PublicKey {
 //         rho: [0u8; 32],

@@ -3,7 +3,6 @@ use crate::{
     polynomials::Poly,
     vectors::{PolyVec1024, PolyVec512, PolyVec768},
 };
-use tinyvec::ArrayVec;
 
 pub type Mat512 = [PolyVec512; 2];
 pub type Mat768 = [PolyVec768; 3];

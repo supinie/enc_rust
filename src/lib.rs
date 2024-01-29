@@ -1,5 +1,6 @@
 // REMOVE BEFORE FINAL, DEVELOPMENT ONLY
-#![allow(unused)]
+// #![allow(unused)]
+#![allow(dead_code)]
 // REMOVE BEFORE FINAL, DEVELOPMENT ONLY
 #![forbid(unsafe_code)]
 #![warn(

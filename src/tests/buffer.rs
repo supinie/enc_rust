@@ -13,7 +13,7 @@ pub(in crate::tests) mod buffer_tests {
     ];
 
     pub(in crate::tests) fn zero_initialise_buffer(size: usize) -> Vec<u8> {
-        let mut data = vec![0u8; size];
+        let data = vec![0u8; size];
         data
     }
 
@@ -47,8 +47,8 @@ pub(in crate::tests) mod buffer_tests {
 
             let mut poly = Poly::new();
 
-            poly.decompress(&buf, sec_level);
-            poly.compress(&mut buf_comp, sec_level);
+            let _ = poly.decompress(&buf, sec_level);
+            let _ = poly.compress(&mut buf_comp, sec_level);
 
             assert_eq!(buf_comp, buf);
         }
@@ -103,24 +103,24 @@ pub(in crate::tests) mod buffer_tests {
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec = PolyVec512::from([Poly::new(); 2]);
 
-                poly_vec.decompress(&buf);
-                poly_vec.compress(&mut buf_comp);
+                let _ = poly_vec.decompress(&buf);
+                let _ = poly_vec.compress(&mut buf_comp);
 
                 assert_eq!(buf_comp, buf);
             }
             if let &SecurityLevel::SevenSixEight { .. } = sec_level {
                 let mut poly_vec = PolyVec768::from([Poly::new(); 3]);
 
-                poly_vec.decompress(&buf);
-                poly_vec.compress(&mut buf_comp);
+                let _ = poly_vec.decompress(&buf);
+                let _ = poly_vec.compress(&mut buf_comp);
 
                 assert_eq!(buf_comp, buf);
             }
             if let &SecurityLevel::TenTwoFour { .. } = sec_level {
                 let mut poly_vec = PolyVec1024::from([Poly::new(); 4]);
 
-                poly_vec.decompress(&buf);
-                poly_vec.compress(&mut buf_comp);
+                let _ = poly_vec.decompress(&buf);
+                let _ = poly_vec.compress(&mut buf_comp);
 
                 assert_eq!(buf_comp, buf);
             }

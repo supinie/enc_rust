@@ -1,7 +1,7 @@
 use core::num::TryFromIntError;
 
 use crate::{
-    matrix::{Mat512, MatOperations, New},
+    matrix::{MatOperations, New},
     params::{GetSecLevel, POLYBYTES},
     polynomials::Poly,
     vectors::{LinkSecLevel, PolyVecOperations},
@@ -181,7 +181,7 @@ where
     message = v;
     message.normalise();
 
-    message.write_msg(output_buf);
+    message.write_msg(output_buf)?;
 
     Ok(output_buf)
 }

@@ -3,7 +3,6 @@ use crate::{
     polynomials::Poly,
 };
 use byteorder::{ByteOrder, LittleEndian};
-use core::num::TryFromIntError;
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,
@@ -86,7 +85,7 @@ impl Poly {
 
     //seed should be of length 32
     pub(crate) fn derive_uniform(&mut self, seed: &[u8], x: u8, y: u8) {
-        let mut seed_suffix = [x, y];
+        let seed_suffix = [x, y];
         let mut buf = [0u8; 168];
 
         let mut i = 0;
@@ -97,7 +96,7 @@ impl Poly {
             let mut reader = hash.finalize_xof();
             reader.read(&mut buf);
 
-            let mut chunk_iter = buf.chunks_exact_mut(3);
+            let chunk_iter = buf.chunks_exact_mut(3);
             for chunk in chunk_iter {
                 let t1 = (u16::from(chunk[0]) | (u16::from(chunk[1]) << 8)) & 0xfff;
                 let t2 = ((u16::from(chunk[1]) >> 4) | (u16::from(chunk[2]) << 4)) & 0xfff;

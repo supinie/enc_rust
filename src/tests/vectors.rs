@@ -315,10 +315,9 @@ mod vec_tests {
 
                 poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
-                let mut temp = Poly::new();
                 let k_value: u8 = sec_level.k().into();
                 for i in 0..usize::from(k_value) {
-                    temp = poly_vec_2[i];
+                    let mut temp = poly_vec_2[i];
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
                 }
@@ -332,10 +331,9 @@ mod vec_tests {
 
                 poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
-                let mut temp = Poly::new();
                 let k_value: u8 = sec_level.k().into();
                 for i in 0..usize::from(k_value) {
-                    temp = poly_vec_2[i];
+                    let mut temp = poly_vec_2[i];
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
                 }
@@ -349,10 +347,9 @@ mod vec_tests {
 
                 poly.inner_product_pointwise(poly_vec_1, poly_vec_2);
 
-                let mut temp = Poly::new();
                 let k_value: u8 = sec_level.k().into();
                 for i in 0..usize::from(k_value) {
-                    temp = poly_vec_2[i];
+                    let mut temp = poly_vec_2[i];
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
                 }

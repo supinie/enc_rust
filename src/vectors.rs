@@ -139,12 +139,11 @@ impl Poly {
     where
         T: PolyVecOperations + IntoIterator<Item = Self>,
     {
-        let mut temp = Self::new();
         *self = Self::new(); // Zero output Poly
         for (multiplicand_poly, multiplier_poly) in
             multiplicand.into_iter().zip(multiplier.into_iter())
         {
-            temp = multiplicand_poly;
+            let mut temp = multiplicand_poly;
             temp.pointwise_mul(&multiplier_poly);
             self.add(&temp);
         }

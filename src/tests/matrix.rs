@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod matrix_tests {
-    use tinyvec::array_vec;
-
     use crate::{
         matrix::*,
         params::{SecurityLevel, K, N},

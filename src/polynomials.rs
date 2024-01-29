@@ -1,7 +1,7 @@
 use crate::{
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
     ntt::ZETAS,
-    params::{SecurityLevel, N, POLYBYTES, Q},
+    params::{SecurityLevel, N, Q},
 };
 use core::num::TryFromIntError;
 

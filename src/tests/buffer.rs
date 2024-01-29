@@ -95,8 +95,10 @@ pub(in crate::tests) mod buffer_tests {
     fn compress_decompress_vec_test() {
         for sec_level in &TEST_PARAMS {
             let k_value: u8 = sec_level.k().into();
-            let buf = generate_random_buffer(usize::from(k_value) * sec_level.poly_compressed_bytes());
-            let mut buf_comp = zero_initialise_buffer(usize::from(k_value) * sec_level.poly_compressed_bytes());
+            let buf =
+                generate_random_buffer(usize::from(k_value) * sec_level.poly_compressed_bytes());
+            let mut buf_comp =
+                zero_initialise_buffer(usize::from(k_value) * sec_level.poly_compressed_bytes());
 
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec = PolyVec512::from([Poly::new(); 2]);

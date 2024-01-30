@@ -43,4 +43,5 @@ mod tests {
     mod polynomials;
     mod sample;
     mod vectors;
+    mod indcpa;
 }

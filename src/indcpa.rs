@@ -51,8 +51,8 @@ impl<PV: PolyVecOperations, M: MatOperations + GetSecLevel + LinkSecLevel<PV>> P
 
 pub fn generate_key_pair<PV, M>(seed: &[u8]) -> (PrivateKey<PV>, PublicKey<PV, M>)
 where
-    PV: PolyVecOperations + GetSecLevel + Default + Iterator<Item = Poly> + Copy,
-    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + Iterator<Item = PV> + Copy,
+    PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
+    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
     let mut pub_key = PublicKey {
         rho: [0u8; 32],
@@ -79,7 +79,7 @@ where
     priv_key.secret.ntt();
     priv_key.secret.normalise();
 
-    for (mut poly, vec) in pub_key.noise.zip(pub_key.a_t) {
+    for (mut poly, vec) in pub_key.noise.into_iter().zip(pub_key.a_t) {
         poly.inner_product_pointwise(vec, priv_key.secret);
         poly.mont_form();
     }
@@ -97,15 +97,18 @@ where
     (priv_key, pub_key)
 }
 
-pub fn encrypt<'a, PV, M>(
+// pub fn encrypt<'a, PV, M>(
+pub fn encrypt<PV, M>(
     pub_key: &PublicKey<PV, M>,
     plaintext: &[u8],
     seed: &[u8],
-    output_buf: &'a mut [u8],
-) -> Result<&'a [u8], TryFromIntError>
+    // output_buf: &'a mut [u8],
+    output_buf: &mut [u8],
+// ) -> Result<&'a [u8], TryFromIntError>
+) -> Result<(), TryFromIntError>
 where
-    PV: PolyVecOperations + GetSecLevel + Default + Iterator<Item = Poly> + Copy,
-    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + Iterator<Item = PV> + Copy,
+    PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
+    M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
     let mut rh = PV::default();
     rh.derive_noise(seed, 0, PV::sec_level().eta_1());
@@ -119,7 +122,7 @@ where
     error_2.derive_noise(seed, 2 * k_value, PV::sec_level().eta_2());
 
     let mut u = PV::default();
-    for (mut poly, vec) in u.zip(pub_key.a_t) {
+    for (mut poly, vec) in u.into_iter().zip(pub_key.a_t) {
         poly.inner_product_pointwise(vec, rh);
     }
     u.barrett_reduce();
@@ -144,20 +147,23 @@ where
     let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
     u.compress(&mut output_buf[..poly_vec_compressed_bytes])?;
     v.compress(
-        &mut output_buf[poly_vec_compressed_bytes..poly_compressed_bytes],
+        &mut output_buf[poly_vec_compressed_bytes..poly_vec_compressed_bytes + poly_compressed_bytes],
         &PV::sec_level(),
     )?;
 
-    Ok(&output_buf[..PV::sec_level().cipher_text_bytes()])
+    Ok(())
 }
 
-pub fn decrypt<'a, PV>(
+// pub fn decrypt<'a, PV>(
+pub fn decrypt<PV>(
     priv_key: &PrivateKey<PV>,
     ciphertext: &[u8],
-    output_buf: &'a mut [u8],
-) -> Result<&'a [u8], TryFromIntError>
+    // output_buf: &'a mut [u8],
+    output_buf: &mut [u8],
+// ) -> Result<&'a [u8], TryFromIntError>
+) -> Result<(), TryFromIntError>
 where
-    PV: PolyVecOperations + GetSecLevel + Default + Iterator<Item = Poly> + Copy,
+    PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
 {
     let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
     let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
@@ -168,7 +174,7 @@ where
 
     let mut v = Poly::new();
     v.decompress(
-        &ciphertext[poly_vec_compressed_bytes..poly_compressed_bytes],
+        &ciphertext[poly_vec_compressed_bytes..poly_vec_compressed_bytes + poly_compressed_bytes],
         &PV::sec_level(),
     )?;
 
@@ -183,7 +189,7 @@ where
 
     message.write_msg(output_buf)?;
 
-    Ok(output_buf)
+    Ok(())
 }
 
 // fn test() {

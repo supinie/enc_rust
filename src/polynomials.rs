@@ -107,11 +107,13 @@ impl Poly {
     // Packs given poly into a 384-byte (POLYBYTES size) buffer
     // Example:
     // poly.pack(buf);
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_possible_wrap)]
     pub(crate) fn pack(&self, buf: &mut [u8]) {
         for i in 0..N / 2 {
-            let t0 = self.coeffs[2 * i];
-            let t1 = self.coeffs[2 * i + 1];
+            let mut t0 = self.coeffs[2 * i];
+            t0 += (t0 >> 15) & Q as i16;
+            let mut t1 = self.coeffs[2 * i + 1];
+            t1 += (t1 >> 15) & Q as i16;
 
             buf[3 * i] = t0 as u8;
             buf[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
@@ -126,11 +128,12 @@ impl Poly {
         for i in 0..N / 2 {
             self.coeffs[2 * i] = i16::from(buf[3 * i]) | ((i16::from(buf[3 * i + 1]) << 8) & 0xfff);
             self.coeffs[2 * i + 1] =
-                i16::from(buf[3 * i + 1] >> 4) | (i16::from(buf[3 * i + 2]) << 4);
+                i16::from(buf[3 * i + 1] >> 4) | ((i16::from(buf[3 * i + 2]) << 4) & 0xfff);
         }
     }
 
     // Converts a message buffer into a polynomial
+    // msg should be of length SYMBYTES (32)
     // Example:
     // poly.read_msg(msg_buf);
     pub(crate) fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
@@ -143,7 +146,7 @@ impl Poly {
         Ok(())
     }
 
-    // Convert a given polynomial into a 32-byte message
+    // Convert a given polynomial into a SYMBYTES (32-byte) message
     // Example:
     // poly.write_msg(msg_buf);
     pub(crate) fn write_msg(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
@@ -163,6 +166,7 @@ impl Poly {
 
     // Decompresses buffer into a polynomial
     // is dependent on the security level
+    // buf should be of length poly_compressed_bytes
     // Example:
     // poly.decompress(buf, k);
     pub(crate) fn decompress(
@@ -206,7 +210,8 @@ impl Poly {
         }
     }
 
-    // Compress selfnomial to a buffer
+    // Compress polynomial to a buffer
+    // buf must have space for poly_compressed_bytes
     // Example:
     // self.compress(buf);
     pub(crate) fn compress(

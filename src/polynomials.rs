@@ -178,11 +178,10 @@ impl Poly {
 
         match sec_level {
             SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-                for i in 0..N / 2 {
-                    self.coeffs[2 * i] = i16::try_from((usize::from(buf[k] & 15) * Q + 8) >> 4)?;
+                for (i, &byte) in buf.iter().take(N / 2).enumerate() {
+                    self.coeffs[2 * i] = i16::try_from((usize::from(byte & 15) * Q + 8) >> 4)?;
                     self.coeffs[2 * i + 1] =
-                        i16::try_from((usize::from(buf[k] >> 4) * Q + 8) >> 4)?;
-                    k += 1;
+                        i16::try_from((usize::from(byte >> 4) * Q + 8) >> 4)?;
                 }
                 Ok(())
             }
@@ -234,10 +233,13 @@ impl Poly {
                                 & 15,
                         )?;
                     }
-                    buf[k] = t[0] | (t[1] << 4);
-                    buf[k + 1] = t[2] | (t[3] << 4);
-                    buf[k + 2] = t[4] | (t[5] << 4);
-                    buf[k + 3] = t[6] | (t[7] << 4);
+
+                    buf[k..k + 4].copy_from_slice(&[
+                        t[0] | (t[1] << 4),
+                        t[2] | (t[3] << 4),
+                        t[4] | (t[5] << 4),
+                        t[6] | (t[7] << 4),
+                    ]);
                     k += 4;
                 }
                 Ok(())
@@ -253,11 +255,14 @@ impl Poly {
                                 & 31,
                         )?;
                     }
-                    buf[k] = t[0] | (t[1] << 5);
-                    buf[k + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);
-                    buf[k + 2] = (t[3] >> 1) | (t[4] << 4);
-                    buf[k + 3] = (t[4] >> 4) | (t[5] << 1) | (t[6] << 6);
-                    buf[k + 4] = (t[6] >> 2) | (t[7] << 3);
+
+                    buf[k..k + 5].copy_from_slice(&[
+                        t[0] | (t[1] << 5),
+                        (t[1] >> 3) | (t[2] << 2) | (t[3] << 7),
+                        (t[3] >> 1) | (t[4] << 4),
+                        (t[4] >> 4) | (t[5] << 1) | (t[6] << 6),
+                        (t[6] >> 2) | (t[7] << 3),
+                    ]);
                     k += 5;
                 }
                 Ok(())

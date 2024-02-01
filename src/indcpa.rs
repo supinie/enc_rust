@@ -110,10 +110,13 @@ where
     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
+    let mut m = Poly::new();
+    m.read_msg(plaintext)?;
+
     let mut rh = PV::new_filled();
     rh.derive_noise(seed, 0, PV::sec_level().eta_1());
     rh.ntt();
-    rh.barrett_reduce();
+    // rh.barrett_reduce();
 
     let k_value: u8 = PV::sec_level().k().into();
     let mut error_1 = PV::new_filled();
@@ -125,27 +128,25 @@ where
     for (mut poly, vec) in u.into_iter().zip(pub_key.a_t) {
         poly.inner_product_pointwise(vec, rh);
     }
-    u.barrett_reduce();
     u.inv_ntt();
-
     u.add(error_1);
+    u.barrett_reduce();
+
     let mut v = Poly::new();
     v.inner_product_pointwise(pub_key.noise, rh);
-    v.barrett_reduce();
+    // v.barrett_reduce();
     v.inv_ntt();
-
-    let mut m = Poly::new();
-    m.read_msg(plaintext)?;
 
     v.add(&m);
     v.add(&error_2);
 
-    u.normalise();
-    v.normalise();
+    v.barrett_reduce();
+
+    // u.normalise();
+    // v.normalise();
 
     let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
-    let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
-    u.compress(&mut output_buf[..poly_vec_compressed_bytes])?;
+    u.compress(output_buf)?;
     v.compress(
         &mut output_buf[poly_vec_compressed_bytes..],
         &PV::sec_level(),

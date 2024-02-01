@@ -2,9 +2,11 @@ use more_asserts::assert_ge;
 
 use crate::params::Q;
 
-// given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
-// Example:
-// let x = montgomery_reduce(y);
+/// given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
+/// Example:
+/// ```
+/// let x = montgomery_reduce(5); //TODO: Tris broke this to remind you to make doctests!
+/// ```
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;

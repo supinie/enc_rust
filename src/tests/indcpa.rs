@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod indcpa_tests {
-    use crate::{indcpa::*, vectors::PolyVec512, matrix::{Mat512, MatOperations}, tests::sample::sample_tests::generate_random_seed, polynomials::Poly, params::N};
+    use crate::{indcpa::*, vectors::PolyVec512, matrix::{Mat512, MatOperations}, tests::sample::sample_tests::generate_random_seed, polynomials::Poly, params::{N, SYMBYTES}};
 
     #[test]
     fn priv_pack_unpack() {
@@ -43,13 +43,13 @@ mod indcpa_tests {
 
         let (priv_key, pub_key) = generate_key_pair::<PolyVec512, Mat512>(&seed);
 
-        let mut ciphertext = [0u8; 768];
+        let mut ciphertext = [0u8; 768]; //indcpa bytes
 
         let _ = encrypt(&pub_key, &plaintext, &seed, &mut ciphertext);
 
-        let mut message = [0u8; 768];
+        let mut message = [0u8; SYMBYTES]; // SYMBYTES
         let _ = decrypt(&priv_key, &ciphertext, &mut message);
 
-        assert_eq!(message, ciphertext);
+        assert_eq!(message, plaintext);
     }
 }

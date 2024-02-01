@@ -32,6 +32,7 @@ impl GetSecLevel for PolyVec1024 {
 trait SameSecLevel {}
 
 pub trait PolyVecOperations {
+    fn new_filled() -> Self;
     fn add(&mut self, addend: Self);
     fn barrett_reduce(&mut self);
     fn normalise(&mut self);
@@ -47,6 +48,14 @@ pub trait PolyVecOperations {
 macro_rules! impl_polyvec {
     ($variant:ty) => {
         impl PolyVecOperations for $variant {
+            fn new_filled() -> Self {
+                let mut poly_vec = Self::default();
+                for _ in 0..poly_vec.capacity() {
+                    poly_vec.push(Poly::new());
+                }
+                poly_vec
+            }
+
             fn add(&mut self, addend: Self) {
                 for (augend_poly, addend_poly) in self.iter_mut().zip(addend.iter()) {
                     augend_poly.add(&addend_poly);

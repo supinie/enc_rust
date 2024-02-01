@@ -8,16 +8,16 @@ use crate::{
 };
 use sha3::{Digest, Sha3_512};
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Debug, Eq)]
 pub struct PrivateKey<PV: PolyVecOperations> {
-    secret: PV,
+    pub secret: PV,
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Debug, Eq)]
 pub struct PublicKey<PV: PolyVecOperations, M: MatOperations + LinkSecLevel<PV>> {
-    rho: [u8; 32],
-    noise: PV,
-    a_t: M,
+    pub rho: [u8; 32],
+    pub noise: PV,
+    pub a_t: M,
 }
 
 impl<PV: PolyVecOperations> PrivateKey<PV> {
@@ -56,11 +56,11 @@ where
 {
     let mut pub_key = PublicKey {
         rho: [0u8; 32],
-        noise: PV::default(),
+        noise: PV::new_filled(),
         a_t: M::new(),
     };
     let mut priv_key = PrivateKey {
-        secret: PV::default(),
+        secret: PV::new_filled(),
     };
 
     let mut expanded_seed = [0u8; 64];
@@ -84,7 +84,7 @@ where
         poly.mont_form();
     }
 
-    let mut error = PV::default();
+    let mut error = PV::new_filled();
     let k_value: u8 = M::sec_level().k().into();
     error.derive_noise(sigma, k_value, M::sec_level().eta_1());
     error.ntt();
@@ -110,18 +110,18 @@ where
     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
-    let mut rh = PV::default();
+    let mut rh = PV::new_filled();
     rh.derive_noise(seed, 0, PV::sec_level().eta_1());
     rh.ntt();
     rh.barrett_reduce();
 
     let k_value: u8 = PV::sec_level().k().into();
-    let mut error_1 = PV::default();
+    let mut error_1 = PV::new_filled();
     error_1.derive_noise(seed, k_value, PV::sec_level().eta_2());
     let mut error_2 = Poly::new();
     error_2.derive_noise(seed, 2 * k_value, PV::sec_level().eta_2());
 
-    let mut u = PV::default();
+    let mut u = PV::new_filled();
     for (mut poly, vec) in u.into_iter().zip(pub_key.a_t) {
         poly.inner_product_pointwise(vec, rh);
     }
@@ -147,7 +147,7 @@ where
     let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
     u.compress(&mut output_buf[..poly_vec_compressed_bytes])?;
     v.compress(
-        &mut output_buf[poly_vec_compressed_bytes..poly_vec_compressed_bytes + poly_compressed_bytes],
+        &mut output_buf[poly_vec_compressed_bytes..],
         &PV::sec_level(),
     )?;
 
@@ -168,7 +168,7 @@ where
     let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
     let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
 
-    let mut u = PV::default();
+    let mut u = PV::new_filled();
     u.decompress(&ciphertext[..poly_vec_compressed_bytes])?;
     u.ntt();
 

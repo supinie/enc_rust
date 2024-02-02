@@ -1,12 +1,10 @@
-use more_asserts::assert_ge;
-
 use crate::params::Q;
 
-/// given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
-/// Example:
-/// ```
-/// let x = montgomery_reduce(5); //TODO: Tris broke this to remind you to make doctests!
-/// ```
+// given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
+// Example:
+// ```
+// let x = montgomery_reduce(5); //TODO: Tris broke this to remind you to make doctests!
+// ```
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;
@@ -52,14 +50,13 @@ pub fn barrett_reduce(x: i16) -> i16 {
 // Example:
 // let x = conditional_sub_q(y);
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-pub fn conditional_sub_q(x: i16) -> i16 {
+pub const fn conditional_sub_q(x: i16) -> i16 {
     const Q_16: i16 = Q as i16;
-    assert_ge!(
-        x,
-        -29439,
-        "x must be >= to -29439 when applying conditional subtract q"
-    );
-    let mut result = x - Q_16;
-    result += (result >> 15) & Q_16;
-    result
+    if x < Q_16 {
+        x
+    } else {
+        let mut result = x - Q_16;
+        result += (result >> 15) & Q_16;
+        result
+    }
 }

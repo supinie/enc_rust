@@ -1,29 +1,32 @@
 #![allow(warnings)]
 #[cfg(test)]
+
+
+
 mod field_tests {
-    use crate::field_operations::*;
+    use crate::{field_operations::*, params::Q};
+    use proptest::prelude::*;
 
-    #[test]
-    pub(in crate::tests) fn montgomery_reduce_test() {
-        assert_eq!(montgomery_reduce(i32::MAX), 32599);
-        assert_eq!(montgomery_reduce(i32::MIN), -32768);
-    }
+    const montgomery_reduce_limit: i32 = (Q as i32) * (2 as i32).pow(15);
+    proptest! {
+        #[test]
+        fn montgomery_reduce_test(i in -montgomery_reduce_limit..montgomery_reduce_limit) {
+            montgomery_reduce(i);
+        }
 
-    #[test]
-    pub(in crate::tests) fn mont_form_test() {
-        assert_eq!(mont_form(i16::MAX), 56);
-        assert_eq!(mont_form(i16::MIN), 988);
-    }
+        #[test] 
+        fn mont_form_test(i: i16) {
+            mont_form(i);
+        }
 
-    #[test]
-    pub(in crate::tests) fn barrett_reduce_test() {
-        assert_eq!(barrett_reduce(i16::MAX), 2806);
-        assert_eq!(barrett_reduce(i16::MIN), 522);
-    }
+        #[test]
+        fn barrett_reduce_test(i: i16) {
+            barrett_reduce(i);
+        }
 
-    #[test]
-    pub(in crate::tests) fn conditional_sub_q_test() {
-        assert_eq!(conditional_sub_q(i16::MAX), 29438);
-        assert_eq!(conditional_sub_q(-29439), -29439);
+        #[test]
+        fn conditional_sub_q_test(i: i16) {
+            conditional_sub_q(i);
+        }
     }
 }

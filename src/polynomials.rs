@@ -53,7 +53,7 @@ impl Poly {
 
     // Barrett reduces all coefficients of given polynomial
     // Example:
-    // poly.reduce();
+    // poly.barrett_reduce();
     pub(crate) fn barrett_reduce(&mut self) {
         for coeff in &mut self.coeffs {
             *coeff = barrett_reduce(*coeff);
@@ -74,6 +74,25 @@ impl Poly {
     // Example:
     // poly1.pointwise_mul(&poly2);
     pub(crate) fn pointwise_mul(&mut self, x: &Self) {
+        for ((chunk, x_chunk), &zeta) in self.coeffs.chunks_mut(4).zip(x.coeffs.chunks(4)).zip(ZETAS.iter().skip(64)) {
+            let mut temp = [0i16; 4];
+
+            for (i, coeff) in temp.iter_mut().enumerate() {
+                if i % 2 == 0 {
+                    *coeff = montgomery_reduce(i32::from(chunk[i + 1]) * i32::from(x_chunk[i + 1]));
+                    *coeff = montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
+                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i]));
+                } else {
+                    *coeff = montgomery_reduce(i32::from(chunk[i - 1]) * i32::from(x_chunk[i]));
+                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
+                }
+            }
+            // WHY IS EVERY THIRD FAILING????????
+            chunk.copy_from_slice(&temp); 
+        }
+    }
+
+    pub fn pointwise_mul_alt(&mut self, x: &Self) {
         let mut j: usize = 64;
 
         for i in (0..N).step_by(4) {

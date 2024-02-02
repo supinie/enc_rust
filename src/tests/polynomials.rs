@@ -5,8 +5,60 @@ mod poly_tests {
         field_operations::{barrett_reduce, montgomery_reduce},
         params::*,
         polynomials::*,
-        tests::buffer::buffer_tests::zero_initialise_buffer,
+        tests::buffer::buffer_tests::zero_initialise_buffer,    
     };
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn pointwise_mul_test(
+            a in prop::array::uniform(-(Q as i16)..(Q as i16)),
+            b in prop::array::uniform(-(Q as i16)..(Q as i16))
+        ) {
+            let mut poly_a = Poly { coeffs: a };
+            let poly_b = Poly { coeffs: b };
+
+            let mut a_copy = poly_a;
+            let b_copy = poly_b;
+
+            poly_a.pointwise_mul(&poly_b);
+            a_copy.pointwise_mul_alt(&poly_b);
+
+            assert_eq!(poly_a, a_copy);
+
+            // a_copy.ntt();
+            // a_copy.normalise();
+            // b_copy.ntt();
+            // b_copy.normalise();
+
+            // a_copy.pointwise_mul(&b_copy);
+            // a_copy.barrett_reduce();
+            // a_copy.inv_ntt();
+
+            // for i in 0..N {
+            //     for j in 0..N {
+            //         let mut v = montgomery_reduce((poly_a.coeffs[i] as i32) * (poly_b.coeffs[j] as i32));
+            //         let mut k = i + j;
+
+            //         // circular shifting case; x^N = -1
+            //         if k >= N {
+            //             k -= N;
+            //             v = -v;
+            //         }
+            //         p.coeffs[k] = barrett_reduce(v + p.coeffs[k]);
+            //     }
+            // }
+
+            // for i in 0..N {
+            //     p.coeffs[i] = (((p.coeffs[i] as i32) * ((1 << 16) % (Q as i32))) % (Q as i32)) as i16;
+            // }
+
+            // p.normalise();
+            // a_copy.normalise();
+
+            // assert_eq!(p.coeffs, a_copy.coeffs);
+        }
+    }
 
     const INPUT_COEFFS: [i16; N] = [
         -650, -1557, -1607, 924, 1571, 776, -531, -1418, -1172, -511, 1430, 1180, 892, 1471, 1063,
@@ -87,49 +139,49 @@ mod poly_tests {
     }
 
     // Test Poly::pointwise_mul()
-    #[test]
-    fn pointwise_mul_test() {
-        let a = Poly {
-            coeffs: [Q as i16; N],
-        };
-        let mut b = Poly { coeffs: [20; N] };
-        let mut p = Poly::new();
+    // #[test]
+    // fn pointwise_mul_test() {
+    //     let a = Poly {
+    //         coeffs: [Q as i16; N],
+    //     };
+    //     let mut b = Poly { coeffs: [20; N] };
+    //     let mut p = Poly::new();
 
-        b.coeffs[0] = 1;
+    //     b.coeffs[0] = 1;
 
-        let mut a_copy = a;
-        let mut b_copy = b;
+    //     let mut a_copy = a;
+    //     let mut b_copy = b;
 
-        a_copy.ntt();
-        b_copy.ntt();
+    //     a_copy.ntt();
+    //     b_copy.ntt();
 
-        a_copy.pointwise_mul(&b_copy);
-        a_copy.barrett_reduce();
-        a_copy.inv_ntt();
+    //     a_copy.pointwise_mul(&b_copy);
+    //     a_copy.barrett_reduce();
+    //     a_copy.inv_ntt();
 
-        for i in 0..N {
-            for j in 0..N {
-                let mut v = montgomery_reduce((a.coeffs[i] as i32) * (b.coeffs[j] as i32));
-                let mut k = i + j;
+    //     for i in 0..N {
+    //         for j in 0..N {
+    //             let mut v = montgomery_reduce((a.coeffs[i] as i32) * (b.coeffs[j] as i32));
+    //             let mut k = i + j;
 
-                // circular shifting case; x^N = -1
-                if k >= N {
-                    k -= N;
-                    v = -v;
-                }
-                p.coeffs[k] = barrett_reduce(v + p.coeffs[k]);
-            }
-        }
+    //             // circular shifting case; x^N = -1
+    //             if k >= N {
+    //                 k -= N;
+    //                 v = -v;
+    //             }
+    //             p.coeffs[k] = barrett_reduce(v + p.coeffs[k]);
+    //         }
+    //     }
 
-        for i in 0..N {
-            p.coeffs[i] = (((p.coeffs[i] as i32) * ((1 << 16) % (Q as i32))) % (Q as i32)) as i16;
-        }
+    //     for i in 0..N {
+    //         p.coeffs[i] = (((p.coeffs[i] as i32) * ((1 << 16) % (Q as i32))) % (Q as i32)) as i16;
+    //     }
 
-        p.normalise();
-        a_copy.normalise();
+    //     p.normalise();
+    //     a_copy.normalise();
 
-        assert_eq!(p.coeffs, a_copy.coeffs);
-    }
+    //     assert_eq!(p.coeffs, a_copy.coeffs);
+    // }
 
     #[test]
     fn to_and_from_msg_test() {

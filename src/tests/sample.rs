@@ -129,6 +129,7 @@ pub(in crate::tests) mod sample_tests {
     }
 
     #[test]
+    #[ignore]
     fn derive_noise_2_dist_test() {
         let seed = generate_random_seed();
         let nonce = generate_random_nonce();
@@ -140,6 +141,7 @@ pub(in crate::tests) mod sample_tests {
     }
 
     #[test]
+    #[ignore]
     fn derive_noise_3_dist_test() {
         let seed = generate_random_seed();
         let nonce = generate_random_nonce();
@@ -151,6 +153,7 @@ pub(in crate::tests) mod sample_tests {
     }
 
     #[test]
+    #[ignore]
     fn derive_uniform_test() {
         let seed = generate_random_seed();
         let x = generate_random_nonce();

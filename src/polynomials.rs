@@ -1,7 +1,7 @@
 use crate::{
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
     ntt::ZETAS,
-    params::{SecurityLevel, N, Q},
+    params::{SecurityLevel, N, Q, SYMBYTES},
 };
 use core::num::TryFromIntError;
 
@@ -79,47 +79,16 @@ impl Poly {
 
             for (i, coeff) in temp.iter_mut().enumerate() {
                 if i % 2 == 0 {
+                    let sign: i16 = if i == 2 { -1 } else { 1 };
                     *coeff = montgomery_reduce(i32::from(chunk[i + 1]) * i32::from(x_chunk[i + 1]));
-                    *coeff = montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
+                    *coeff = sign * montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
                     *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i]));
                 } else {
                     *coeff = montgomery_reduce(i32::from(chunk[i - 1]) * i32::from(x_chunk[i]));
                     *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
                 }
             }
-            // WHY IS EVERY THIRD FAILING????????
             chunk.copy_from_slice(&temp); 
-        }
-    }
-
-    pub fn pointwise_mul_alt(&mut self, x: &Self) {
-        let mut j: usize = 64;
-
-        for i in (0..N).step_by(4) {
-            let zeta = i32::from(ZETAS[j]);
-            j += 1;
-
-            let mut p0 =
-                montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i + 1]));
-            p0 = montgomery_reduce(i32::from(p0) * zeta);
-            p0 += montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i]));
-
-            let mut p1 = montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
-            p1 += montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i]));
-
-            let mut p2 =
-                montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 3]));
-            p2 = -montgomery_reduce(i32::from(p2) * zeta);
-            p2 += montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 2]));
-
-            let mut p3 =
-                montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 3]));
-            p3 += montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 2]));
-
-            self.coeffs[i] = p0;
-            self.coeffs[i + 1] = p1;
-            self.coeffs[i + 2] = p2;
-            self.coeffs[i + 3] = p3;
         }
     }
 
@@ -153,10 +122,11 @@ impl Poly {
 
     // Converts a message buffer into a polynomial
     // msg should be of length SYMBYTES (32)
+    // poly should be normalised
     // Example:
     // poly.read_msg(msg_buf);
     pub(crate) fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
-        for i in 0..N / 8 {
+        for i in 0..SYMBYTES {
             for j in 0..8 {
                 let mask = ((i16::from(msg[i]) >> j) & 1).wrapping_neg();
                 self.coeffs[8 * i + j] = mask & i16::try_from((Q + 1) / 2)?;

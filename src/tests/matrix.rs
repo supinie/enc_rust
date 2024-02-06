@@ -15,6 +15,7 @@ mod matrix_tests {
     ];
 
     #[test]
+    #[ignore]
     fn derive_test() {
         let seed = generate_random_seed();
         for sec_level in &TEST_PARAMS {

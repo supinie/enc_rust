@@ -24,6 +24,10 @@ impl Poly {
         Self { coeffs: [0; N] }
     }
 
+    pub(crate) fn from(array: [i16; N]) -> Self {
+        Self { coeffs: array }
+    }
+
     // Sets self to self + x
     // Example:
     // poly1.add(&poly2);

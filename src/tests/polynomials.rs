@@ -52,12 +52,18 @@ mod poly_tests {
 
     proptest! {
         #[test]
+        fn from_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+            let mut poly = Poly::from(a);
+            assert_eq!(a, poly.coeffs);
+        }
+
+        #[test]
         fn pointwise_mul_test(
             a in prop::array::uniform(-(Q as i16)..(Q as i16)),
             b in prop::array::uniform(-(Q as i16)..(Q as i16))
         ) {
-            let mut poly_a = Poly { coeffs: a };
-            let poly_b = Poly { coeffs: b };
+            let mut poly_a = Poly::from(a);
+            let poly_b = Poly::from(b);
 
             let mut a_copy = poly_a;
             let b_copy = poly_b;
@@ -70,7 +76,7 @@ mod poly_tests {
 
         #[test]
         fn to_and_from_msg_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
-            let mut poly = Poly { coeffs: a};
+            let mut poly = Poly::from(a);
             poly.normalise();
             let mut msg = zero_initialise_buffer(32);
 
@@ -93,8 +99,8 @@ mod poly_tests {
             a in prop::array::uniform(-(Q as i16)..(Q as i16)),
             b in prop::array::uniform(-(Q as i16)..(Q as i16))
         ) {
-            let mut poly_a = Poly { coeffs: a };
-            let poly_b = Poly { coeffs: b };
+            let mut poly_a = Poly::from(a);
+            let poly_b = Poly::from(b);
 
             poly_a.add(&poly_b);
         }
@@ -104,15 +110,15 @@ mod poly_tests {
             a in prop::array::uniform(-(Q as i16)..(Q as i16)),
             b in prop::array::uniform(-(Q as i16)..(Q as i16))
         ) {
-            let mut poly_a = Poly { coeffs: a };
-            let poly_b = Poly { coeffs: b };
+            let mut poly_a = Poly::from(a);
+            let poly_b = Poly::from(b);
 
             poly_a.sub(&poly_b);
         }
 
         #[test]
         fn mont_form_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
-            let mut poly = Poly { coeffs: a };
+            let mut poly = Poly::from(a);
             poly.mont_form();
         }
     }

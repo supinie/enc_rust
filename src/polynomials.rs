@@ -97,6 +97,7 @@ impl Poly {
     }
 
     // Packs given poly into a 384-byte (POLYBYTES size) buffer
+    // must be normalised
     // Example:
     // poly.pack(buf);
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_possible_wrap)]

@@ -2,6 +2,7 @@
 pub(in crate::tests) mod buffer_tests {
     use crate::{params::*, polynomials::*, vectors::*};
     use rand::Rng;
+    use proptest::prelude::*;
     extern crate std;
     use std::vec;
     use std::vec::Vec;
@@ -27,17 +28,32 @@ pub(in crate::tests) mod buffer_tests {
         data
     }
 
-    #[test]
-    fn pack_unpack_poly_test() {
-        let poly = Poly { coeffs: [20; N] };
-        let mut buffer = [0; POLYBYTES];
-        poly.pack(&mut buffer);
+    proptest! {
+        #[test]
+        fn pack_unpack_poly_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+            let mut poly = Poly::from(a);
+            poly.normalise();
+            let mut buffer = [0; POLYBYTES];
+            poly.pack(&mut buffer);
 
-        let mut comp_poly = Poly::new();
-        comp_poly.unpack(&buffer);
+            let mut comp_poly = Poly::new();
+            comp_poly.unpack(&buffer);
 
-        assert_eq!(comp_poly.coeffs, poly.coeffs);
+            assert_eq!(poly, comp_poly);
+        }
     }
+
+    // #[test]
+    // fn pack_unpack_poly_test() {
+    //     let poly = Poly { coeffs: [20; N] };
+    //     let mut buffer = [0; POLYBYTES];
+    //     poly.pack(&mut buffer);
+
+    //     let mut comp_poly = Poly::new();
+    //     comp_poly.unpack(&buffer);
+
+    //     assert_eq!(comp_poly.coeffs, poly.coeffs);
+    // }
 
     #[test]
     fn compress_decompress_poly_test() {

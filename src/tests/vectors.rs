@@ -7,7 +7,6 @@ mod vec_tests {
         polynomials::*,
         vectors::*,
     };
-    use proptest::prelude::*;
 
     static TEST_PARAMS: [SecurityLevel; 3] = [
         SecurityLevel::new(K::Two),

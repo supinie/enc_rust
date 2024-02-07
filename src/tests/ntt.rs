@@ -1,14 +1,14 @@
 #![allow(warnings)]
 #[cfg(test)]
 mod ntt_tests {
-    use crate::{params::*, polynomials::*};
+    use crate::{params::*, polynomials::*, tests::polynomials::poly_tests::new_poly_array};
     use more_asserts::assert_lt;
     use proptest::prelude::*;
 
     proptest! {
         // Our poly's are over Z_q and so we only need to test for |coefficients| <= q
         #[test]
-        fn ntt_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn ntt_test(a in new_poly_array()) {
             let mut poly = Poly { coeffs: a };
             poly.ntt();
 
@@ -18,7 +18,7 @@ mod ntt_tests {
         }
 
         #[test]
-        fn inv_ntt_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn inv_ntt_test(a in new_poly_array()) {
             let mut poly = Poly { coeffs: a };
             poly.inv_ntt();
 
@@ -28,7 +28,7 @@ mod ntt_tests {
         }
 
         #[test]
-        fn ntt_inv_ntt_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn ntt_inv_ntt_test(a in new_poly_array()) {
             let mut input_poly = Poly { coeffs: a };
             let mut original_input = input_poly;
             original_input.normalise();

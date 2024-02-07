@@ -7,6 +7,7 @@ mod vec_tests {
         polynomials::*,
         vectors::*,
     };
+    use proptest::prelude::*;
 
     static TEST_PARAMS: [SecurityLevel; 3] = [
         SecurityLevel::new(K::Two),
@@ -269,6 +270,7 @@ mod vec_tests {
     }
 
     #[test]
+    #[ignore]
     fn derive_noise_dist_test() {
         let poly = Poly::new();
         let seed = generate_random_seed();

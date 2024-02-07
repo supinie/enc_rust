@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub(in crate::tests) mod buffer_tests {
-    use crate::{params::*, polynomials::*, vectors::*};
+    use crate::{params::*, polynomials::*, vectors::*, tests::{params::params_tests::sec_level_strategy, polynomials::poly_tests::new_poly_array}};
     use rand::Rng;
     use proptest::prelude::*;
     extern crate std;
@@ -30,7 +30,7 @@ pub(in crate::tests) mod buffer_tests {
 
     proptest! {
         #[test]
-        fn pack_unpack_poly_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn pack_unpack_poly_test(a in new_poly_array()) {
             let mut poly = Poly::from(a);
             poly.normalise();
             let mut buffer = [0; POLYBYTES];
@@ -41,34 +41,22 @@ pub(in crate::tests) mod buffer_tests {
 
             assert_eq!(poly, comp_poly);
         }
-    }
 
-    // #[test]
-    // fn pack_unpack_poly_test() {
-    //     let poly = Poly { coeffs: [20; N] };
-    //     let mut buffer = [0; POLYBYTES];
-    //     poly.pack(&mut buffer);
-
-    //     let mut comp_poly = Poly::new();
-    //     comp_poly.unpack(&buffer);
-
-    //     assert_eq!(comp_poly.coeffs, poly.coeffs);
-    // }
-
-    #[test]
-    fn compress_decompress_poly_test() {
-        for sec_level in &TEST_PARAMS {
+        #[test]
+        fn compress_decompress_poly_test(
+            sec_level in sec_level_strategy()
+        ) {
             let buf = generate_random_buffer(sec_level.poly_compressed_bytes());
             let mut buf_comp = zero_initialise_buffer(sec_level.poly_compressed_bytes());
-
             let mut poly = Poly::new();
 
-            let _ = poly.decompress(&buf, sec_level);
-            let _ = poly.compress(&mut buf_comp, sec_level);
+            let _ = poly.decompress(&buf, &sec_level);
+            let _ = poly.compress(&mut buf_comp, &sec_level);
 
-            assert_eq!(buf_comp, buf);
+            assert_eq!(buf, buf_comp);
         }
     }
+
 
     #[test]
     fn pack_unpack_vec_test() {

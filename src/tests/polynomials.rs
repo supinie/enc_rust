@@ -1,6 +1,6 @@
 #![allow(warnings)]
 #[cfg(test)]
-mod poly_tests {
+pub(in crate::tests) mod poly_tests {
     use crate::{
         field_operations::{barrett_reduce, montgomery_reduce},
         params::*,
@@ -9,6 +9,10 @@ mod poly_tests {
         tests::buffer::buffer_tests::zero_initialise_buffer,    
     };
     use proptest::prelude::*;
+
+    pub(in crate::tests) fn new_poly_array() -> impl Strategy<Value = [i16; N]> {
+        prop::array::uniform(-(Q as i16)..(Q as i16))
+    }
 
     impl Poly {
         fn pointwise_mul_alt(&mut self, x: &Self) {
@@ -52,15 +56,15 @@ mod poly_tests {
 
     proptest! {
         #[test]
-        fn from_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn from_test(a in new_poly_array()) {
             let mut poly = Poly::from(a);
             assert_eq!(a, poly.coeffs);
         }
 
         #[test]
         fn pointwise_mul_test(
-            a in prop::array::uniform(-(Q as i16)..(Q as i16)),
-            b in prop::array::uniform(-(Q as i16)..(Q as i16))
+            a in new_poly_array(),
+            b in new_poly_array()
         ) {
             let mut poly_a = Poly::from(a);
             let poly_b = Poly::from(b);
@@ -75,10 +79,10 @@ mod poly_tests {
         }
 
         #[test]
-        fn to_and_from_msg_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn to_and_from_msg_test(a in new_poly_array()) {
             let mut poly = Poly::from(a);
             poly.normalise();
-            let mut msg = zero_initialise_buffer(32);
+            let mut msg = [0u8; POLYBYTES];
 
             poly.write_msg(&mut msg);
             
@@ -96,8 +100,8 @@ mod poly_tests {
 
         #[test]
         fn add_test(
-            a in prop::array::uniform(-(Q as i16)..(Q as i16)),
-            b in prop::array::uniform(-(Q as i16)..(Q as i16))
+            a in new_poly_array(),
+            b in new_poly_array()
         ) {
             let mut poly_a = Poly::from(a);
             let poly_b = Poly::from(b);
@@ -107,8 +111,8 @@ mod poly_tests {
 
         #[test]
         fn sub_test(
-            a in prop::array::uniform(-(Q as i16)..(Q as i16)),
-            b in prop::array::uniform(-(Q as i16)..(Q as i16))
+            a in new_poly_array(),
+            b in new_poly_array()
         ) {
             let mut poly_a = Poly::from(a);
             let poly_b = Poly::from(b);
@@ -117,7 +121,7 @@ mod poly_tests {
         }
 
         #[test]
-        fn mont_form_test(a in prop::array::uniform(-(Q as i16)..(Q as i16))) {
+        fn mont_form_test(a in new_poly_array()) {
             let mut poly = Poly::from(a);
             poly.mont_form();
         }

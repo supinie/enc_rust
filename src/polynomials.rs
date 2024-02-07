@@ -115,6 +115,7 @@ impl Poly {
     }
 
     // Unpacks a buffer of bytes into a polynomial
+    // poly will NOT be normalised, but 0 <= coeffs < 4096
     // Example:
     // poly.unpack(buf);
     pub(crate) fn unpack(&mut self, buf: &[u8]) {
@@ -127,7 +128,7 @@ impl Poly {
 
     // Converts a message buffer into a polynomial
     // msg should be of length SYMBYTES (32)
-    // poly should be normalised
+    // poly will not be normalised
     // Example:
     // poly.read_msg(msg_buf);
     pub(crate) fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
@@ -141,6 +142,7 @@ impl Poly {
     }
 
     // Convert a given polynomial into a SYMBYTES (32-byte) message
+    // poly should be normalised
     // Example:
     // poly.write_msg(msg_buf);
     pub(crate) fn write_msg(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
@@ -161,6 +163,7 @@ impl Poly {
     // Decompresses buffer into a polynomial
     // is dependent on the security level
     // buf should be of length poly_compressed_bytes
+    // output poly is normalised
     // Example:
     // poly.decompress(buf, k);
     pub(crate) fn decompress(
@@ -205,6 +208,7 @@ impl Poly {
 
     // Compress polynomial to a buffer
     // buf must have space for poly_compressed_bytes
+    // poly should be normalised
     // Example:
     // self.compress(buf);
     pub(crate) fn compress(

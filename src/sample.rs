@@ -1,15 +1,25 @@
 use crate::{
-    params::{Eta, N, Q},
+    params::{Eta, N, Q, SYMBYTES},
     polynomials::Poly,
 };
 use byteorder::{ByteOrder, LittleEndian};
+use rand_core::{CryptoRng, Error, RngCore};
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,
 };
 
+pub fn random_bytes<R>(buf: &mut [u8], len: usize, rng: &mut R) -> Result<(), Error>
+where
+    R: RngCore + CryptoRng,
+{
+    rng.try_fill_bytes(&mut buf[..len])?;
+    Ok(())
+}
+
 impl Poly {
     // Sample our polynomial from a centered binomial distribution
+    // given a uniformly distributed array of bytes
     // n = 4, p = 1/2
     // ie. coefficients are in {-2, -1, 0, 1, 2}
     // with probabilities {1/16, 1/4, 3/8, 1/4, 1/16}
@@ -19,23 +29,22 @@ impl Poly {
         hash.update(seed);
         hash.update(&key_suffix);
 
-        let mut entropy_buf = [0u8; 128];
+        let mut entropy_buf = [0u8; SYMBYTES * 4];
         hash.finalize_xof().read(&mut entropy_buf);
 
-        for i in 0..16 {
-            let coeff_bytes = &entropy_buf[i * 8..(i + 1) * 8];
+        for (i, coeff_bytes) in entropy_buf.chunks_exact(8).enumerate() {
             let coeff_sum = LittleEndian::read_u64(coeff_bytes);
 
             let mut accumulated_sum = coeff_sum & 0x5555_5555_5555_5555;
             accumulated_sum += (coeff_sum >> 1) & 0x5555_5555_5555_5555;
 
             #[allow(clippy::cast_possible_truncation)]
-            for j in 0..16 {
+            for coeff in self.coeffs.iter_mut().skip(16 * i).take(16) {
                 let coeff_a = (accumulated_sum as i16) & 0x3;
                 accumulated_sum >>= 2;
                 let coeff_b = (accumulated_sum as i16) & 0x3;
                 accumulated_sum >>= 2;
-                self.coeffs[16 * i + j] = coeff_a - coeff_b;
+                *coeff = coeff_a - coeff_b;
             }
         }
     }
@@ -50,24 +59,25 @@ impl Poly {
         hash.update(seed);
         hash.update(&key_suffix);
 
-        let mut entropy_buf = [0u8; 192 + 2];
+        let mut entropy_buf = [0u8; SYMBYTES * 6];
         hash.finalize_xof().read(&mut entropy_buf);
 
-        for i in 0..32 {
-            let coeff_bytes = &entropy_buf[i * 6..i * 6 + 8];
-            let coeff_sum = LittleEndian::read_u64(coeff_bytes);
+        for (i, coeff_bytes) in entropy_buf.chunks_exact(6).enumerate() {
+            //must be able to read 8 bytes even though we only use 6.
+            let coeff_sum = LittleEndian::read_u64(&[coeff_bytes, &[0u8; 2]].concat());
 
             let mut accumulated_sum = coeff_sum & 0x2492_4924_9249;
             accumulated_sum += (coeff_sum >> 1) & 0x2492_4924_9249;
             accumulated_sum += (coeff_sum >> 2) & 0x2492_4924_9249;
 
             #[allow(clippy::cast_possible_truncation)]
-            for j in 0..8 {
+            for coeff in self.coeffs.iter_mut().skip(8 * i).take(8) {
                 let coeff_a = (accumulated_sum as i16) & 0x7;
                 accumulated_sum >>= 3;
                 let coeff_b = (accumulated_sum as i16) & 0x7;
                 accumulated_sum >>= 3;
-                self.coeffs[8 * i + j] = coeff_a - coeff_b;
+
+                *coeff = coeff_a - coeff_b;
             }
         }
     }

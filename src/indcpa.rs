@@ -2,7 +2,7 @@ use core::num::TryFromIntError;
 
 use crate::{
     matrix::{MatOperations, New},
-    params::{GetSecLevel, POLYBYTES},
+    params::{GetSecLevel, POLYBYTES, SYMBYTES},
     polynomials::Poly,
     vectors::{LinkSecLevel, PolyVecOperations},
 };
@@ -15,7 +15,7 @@ pub struct PrivateKey<PV: PolyVecOperations> {
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct PublicKey<PV: PolyVecOperations, M: MatOperations + LinkSecLevel<PV>> {
-    pub rho: [u8; 32],
+    pub rho: [u8; SYMBYTES],
     pub noise: PV,
     pub a_t: M,
 }
@@ -55,7 +55,7 @@ where
     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
     let mut pub_key = PublicKey {
-        rho: [0u8; 32],
+        rho: [0u8; SYMBYTES],
         noise: PV::new_filled(),
         a_t: M::new(),
     };
@@ -63,7 +63,7 @@ where
         secret: PV::new_filled(),
     };
 
-    let mut expanded_seed = [0u8; 64];
+    let mut expanded_seed = [0u8; 2 * SYMBYTES];
     let mut hash = Sha3_512::new();
     hash.update(seed);
 
@@ -104,16 +104,19 @@ pub fn encrypt<PV, M>(
     seed: &[u8],
     // output_buf: &'a mut [u8],
     output_buf: &mut [u8],
-// ) -> Result<&'a [u8], TryFromIntError>
+    // ) -> Result<&'a [u8], TryFromIntError>
 ) -> Result<(), TryFromIntError>
 where
     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
+    let mut m = Poly::new();
+    m.read_msg(plaintext)?;
+
     let mut rh = PV::new_filled();
     rh.derive_noise(seed, 0, PV::sec_level().eta_1());
     rh.ntt();
-    rh.barrett_reduce();
+    // rh.barrett_reduce();
 
     let k_value: u8 = PV::sec_level().k().into();
     let mut error_1 = PV::new_filled();
@@ -125,27 +128,25 @@ where
     for (mut poly, vec) in u.into_iter().zip(pub_key.a_t) {
         poly.inner_product_pointwise(vec, rh);
     }
-    u.barrett_reduce();
     u.inv_ntt();
-
     u.add(error_1);
+    u.barrett_reduce();
+
     let mut v = Poly::new();
     v.inner_product_pointwise(pub_key.noise, rh);
-    v.barrett_reduce();
+    // v.barrett_reduce();
     v.inv_ntt();
-
-    let mut m = Poly::new();
-    m.read_msg(plaintext)?;
 
     v.add(&m);
     v.add(&error_2);
 
-    u.normalise();
-    v.normalise();
+    v.barrett_reduce();
+
+    // u.normalise();
+    // v.normalise();
 
     let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
-    let poly_compressed_bytes: usize = PV::sec_level().poly_compressed_bytes();
-    u.compress(&mut output_buf[..poly_vec_compressed_bytes])?;
+    u.compress(output_buf)?;
     v.compress(
         &mut output_buf[poly_vec_compressed_bytes..],
         &PV::sec_level(),
@@ -160,7 +161,7 @@ pub fn decrypt<PV>(
     ciphertext: &[u8],
     // output_buf: &'a mut [u8],
     output_buf: &mut [u8],
-// ) -> Result<&'a [u8], TryFromIntError>
+    // ) -> Result<&'a [u8], TryFromIntError>
 ) -> Result<(), TryFromIntError>
 where
     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,

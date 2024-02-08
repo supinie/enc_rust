@@ -1,7 +1,16 @@
 #![allow(warnings)]
 #[cfg(test)]
-mod params_tests {
+pub(in crate::tests) mod params_tests {
     use crate::params::*;
+    use proptest::prelude::*;
+
+    pub(in crate::tests) fn sec_level_strategy() -> impl Strategy<Value = SecurityLevel> {
+        prop_oneof![
+            Just(SecurityLevel::new(K::Two)),
+            Just(SecurityLevel::new(K::Three)),
+            Just(SecurityLevel::new(K::Four)),
+        ]
+    }
 
     #[test]
     fn sec_level_test() {

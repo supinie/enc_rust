@@ -2,7 +2,7 @@ use core::num::TryFromIntError;
 
 use crate::{
     matrix::{Mat1024, Mat512, Mat768},
-    params::{Eta, GetSecLevel, SecurityLevel, K, POLYBYTES, N, Q},
+    params::{Eta, GetSecLevel, SecurityLevel, K, N, POLYBYTES, Q},
     polynomials::Poly,
 };
 use tinyvec::ArrayVec;
@@ -117,8 +117,14 @@ macro_rules! impl_polyvec {
 
                                 for k in 0..4 {
                                     temp[k] = u16::try_from(self[i].coeffs[4 * j + k])?;
-                                    temp[k] = temp[k].wrapping_add(u16::try_from((i16::try_from(temp[k])? >> 15) & i16::try_from(Q)?)?);
-                                    temp[k] = u16::try_from((((u32::from(temp[k]) << 10) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 0x3ff)?;
+                                    temp[k] = temp[k].wrapping_add(u16::try_from(
+                                        (i16::try_from(temp[k])? >> 15) & i16::try_from(Q)?,
+                                    )?);
+                                    temp[k] = u16::try_from(
+                                        (((u32::from(temp[k]) << 10) + u32::try_from(Q)? / 2)
+                                            / u32::try_from(Q)?)
+                                            & 0x3ff,
+                                    )?;
                                 }
 
                                 let index = (i * (N / 4) + j) * 5;
@@ -140,8 +146,14 @@ macro_rules! impl_polyvec {
 
                                 for k in 0..8 {
                                     temp[k] = u16::try_from(self[i].coeffs[8 * j + k])?;
-                                    temp[k] = temp[k].wrapping_add(u16::try_from((i16::try_from(temp[k])? >> 15) & i16::try_from(Q)?)?);
-                                    temp[k] = u16::try_from((((u32::from(temp[k]) << 11) + u32::try_from(Q)? / 2) / u32::try_from(Q)?) & 0x7ff)?;
+                                    temp[k] = temp[k].wrapping_add(u16::try_from(
+                                        (i16::try_from(temp[k])? >> 15) & i16::try_from(Q)?,
+                                    )?);
+                                    temp[k] = u16::try_from(
+                                        (((u32::from(temp[k]) << 11) + u32::try_from(Q)? / 2)
+                                            / u32::try_from(Q)?)
+                                            & 0x7ff,
+                                    )?;
                                 }
 
                                 let index = (i * (N / 8) + j) * 11;
@@ -178,12 +190,15 @@ macro_rules! impl_polyvec {
 
                                 let temp = (0..4).map(|k| {
                                     let shift = (2 * k) as u32;
-                                    let val = u16::from(buf[index + k] >> shift) | u16::from(buf[index + k + 1]) << (8 - shift);
+                                    let val = u16::from(buf[index + k] >> shift)
+                                        | u16::from(buf[index + k + 1]) << (8 - shift);
                                     val
                                 });
-                                
+
                                 for (k, val) in temp.enumerate() {
-                                    self[i].coeffs[4 * j + k] = i16::try_from(((u32::from(val) & 0x3ff) * u32::try_from(Q)? + 512) >> 10)?;
+                                    self[i].coeffs[4 * j + k] = i16::try_from(
+                                        ((u32::from(val) & 0x3ff) * u32::try_from(Q)? + 512) >> 10,
+                                    )?;
                                 }
                             }
                         }
@@ -195,7 +210,8 @@ macro_rules! impl_polyvec {
 
                                 let temp = (0..8).map(|k| {
                                     let shift = ((3 * k) % 8) as u32;
-                                    let mut val = u16::from(buf[index + k] >> shift) | u16::from(buf[index + k + 1]) << (8 - shift);
+                                    let mut val = u16::from(buf[index + k] >> shift)
+                                        | u16::from(buf[index + k + 1]) << (8 - shift);
                                     if k % 3 == 2 {
                                         let mut extra = u16::from(buf[index + k + 2]);
                                         if k == 2 {
@@ -210,7 +226,9 @@ macro_rules! impl_polyvec {
                                 });
 
                                 for (k, val) in temp.enumerate() {
-                                    self[i].coeffs[8 * j + k] = i16::try_from((u32::from(val & 0x7ff) * u32::try_from(Q)? + 1024) >> 11)?;
+                                    self[i].coeffs[8 * j + k] = i16::try_from(
+                                        (u32::from(val & 0x7ff) * u32::try_from(Q)? + 1024) >> 11,
+                                    )?;
                                 }
                             }
                         }
@@ -245,5 +263,6 @@ impl Poly {
             temp.pointwise_mul(&multiplier_poly);
             self.add(&temp);
         }
+        self.barrett_reduce();
     }
 }

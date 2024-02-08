@@ -1,6 +1,14 @@
 #[cfg(test)]
 pub(in crate::tests) mod buffer_tests {
-    use crate::{params::*, polynomials::*, vectors::*};
+    use crate::{
+        params::*,
+        polynomials::*,
+        tests::{
+            params::params_tests::sec_level_strategy, polynomials::poly_tests::new_poly_array,
+        },
+        vectors::*,
+    };
+    use proptest::prelude::*;
     use rand::Rng;
     extern crate std;
     use std::vec;
@@ -27,30 +35,32 @@ pub(in crate::tests) mod buffer_tests {
         data
     }
 
-    #[test]
-    fn pack_unpack_poly_test() {
-        let poly = Poly { coeffs: [20; N] };
-        let mut buffer = [0; POLYBYTES];
-        poly.pack(&mut buffer);
+    proptest! {
+        #[test]
+        fn pack_unpack_poly_test(a in new_poly_array()) {
+            let mut poly = Poly::from(&a);
+            poly.normalise();
+            let mut buffer = [0; POLYBYTES];
+            poly.pack(&mut buffer);
 
-        let mut comp_poly = Poly::new();
-        comp_poly.unpack(&buffer);
+            let mut comp_poly = Poly::new();
+            comp_poly.unpack(&buffer);
 
-        assert_eq!(comp_poly.coeffs, poly.coeffs);
-    }
+            assert_eq!(poly, comp_poly);
+        }
 
-    #[test]
-    fn compress_decompress_poly_test() {
-        for sec_level in &TEST_PARAMS {
+        #[test]
+        fn compress_decompress_poly_test(
+            sec_level in sec_level_strategy()
+        ) {
             let buf = generate_random_buffer(sec_level.poly_compressed_bytes());
             let mut buf_comp = zero_initialise_buffer(sec_level.poly_compressed_bytes());
-
             let mut poly = Poly::new();
 
-            let _ = poly.decompress(&buf, sec_level);
-            let _ = poly.compress(&mut buf_comp, sec_level);
+            let _ = poly.decompress(&buf, &sec_level);
+            let _ = poly.compress(&mut buf_comp, &sec_level);
 
-            assert_eq!(buf_comp, buf);
+            assert_eq!(buf, buf_comp);
         }
     }
 
@@ -94,10 +104,8 @@ pub(in crate::tests) mod buffer_tests {
     #[test]
     fn compress_decompress_vec_test() {
         for sec_level in &TEST_PARAMS {
-            let buf =
-                generate_random_buffer(sec_level.poly_vec_compressed_bytes());
-            let mut buf_comp =
-                zero_initialise_buffer(sec_level.poly_vec_compressed_bytes());
+            let buf = generate_random_buffer(sec_level.poly_vec_compressed_bytes());
+            let mut buf_comp = zero_initialise_buffer(sec_level.poly_vec_compressed_bytes());
 
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec = PolyVec512::from([Poly::new(); 2]);

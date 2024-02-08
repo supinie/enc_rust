@@ -31,7 +31,7 @@ pub(in crate::tests) mod buffer_tests {
     proptest! {
         #[test]
         fn pack_unpack_poly_test(a in new_poly_array()) {
-            let mut poly = Poly::from(a);
+            let mut poly = Poly::from(&a);
             poly.normalise();
             let mut buffer = [0; POLYBYTES];
             poly.pack(&mut buffer);

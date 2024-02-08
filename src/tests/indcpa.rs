@@ -38,14 +38,15 @@ mod indcpa_tests {
 
     #[test]
     fn key_gen_enc_dec() {
-        let seed = generate_random_seed();
+        let key_seed = generate_random_seed();
+        let cipher_seed = generate_random_seed();
         let plaintext = generate_random_seed();
 
-        let (priv_key, pub_key) = generate_key_pair::<PolyVec512, Mat512>(&seed);
+        let (priv_key, pub_key) = generate_key_pair::<PolyVec512, Mat512>(&key_seed);
 
         let mut ciphertext = [0u8; 768]; //indcpa bytes
 
-        let _ = encrypt(&pub_key, &plaintext, &seed, &mut ciphertext);
+        let _ = encrypt(&pub_key, &plaintext, &cipher_seed, &mut ciphertext);
 
         let mut message = [0u8; SYMBYTES]; // SYMBYTES
         let _ = decrypt(&priv_key, &ciphertext, &mut message);

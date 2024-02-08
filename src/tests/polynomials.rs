@@ -57,7 +57,7 @@ pub(in crate::tests) mod poly_tests {
     proptest! {
         #[test]
         fn from_test(a in new_poly_array()) {
-            let mut poly = Poly::from(a);
+            let mut poly = Poly::from(&a);
             assert_eq!(a, poly.coeffs);
         }
 
@@ -66,8 +66,8 @@ pub(in crate::tests) mod poly_tests {
             a in new_poly_array(),
             b in new_poly_array()
         ) {
-            let mut poly_a = Poly::from(a);
-            let poly_b = Poly::from(b);
+            let mut poly_a = Poly::from(&a);
+            let poly_b = Poly::from(&b);
 
             let mut a_copy = poly_a;
             let b_copy = poly_b;
@@ -80,7 +80,7 @@ pub(in crate::tests) mod poly_tests {
 
         #[test]
         fn to_and_from_msg_test(a in new_poly_array()) {
-            let mut poly = Poly::from(a);
+            let mut poly = Poly::from(&a);
             poly.normalise();
             let mut msg = [0u8; POLYBYTES];
 
@@ -103,8 +103,8 @@ pub(in crate::tests) mod poly_tests {
             a in new_poly_array(),
             b in new_poly_array()
         ) {
-            let mut poly_a = Poly::from(a);
-            let poly_b = Poly::from(b);
+            let mut poly_a = Poly::from(&a);
+            let poly_b = Poly::from(&b);
 
             poly_a.add(&poly_b);
         }
@@ -114,15 +114,15 @@ pub(in crate::tests) mod poly_tests {
             a in new_poly_array(),
             b in new_poly_array()
         ) {
-            let mut poly_a = Poly::from(a);
-            let poly_b = Poly::from(b);
+            let mut poly_a = Poly::from(&a);
+            let poly_b = Poly::from(&b);
 
             poly_a.sub(&poly_b);
         }
 
         #[test]
         fn mont_form_test(a in new_poly_array()) {
-            let mut poly = Poly::from(a);
+            let mut poly = Poly::from(&a);
             poly.mont_form();
         }
     }

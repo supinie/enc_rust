@@ -5,6 +5,72 @@ use crate::{
 };
 use core::num::TryFromIntError;
 
+
+struct StatefulPoly<State: NormalisedState> {
+    pub(crate) coeffs: [i16; N],
+    state: State,
+}
+
+struct Normalised;
+struct Unnormalised;
+
+trait NormalisedState {}
+impl NormalisedState for Normalised {}
+impl NormalisedState for Unnormalised {}
+
+// impl Default for StatefulPoly<Normalised> {
+//     fn default() -> Self {
+//         Self {
+//             coeffs: [0; N],
+//             state: Unnormalised,
+//         }
+//     }
+// }
+
+impl StatefulPoly<Unnormalised> {
+    // Normalise coefficients of given polynomial
+    // Example:
+    // poly.normalise();
+    fn normalise(&mut self) {
+        for coeff in &mut self.coeffs {
+            *coeff = conditional_sub_q(barrett_reduce(*coeff));
+        }
+    }
+}
+
+
+impl StatefulPoly<Normalised> {
+    // Sets self to self + x
+    // Example:
+    // poly1.add(&poly2);
+    fn add(&mut self, x: &Self) {
+        for i in 0..N {
+            self.coeffs[i] += x.coeffs[i];
+        }
+    }
+}
+
+// impl<S> HttpResponse<S>
+//     where S: SendingState
+// {
+//     fn spam_spam_spam(&mut self);
+// }
+
+impl <State: NormalisedState> StatefulPoly<State> 
+    //where State: NormalisedState
+{
+    // const function equivelent of default (default is needed for ArrayVec)
+    // Example:
+    // let poly = Poly::new();
+    const fn new() -> StatefulPoly<Unnormalised> {
+        StatefulPoly { coeffs: [0; N], state: Unnormalised }
+    }
+
+    // fn from(array: [i16; N]) -> Self {
+    //     Self { coeffs: array, state: Normalised }
+    // }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Poly {
     pub(crate) coeffs: [i16; N],
@@ -24,8 +90,8 @@ impl Poly {
         Self { coeffs: [0; N] }
     }
 
-    pub(crate) fn from(array: [i16; N]) -> Self {
-        Self { coeffs: array }
+    pub(crate) const fn from(array: &[i16; N]) -> Self {
+        Self { coeffs: *array }
     }
 
     // Sets self to self + x
@@ -267,4 +333,47 @@ impl Poly {
             }
         }
     }
+
 }
+
+
+// struct HttpResponse<S: ResponseState> {
+//     // Instead of PhantomData<S>, we store an actual copy.
+//     extra: S,
+// }
+
+// // Start adds no fields.
+// struct Start;
+
+// // Headers adds a field recording the response code we sent.
+// struct Headers {
+//     response_code: u8,
+// }
+
+// trait ResponseState {}
+// impl ResponseState for Start {}
+// impl ResponseState for Headers {}
+
+// impl HttpResponse<Start> {
+//     fn status_line(self, response_code: u8, _message: &str)
+//         -> HttpResponse<Headers>
+//     {
+//         HttpResponse {
+//             extra: Headers {
+//                 response_code,
+//             },
+//         }
+//     }
+// }
+
+// impl HttpResponse<Headers> {
+//     fn response_code(&self) -> u8 {
+//         self.extra.response_code
+//     }
+// }
+
+// fn testing() {
+//     let r = HttpResponse {
+//         extra: Start
+//     };
+// }

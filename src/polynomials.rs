@@ -5,7 +5,6 @@ use crate::{
 };
 use core::num::TryFromIntError;
 
-
 struct StatefulPoly<State: NormalisedState> {
     pub(crate) coeffs: [i16; N],
     state: State,
@@ -38,7 +37,6 @@ impl StatefulPoly<Unnormalised> {
     }
 }
 
-
 impl StatefulPoly<Normalised> {
     // Sets self to self + x
     // Example:
@@ -56,14 +54,17 @@ impl StatefulPoly<Normalised> {
 //     fn spam_spam_spam(&mut self);
 // }
 
-impl <State: NormalisedState> StatefulPoly<State> 
-    //where State: NormalisedState
+impl<State: NormalisedState> StatefulPoly<State>
+//where State: NormalisedState
 {
     // const function equivelent of default (default is needed for ArrayVec)
     // Example:
     // let poly = Poly::new();
     const fn new() -> StatefulPoly<Unnormalised> {
-        StatefulPoly { coeffs: [0; N], state: Unnormalised }
+        StatefulPoly {
+            coeffs: [0; N],
+            state: Unnormalised,
+        }
     }
 
     // fn from(array: [i16; N]) -> Self {
@@ -144,7 +145,12 @@ impl Poly {
     // Example:
     // poly1.pointwise_mul(&poly2);
     pub(crate) fn pointwise_mul(&mut self, x: &Self) {
-        for ((chunk, x_chunk), &zeta) in self.coeffs.chunks_mut(4).zip(x.coeffs.chunks(4)).zip(ZETAS.iter().skip(64)) {
+        for ((chunk, x_chunk), &zeta) in self
+            .coeffs
+            .chunks_mut(4)
+            .zip(x.coeffs.chunks(4))
+            .zip(ZETAS.iter().skip(64))
+        {
             let mut temp = [0i16; 4];
 
             for (i, coeff) in temp.iter_mut().enumerate() {
@@ -158,7 +164,7 @@ impl Poly {
                     *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
                 }
             }
-            chunk.copy_from_slice(&temp); 
+            chunk.copy_from_slice(&temp);
         }
     }
 
@@ -166,7 +172,11 @@ impl Poly {
     // must be normalised
     // Example:
     // poly.pack(buf);
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_possible_wrap)]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_possible_wrap
+    )]
     pub(crate) fn pack(&self, buf: &mut [u8]) {
         for i in 0..N / 2 {
             let mut t0 = self.coeffs[2 * i];
@@ -243,8 +253,7 @@ impl Poly {
             SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
                 for (i, &byte) in buf.iter().take(N / 2).enumerate() {
                     self.coeffs[2 * i] = i16::try_from((usize::from(byte & 15) * Q + 8) >> 4)?;
-                    self.coeffs[2 * i + 1] =
-                        i16::try_from((usize::from(byte >> 4) * Q + 8) >> 4)?;
+                    self.coeffs[2 * i + 1] = i16::try_from((usize::from(byte >> 4) * Q + 8) >> 4)?;
                 }
                 Ok(())
             }
@@ -333,9 +342,7 @@ impl Poly {
             }
         }
     }
-
 }
-
 
 // struct HttpResponse<S: ResponseState> {
 //     // Instead of PhantomData<S>, we store an actual copy.

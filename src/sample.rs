@@ -3,7 +3,7 @@ use crate::{
     polynomials::Poly,
 };
 use byteorder::{ByteOrder, LittleEndian};
-use rand_core::{RngCore, CryptoRng, Error};
+use rand_core::{CryptoRng, Error, RngCore};
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,

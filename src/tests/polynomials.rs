@@ -3,10 +3,10 @@
 pub(in crate::tests) mod poly_tests {
     use crate::{
         field_operations::{barrett_reduce, montgomery_reduce},
+        ntt::ZETAS,
         params::*,
         polynomials::*,
-        ntt::ZETAS,
-        tests::buffer::buffer_tests::zero_initialise_buffer,    
+        tests::buffer::buffer_tests::zero_initialise_buffer,
     };
     use proptest::prelude::*;
 
@@ -27,7 +27,8 @@ pub(in crate::tests) mod poly_tests {
                 p0 = montgomery_reduce(i32::from(p0) * zeta);
                 p0 += montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i]));
 
-                let mut p1 = montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
+                let mut p1 =
+                    montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
                 p1 += montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i]));
 
                 let mut p2 =
@@ -85,7 +86,7 @@ pub(in crate::tests) mod poly_tests {
             let mut msg = [0u8; POLYBYTES];
 
             poly.write_msg(&mut msg);
-            
+
             let mut new_poly = Poly::new();
             new_poly.read_msg(&msg);
 

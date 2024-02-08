@@ -1,8 +1,6 @@
 #![allow(warnings)]
 #[cfg(test)]
 
-
-
 mod field_tests {
     use crate::{field_operations::*, params::Q};
     use proptest::prelude::*;
@@ -14,7 +12,7 @@ mod field_tests {
             montgomery_reduce(i);
         }
 
-        #[test] 
+        #[test]
         fn mont_form_test(i: i16) {
             mont_form(i);
         }

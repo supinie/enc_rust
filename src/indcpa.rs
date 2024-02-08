@@ -104,7 +104,7 @@ pub fn encrypt<PV, M>(
     seed: &[u8],
     // output_buf: &'a mut [u8],
     output_buf: &mut [u8],
-// ) -> Result<&'a [u8], TryFromIntError>
+    // ) -> Result<&'a [u8], TryFromIntError>
 ) -> Result<(), TryFromIntError>
 where
     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
@@ -161,7 +161,7 @@ pub fn decrypt<PV>(
     ciphertext: &[u8],
     // output_buf: &'a mut [u8],
     output_buf: &mut [u8],
-// ) -> Result<&'a [u8], TryFromIntError>
+    // ) -> Result<&'a [u8], TryFromIntError>
 ) -> Result<(), TryFromIntError>
 where
     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,

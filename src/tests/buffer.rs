@@ -1,8 +1,15 @@
 #[cfg(test)]
 pub(in crate::tests) mod buffer_tests {
-    use crate::{params::*, polynomials::*, vectors::*, tests::{params::params_tests::sec_level_strategy, polynomials::poly_tests::new_poly_array}};
-    use rand::Rng;
+    use crate::{
+        params::*,
+        polynomials::*,
+        tests::{
+            params::params_tests::sec_level_strategy, polynomials::poly_tests::new_poly_array,
+        },
+        vectors::*,
+    };
     use proptest::prelude::*;
+    use rand::Rng;
     extern crate std;
     use std::vec;
     use std::vec::Vec;
@@ -57,7 +64,6 @@ pub(in crate::tests) mod buffer_tests {
         }
     }
 
-
     #[test]
     fn pack_unpack_vec_test() {
         let poly = Poly { coeffs: [20; N] };
@@ -98,10 +104,8 @@ pub(in crate::tests) mod buffer_tests {
     #[test]
     fn compress_decompress_vec_test() {
         for sec_level in &TEST_PARAMS {
-            let buf =
-                generate_random_buffer(sec_level.poly_vec_compressed_bytes());
-            let mut buf_comp =
-                zero_initialise_buffer(sec_level.poly_vec_compressed_bytes());
+            let buf = generate_random_buffer(sec_level.poly_vec_compressed_bytes());
+            let mut buf_comp = zero_initialise_buffer(sec_level.poly_vec_compressed_bytes());
 
             if let &SecurityLevel::FiveOneTwo { .. } = sec_level {
                 let mut poly_vec = PolyVec512::from([Poly::new(); 2]);

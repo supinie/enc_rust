@@ -50,6 +50,7 @@ mod indcpa_tests {
         let mut message = [0u8; SYMBYTES]; // SYMBYTES
         let _ = decrypt(&priv_key, &ciphertext, &mut message);
 
+        // assert_eq!(ciphertext, [0u8; 768]);
         assert_eq!(message, plaintext);
     }
 }

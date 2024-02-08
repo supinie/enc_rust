@@ -89,8 +89,8 @@ impl Poly {
             l <<= 1;
         }
 
-        for j in 0..N {
-            self.coeffs[j] = montgomery_reduce(1441 * i32::from(self.coeffs[j]));
+        for coeff in self.coeffs.iter_mut() {
+            *coeff = montgomery_reduce(1441 * i32::from(*coeff));
         }
     }
 }

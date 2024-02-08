@@ -322,6 +322,7 @@ mod vec_tests {
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
                 }
+                comp_poly.barrett_reduce();
 
                 assert_eq!(poly, comp_poly);
             }
@@ -338,6 +339,7 @@ mod vec_tests {
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
                 }
+                comp_poly.barrett_reduce();
 
                 assert_eq!(poly, comp_poly);
             }
@@ -354,6 +356,7 @@ mod vec_tests {
                     temp.pointwise_mul(&poly_vec_1[i]);
                     comp_poly.add(&temp);
                 }
+                comp_poly.barrett_reduce();
 
                 assert_eq!(poly, comp_poly);
             }

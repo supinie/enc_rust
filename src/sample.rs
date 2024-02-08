@@ -3,10 +3,19 @@ use crate::{
     polynomials::Poly,
 };
 use byteorder::{ByteOrder, LittleEndian};
+use rand_core::{RngCore, CryptoRng, Error};
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,
 };
+
+pub fn random_bytes<R>(buf: &mut [u8], len: usize, rng: &mut R) -> Result<(), Error>
+where
+    R: RngCore + CryptoRng,
+{
+    rng.try_fill_bytes(&mut buf[..len])?;
+    Ok(())
+}
 
 impl Poly {
     // Sample our polynomial from a centered binomial distribution

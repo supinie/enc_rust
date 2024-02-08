@@ -245,5 +245,6 @@ impl Poly {
             temp.pointwise_mul(&multiplier_poly);
             self.add(&temp);
         }
+        self.barrett_reduce();
     }
 }

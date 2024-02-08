@@ -2,7 +2,7 @@ use core::num::TryFromIntError;
 
 use crate::{
     matrix::{MatOperations, New},
-    params::{GetSecLevel, POLYBYTES},
+    params::{GetSecLevel, POLYBYTES, SYMBYTES},
     polynomials::Poly,
     vectors::{LinkSecLevel, PolyVecOperations},
 };
@@ -15,7 +15,7 @@ pub struct PrivateKey<PV: PolyVecOperations> {
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct PublicKey<PV: PolyVecOperations, M: MatOperations + LinkSecLevel<PV>> {
-    pub rho: [u8; 32],
+    pub rho: [u8; SYMBYTES],
     pub noise: PV,
     pub a_t: M,
 }
@@ -55,7 +55,7 @@ where
     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
 {
     let mut pub_key = PublicKey {
-        rho: [0u8; 32],
+        rho: [0u8; SYMBYTES],
         noise: PV::new_filled(),
         a_t: M::new(),
     };
@@ -63,7 +63,7 @@ where
         secret: PV::new_filled(),
     };
 
-    let mut expanded_seed = [0u8; 64];
+    let mut expanded_seed = [0u8; 2 * SYMBYTES];
     let mut hash = Sha3_512::new();
     hash.update(seed);
 

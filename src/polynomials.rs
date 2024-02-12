@@ -4,6 +4,7 @@ use crate::{
     params::{SecurityLevel, N, Q, SYMBYTES},
 };
 use core::num::TryFromIntError;
+use tinyvec::ArrayVec;
 
 struct StatefulPoly<S: State> {
     pub(crate) coeffs: [i16; N],
@@ -47,118 +48,58 @@ impl<S: State> StatefulPoly<S> {
     // Sets self to self + x
     // Example:
     // poly1.add(&poly2);
-    fn add(&mut self, x: &Self) {
-        for i in 0..N {
-            self.coeffs[i] += x.coeffs[i];
+    fn add(&self, x: &Self) -> StatefulPoly<Unnormalised> {
+        let coeffs_arr: [i16; N] = self.coeffs.iter().zip(x.coeffs.iter())
+            .map(|(&a, &b)| a + b)
+            .collect::<ArrayVec<[i16; N]>>()
+            .into_inner();
+        StatefulPoly {
+            coeffs: coeffs_arr,
+            state: Unnormalised,
         }
-        // // self.state = Unnormalised
     }
 
     // Sets self to self - x
     // Example:
     // poly1.sub(&poly2);
-    pub(crate) fn sub(&mut self, x: &Self) {
-        for i in 0..N {
-            self.coeffs[i] -= x.coeffs[i];
+    pub(crate) fn sub(&self, x: &Self) -> StatefulPoly<Unnormalised> {
+        let coeffs_arr: [i16; N] = self.coeffs.iter().zip(x.coeffs.iter())
+            .map(|(&a, &b)| a - b)
+            .collect::<ArrayVec<[i16; N]>>()
+            .into_inner();
+        StatefulPoly {
+            coeffs: coeffs_arr,
+            state: Unnormalised,
         }
-        // // self.state = Unnormalised;
     }
 
     // Barrett reduces all coefficients of given polynomial
     // Example:
     // poly.barrett_reduce();
-    pub(crate) fn barrett_reduce(&mut self) {
-        for coeff in &mut self.coeffs {
-            *coeff = barrett_reduce(*coeff);
+    pub(crate) fn barrett_reduce(&self) -> StatefulPoly<Unnormalised> {
+        let coeffs_arr: [i16; N] = self.coeffs.iter()
+            .map(|&coeff| barrett_reduce(coeff))
+            .collect::<ArrayVec<[i16; N]>>()
+            .into_inner();
+        StatefulPoly {
+            coeffs: coeffs_arr,
+            state: Unnormalised,
         }
-        // // self.state = Unnormalised;
     }
 
     // Converts all coefficients of the given polynomial to Mongomery form
     // Example:
     // poly.mont_form();
-    pub(crate) fn mont_form(&mut self) {
-        for coeff in &mut self.coeffs {
-            *coeff = mont_form(*coeff);
+    pub(crate) fn mont_form(&self) -> StatefulPoly<Unnormalised> {
+        let coeffs_arr: [i16; N] = self.coeffs.iter()
+            .map(|&coeff| mont_form(coeff))
+            .collect::<ArrayVec<[i16; N]>>()
+            .into_inner();
+        StatefulPoly {
+            coeffs: coeffs_arr,
+            state: Unnormalised,
         }
-        // // self.state = Unnormalised;
-    }
-    
-    // Unpacks a buffer of bytes into a polynomial
-    // poly will NOT be normalised, but 0 <= coeffs < 4096
-    // Example:
-    // poly.unpack(buf);
-    pub(crate) fn unpack(&mut self, buf: &[u8]) {
-        for i in 0..N / 2 {
-            self.coeffs[2 * i] = i16::from(buf[3 * i]) | ((i16::from(buf[3 * i + 1]) << 8) & 0xfff);
-            self.coeffs[2 * i + 1] =
-                i16::from(buf[3 * i + 1] >> 4) | ((i16::from(buf[3 * i + 2]) << 4) & 0xfff);
-        }
-        // self.state = Unnormalised;
-    }
-
-    // Converts a message buffer into a polynomial
-    // msg should be of length SYMBYTES (32)
-    // poly will not be normalised
-    // Example:
-    // poly.read_msg(msg_buf);
-    pub(crate) fn read_msg(&mut self, msg: &[u8]) -> Result<(), TryFromIntError> {
-        for i in 0..SYMBYTES {
-            for j in 0..8 {
-                let mask = ((i16::from(msg[i]) >> j) & 1).wrapping_neg();
-                self.coeffs[8 * i + j] = mask & i16::try_from((Q + 1) / 2)?;
-            }
-        }
-        // self.state = Unnormalised;
-        Ok(())
-    }
-
-    // Decompresses buffer into a polynomial
-    // is dependent on the security level
-    // buf should be of length poly_compressed_bytes
-    // output poly is normalised
-    // Example:
-    // poly.decompress(buf, k);
-    pub(crate) fn decompress(
-        &mut self,
-        buf: &[u8],
-        sec_level: &SecurityLevel,
-    ) -> Result<(), TryFromIntError> {
-        let mut k = 0usize;
-
-        match sec_level {
-            SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-                for (i, &byte) in buf.iter().take(N / 2).enumerate() {
-                    self.coeffs[2 * i] = i16::try_from((usize::from(byte & 15) * Q + 8) >> 4)?;
-                    self.coeffs[2 * i + 1] = i16::try_from((usize::from(byte >> 4) * Q + 8) >> 4)?;
-                }
-                // self.state = Normalised;
-                Ok(())
-            }
-            SecurityLevel::TenTwoFour { .. } => {
-                let mut t = [0u8; 8];
-                for i in 0..N / 8 {
-                    t[0] = buf[k];
-                    t[1] = (buf[k] >> 5) | (buf[k + 1] << 3);
-                    t[2] = buf[k + 1] >> 2;
-                    t[3] = (buf[k + 1] >> 7) | (buf[k + 2] << 1);
-                    t[4] = (buf[k + 2] >> 4) | (buf[k + 3] << 4);
-                    t[5] = buf[k + 3] >> 1;
-                    t[6] = (buf[k + 3] >> 6) | (buf[k + 4] << 2);
-                    t[7] = buf[k + 4] >> 3;
-                    k += 5;
-
-                    for (j, t_elem) in t.iter().enumerate() {
-                        self.coeffs[8 * i + j] = i16::try_from(
-                            ((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5,
-                        )?;
-                    }
-                }
-                // self.state = Normalised;
-                Ok(())
-            }
-        }
-    }
+    }    
 }
 
 impl StatefulPoly<Unnormalised> {
@@ -306,6 +247,95 @@ impl StatefulPoly<Normalised> {
         }
     }
 }
+
+
+// Unpacks a buffer of POLYBYTES bytes into a polynomial
+// poly will NOT be normalised, but 0 <= coeffs < 4096
+// Example:
+// poly.unpack(buf);
+fn unpack_to_poly(buf: &[u8]) -> StatefulPoly<Unnormalised>{
+    let coeffs_arr: [i16; N] = buf.chunks_exact(3)
+        .flat_map(|chunk| chunk.windows(2).enumerate())
+        .map(|(index, pair)| {
+            if index % 2 == 0 {
+                i16::from(pair[0]) | ((i16::from(pair[1]) << 8) & 0xfff)
+            } else {
+                i16::from(pair[0] >> 4) | ((i16::from(pair[1]) << 4) & 0xfff)
+            }
+        }).collect::<ArrayVec<[i16; N]>>()
+        .into_inner();                    
+
+    StatefulPoly {
+        coeffs: coeffs_arr,
+        state: Unnormalised,
+    }
+}
+
+// Converts a message buffer into a polynomial
+// msg should be of length SYMBYTES (32)
+// poly will not be normalised
+// Example:
+// poly.read_msg(msg_buf);
+fn read_msg_to_poly(msg: &[u8]) -> Result<StatefulPoly<Unnormalised>, TryFromIntError> {
+    let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
+    let coeffs_arr: [i16; N] = msg.iter()
+        .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
+        .map(|mask| mask & q_plus_one_over_2)
+        .collect::<ArrayVec<[i16; N]>>()
+        .into_inner();
+
+    Ok(StatefulPoly {
+        coeffs: coeffs_arr,
+        state: Unnormalised,
+    })
+}
+
+// // Decompresses buffer into a polynomial
+// // is dependent on the security level
+// // buf should be of length poly_compressed_bytes
+// // output poly is normalised
+// // Example:
+// // poly.decompress(buf, k);
+// pub(crate) fn decompress(
+//     &mut self,
+//     buf: &[u8],
+//     sec_level: &SecurityLevel,
+// ) -> Result<(), TryFromIntError> {
+//     let mut k = 0usize;
+
+//     match sec_level {
+//         SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
+//             for (i, &byte) in buf.iter().take(N / 2).enumerate() {
+//                 self.coeffs[2 * i] = i16::try_from((usize::from(byte & 15) * Q + 8) >> 4)?;
+//                 self.coeffs[2 * i + 1] = i16::try_from((usize::from(byte >> 4) * Q + 8) >> 4)?;
+//             }
+//             // self.state = Normalised;
+//             Ok(())
+//         }
+//         SecurityLevel::TenTwoFour { .. } => {
+//             let mut t = [0u8; 8];
+//             for i in 0..N / 8 {
+//                 t[0] = buf[k];
+//                 t[1] = (buf[k] >> 5) | (buf[k + 1] << 3);
+//                 t[2] = buf[k + 1] >> 2;
+//                 t[3] = (buf[k + 1] >> 7) | (buf[k + 2] << 1);
+//                 t[4] = (buf[k + 2] >> 4) | (buf[k + 3] << 4);
+//                 t[5] = buf[k + 3] >> 1;
+//                 t[6] = (buf[k + 3] >> 6) | (buf[k + 4] << 2);
+//                 t[7] = buf[k + 4] >> 3;
+//                 k += 5;
+
+//                 for (j, t_elem) in t.iter().enumerate() {
+//                     self.coeffs[8 * i + j] = i16::try_from(
+//                         ((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5,
+//                     )?;
+//                 }
+//             }
+//             // self.state = Normalised;
+//             Ok(())
+//         }
+//     }
+// }
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -579,44 +609,3 @@ impl Poly {
         }
     }
 }
-
-// struct HttpResponse<S: ResponseState> {
-//     // Instead of PhantomData<S>, we store an actual copy.
-//     extra: S,
-// }
-
-// // Start adds no fields.
-// struct Start;
-
-// // Headers adds a field recording the response code we sent.
-// struct Headers {
-//     response_code: u8,
-// }
-
-// trait ResponseState {}
-// impl ResponseState for Start {}
-// impl ResponseState for Headers {}
-
-// impl HttpResponse<Start> {
-//     fn status_line(self, response_code: u8, _message: &str)
-//         -> HttpResponse<Headers>
-//     {
-//         HttpResponse {
-//             extra: Headers {
-//                 response_code,
-//             },
-//         }
-//     }
-// }
-
-// impl HttpResponse<Headers> {
-//     fn response_code(&self) -> u8 {
-//         self.extra.response_code
-//     }
-// }
-
-// fn testing() {
-//     let r = HttpResponse {
-//         extra: Start
-//     };
-// }

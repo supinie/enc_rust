@@ -1,6 +1,6 @@
 use crate::{
     params::{Eta, N, Q, SYMBYTES},
-    polynomials::Poly,
+    polynomials::{Poly, State},
 };
 use byteorder::{ByteOrder, LittleEndian};
 use rand_core::{CryptoRng, Error, RngCore};
@@ -17,7 +17,7 @@ where
     Ok(())
 }
 
-impl Poly {
+impl<S: State> Poly<S> {
     // Sample our polynomial from a centered binomial distribution
     // given a uniformly distributed array of bytes
     // n = 4, p = 1/2

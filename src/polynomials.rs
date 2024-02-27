@@ -13,17 +13,16 @@ pub struct Poly<S: State> {
 
 struct Normalised;
 struct Unnormalised;
-struct Montgomery;
 
 pub trait State {}
 impl State for Normalised {}
 impl State for Unnormalised {}
 
-impl Default for Poly<Unnormalised> {
+impl Default for Poly<Normalised> {
     fn default() -> Self {
         Self {
             coeffs: [0; N],
-            state: Unnormalised,
+            state: Normalised,
         }
     }
 }
@@ -32,10 +31,10 @@ impl<S: State> Poly<S> {
     // const function equivelent of default (default is needed for ArrayVec)
     // Example:
     // let poly = Poly::new();
-    const fn new() -> Poly<Unnormalised> {
+    const fn new() -> Poly<Normalised> {
         Poly {
             coeffs: [0; N],
-            state: Unnormalised,
+            state: Normalised,
         }
     }
 

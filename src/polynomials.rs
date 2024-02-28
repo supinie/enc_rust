@@ -6,6 +6,7 @@ use crate::{
 use core::num::TryFromIntError;
 use tinyvec::ArrayVec;
 
+// #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Poly<S: State> {
     pub(crate) coeffs: [i16; N],
     state: S,
@@ -28,23 +29,6 @@ impl Default for Poly<Normalised> {
 }
 
 impl<S: State> Poly<S> {
-    // const function equivelent of default (default is needed for ArrayVec)
-    // Example:
-    // let poly = Poly::new();
-    const fn new() -> Poly<Normalised> {
-        Poly {
-            coeffs: [0; N],
-            state: Normalised,
-        }
-    }
-
-    const fn from(array: &[i16; N]) -> Poly<Unnormalised> {
-        Poly {
-            coeffs: *array,
-            state: Unnormalised,
-        }
-    }
-
     // Sets self to self + x
     // Example:
     // poly1.add(&poly2);
@@ -154,6 +138,23 @@ impl Poly<Unnormalised> {
 
 
 impl Poly<Normalised> {
+    // const function equivelent of default (default is needed for ArrayVec)
+    // Example:
+    // let poly = Poly::new();
+    const fn new() -> Poly<Normalised> {
+        Poly {
+            coeffs: [0; N],
+            state: Normalised,
+        }
+    }
+
+    const fn from(array: &[i16; N]) -> Poly<Unnormalised> {
+        Poly {
+            coeffs: *array,
+            state: Unnormalised,
+        }
+    }
+
     // Packs given poly into a 384-byte (POLYBYTES size) buffer
     // must be normalised
     // Example:

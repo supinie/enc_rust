@@ -25,7 +25,7 @@
 #![allow(clippy::needless_range_loop)]
 
 mod field_operations;
-mod indcpa;
+// mod indcpa;
 pub mod kem;
 mod matrix;
 mod ntt;

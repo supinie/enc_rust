@@ -163,13 +163,13 @@ impl Poly<Unnormalised> {
 }
 
 impl Poly<Normalised> {
-    /// const function equivelent of default (default is needed for ArrayVec)
+    /// const function equivelent of `default` (`default` is needed for `ArrayVec`)
     /// Example:
     /// ```
     /// let poly = Poly::new();
     /// ```
-    pub const fn new() -> Poly<Normalised> {
-        Poly {
+    pub const fn new() -> Self {
+        Self {
             coeffs: [0; N],
             state: Normalised,
         }
@@ -238,13 +238,13 @@ impl Poly<Normalised> {
                     })
             })
             .collect::<Result<ArrayVec<[u8; SYMBYTES]>, TryFromIntError>>()
-            .map(|array_vec| array_vec.into_inner());
+            .map(tinyvec::ArrayVec::into_inner);
 
         buf
     }
 
     /// Compress polynomial to a buffer
-    /// buf must have space for poly_compressed_bytes
+    /// buf must have space for `poly_compressed_bytes`
     /// poly should be normalised
     /// Example:
     /// ```
@@ -334,10 +334,12 @@ fn unpack_to_poly(buf: &[u8]) -> Poly<Unnormalised> {
 }
 
 /// Converts a message buffer into a polynomial
-/// msg should be of length SYMBYTES (32)
+/// msg should be of length `SYMBYTES` (32)
 /// poly will not be normalised
 /// Example:
+/// ```
 /// poly.read_msg(msg_buf);
+/// ```
 fn read_msg_to_poly(msg: &[u8]) -> Result<Poly<Unnormalised>, TryFromIntError> {
     let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
     let coeffs_arr: [i16; N] = msg
@@ -355,10 +357,12 @@ fn read_msg_to_poly(msg: &[u8]) -> Result<Poly<Unnormalised>, TryFromIntError> {
 
 /// Decompresses buffer into a polynomial
 /// is dependent on the security level
-/// buf should be of length poly_compressed_bytes
+/// buf should be of length `poly_compressed_bytes`
 /// output poly is normalised
 /// Example:
+/// ```
 /// poly.decompress(buf, k);
+/// ```
 fn decompress_to_poly(
     buf: &[u8],
     sec_level: &SecurityLevel,

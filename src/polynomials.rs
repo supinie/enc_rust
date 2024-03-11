@@ -1,7 +1,7 @@
 use crate::{
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
     ntt::ZETAS,
-    params::{SecurityLevel, N, Q, SYMBYTES, POLYBYTES},
+    params::{SecurityLevel, N, POLYBYTES, Q, SYMBYTES},
 };
 use core::num::TryFromIntError;
 use tinyvec::ArrayVec;
@@ -12,8 +12,8 @@ pub struct Poly<S: State> {
     state: S,
 }
 
-struct Normalised;
-struct Unnormalised;
+pub struct Normalised;
+pub struct Unnormalised;
 
 pub trait State {}
 impl State for Normalised {}
@@ -35,7 +35,10 @@ impl<S: State> Poly<S> {
     /// let new_poly = poly1.add(&poly2);
     /// ```
     fn add(&self, x: &Self) -> Poly<Unnormalised> {
-        let coeffs_arr: [i16; N] = self.coeffs.iter().zip(x.coeffs.iter())
+        let coeffs_arr: [i16; N] = self
+            .coeffs
+            .iter()
+            .zip(x.coeffs.iter())
             .map(|(&a, &b)| a + b)
             .collect::<ArrayVec<[i16; N]>>()
             .into_inner();
@@ -51,7 +54,10 @@ impl<S: State> Poly<S> {
     /// let new_poly = poly1.sub(&poly2);
     /// ```
     pub(crate) fn sub(&self, x: &Self) -> Poly<Unnormalised> {
-        let coeffs_arr: [i16; N] = self.coeffs.iter().zip(x.coeffs.iter())
+        let coeffs_arr: [i16; N] = self
+            .coeffs
+            .iter()
+            .zip(x.coeffs.iter())
             .map(|(&a, &b)| a - b)
             .collect::<ArrayVec<[i16; N]>>()
             .into_inner();
@@ -68,7 +74,9 @@ impl<S: State> Poly<S> {
     /// let reduced_poly = poly.barrett_reduce();
     /// ```
     pub(crate) fn barrett_reduce(&self) -> Poly<Unnormalised> {
-        let coeffs_arr: [i16; N] = self.coeffs.iter()
+        let coeffs_arr: [i16; N] = self
+            .coeffs
+            .iter()
             .map(|&coeff| barrett_reduce(coeff))
             .collect::<ArrayVec<[i16; N]>>()
             .into_inner();
@@ -85,7 +93,9 @@ impl<S: State> Poly<S> {
     /// let reduced_poly = poly.mont_form();
     /// ```
     pub(crate) fn mont_form(&self) -> Poly<Unnormalised> {
-        let coeffs_arr: [i16; N] = self.coeffs.iter()
+        let coeffs_arr: [i16; N] = self
+            .coeffs
+            .iter()
             .map(|&coeff| mont_form(coeff))
             .collect::<ArrayVec<[i16; N]>>()
             .into_inner();
@@ -93,7 +103,7 @@ impl<S: State> Poly<S> {
             coeffs: coeffs_arr,
             state: Unnormalised,
         }
-    }    
+    }
 
     /// Pointwise multiplication of two polynomials,
     /// If the inputs are of montgomery form, then so will the output, bounded by 2q.
@@ -131,7 +141,6 @@ impl<S: State> Poly<S> {
     }
 }
 
-
 impl Poly<Unnormalised> {
     /// Normalise coefficients of given polynomial
     /// Normalised coefficients lie within {0..q-1}
@@ -139,8 +148,10 @@ impl Poly<Unnormalised> {
     /// ```
     /// let new_poly = poly.normalise();
     /// ```
-    fn normalise(&self) -> Poly<Normalised>{
-        let coeffs_arr: [i16; N] = self.coeffs.iter()
+    fn normalise(&self) -> Poly<Normalised> {
+        let coeffs_arr: [i16; N] = self
+            .coeffs
+            .iter()
             .map(|&coeff| conditional_sub_q(barrett_reduce(coeff)))
             .collect::<ArrayVec<[i16; N]>>()
             .into_inner();
@@ -151,14 +162,13 @@ impl Poly<Unnormalised> {
     }
 }
 
-
 impl Poly<Normalised> {
     /// const function equivelent of default (default is needed for ArrayVec)
     /// Example:
     /// ```
     /// let poly = Poly::new();
     /// ```
-    const fn new() -> Poly<Normalised> {
+    pub const fn new() -> Poly<Normalised> {
         Poly {
             coeffs: [0; N],
             state: Normalised,
@@ -203,7 +213,7 @@ impl Poly<Normalised> {
 
         buf
     }
-    
+
     /// Convert a given polynomial into a SYMBYTES (32-byte) message
     /// poly should be normalised
     /// Example:
@@ -213,18 +223,23 @@ impl Poly<Normalised> {
     pub(crate) fn write_msg(&self) -> Result<[u8; SYMBYTES], TryFromIntError> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
         let q_16 = i16::try_from(Q)?;
-        let buf = self.coeffs.chunks_exact(8)
-            .map(|chunk|chunk.iter()
-                .map(|&coeff| coeff + ((coeff >> 15) & q_16))
-                .map(|&coeff| (((coeff << 1) + q_16 / 2) / q_16) & 1)
-                .enumerate()
-                .try_fold(0, |accumulator, (index, &coeff)| {
-                    let shifted_coeff = u8::try_from(coeff << index)?;
-                    Ok(accumulator | shifted_coeff)
-                })
-            )
-            .collect::<Result<ArrayVec<[u8; SYMBYTES]>, TryFromIntError>>();
-            
+        let buf = self
+            .coeffs
+            .chunks_exact(8)
+            .map(|chunk| {
+                chunk
+                    .iter()
+                    .map(|&coeff| coeff + ((coeff >> 15) & q_16))
+                    .map(|coeff| (((coeff << 1) + q_16 / 2) / q_16) & 1)
+                    .enumerate()
+                    .try_fold(0, |accumulator, (index, coeff)| {
+                        let shifted_coeff = u8::try_from(coeff << index)?;
+                        Ok(accumulator | shifted_coeff)
+                    })
+            })
+            .collect::<Result<ArrayVec<[u8; SYMBYTES]>, TryFromIntError>>()
+            .map(|array_vec| array_vec.into_inner());
+
         buf
     }
 
@@ -244,8 +259,9 @@ impl Poly<Normalised> {
 
         match sec_level {
             SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-                for (coeff_chunk, buf_chunk) in self.coeffs.chunks_exact(8)
-                    .zip(buf.chunks_exact_mut(4)) {
+                for (coeff_chunk, buf_chunk) in
+                    self.coeffs.chunks_exact(8).zip(buf.chunks_exact_mut(4))
+                {
                     for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                         let mut temp = *coeff;
                         temp += (temp >> 15) & i16::try_from(Q)?;
@@ -258,16 +274,17 @@ impl Poly<Normalised> {
 
                     buf_chunk.copy_from_slice(
                         &t.chunks_exact(2)
-                        .map(|chunk| chunk[0] | (chunk[1] << 4))
-                        .collect::<ArrayVec<[i16; N]>>()
-                        .into_inner()
+                            .map(|chunk| chunk[0] | (chunk[1] << 4))
+                            .collect::<ArrayVec<[u8; N]>>()
+                            .into_inner(),
                     );
                 }
                 Ok(())
             }
             SecurityLevel::TenTwoFour { .. } => {
-                for (coeff_chunk, buf_chunk) in self.coeffs.chunks_exact(8)
-                    .zip(buf.chunks_exact_mut(5)) {
+                for (coeff_chunk, buf_chunk) in
+                    self.coeffs.chunks_exact(8).zip(buf.chunks_exact_mut(5))
+                {
                     for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                         let mut temp = *coeff;
                         temp += (temp >> 15) & i16::try_from(Q)?;
@@ -292,13 +309,13 @@ impl Poly<Normalised> {
     }
 }
 
-
 /// Unpacks a buffer of POLYBYTES bytes into a polynomial
 /// poly will NOT be normalised, but 0 <= coeffs < 4096
 /// Example:
 /// poly.unpack(buf);
-fn unpack_to_poly(buf: &[u8]) -> Poly<Unnormalised>{
-    let coeffs_arr: [i16; N] = buf.chunks_exact(3)
+fn unpack_to_poly(buf: &[u8]) -> Poly<Unnormalised> {
+    let coeffs_arr: [i16; N] = buf
+        .chunks_exact(3)
         .flat_map(|chunk| chunk.windows(2).enumerate())
         .map(|(index, pair)| {
             if index % 2 == 0 {
@@ -306,8 +323,9 @@ fn unpack_to_poly(buf: &[u8]) -> Poly<Unnormalised>{
             } else {
                 i16::from(pair[0] >> 4) | ((i16::from(pair[1]) << 4) & 0xfff)
             }
-        }).collect::<ArrayVec<[i16; N]>>()
-        .into_inner();                    
+        })
+        .collect::<ArrayVec<[i16; N]>>()
+        .into_inner();
 
     Poly {
         coeffs: coeffs_arr,
@@ -322,7 +340,8 @@ fn unpack_to_poly(buf: &[u8]) -> Poly<Unnormalised>{
 /// poly.read_msg(msg_buf);
 fn read_msg_to_poly(msg: &[u8]) -> Result<Poly<Unnormalised>, TryFromIntError> {
     let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
-    let coeffs_arr: [i16; N] = msg.iter()
+    let coeffs_arr: [i16; N] = msg
+        .iter()
         .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
         .map(|mask| mask & q_plus_one_over_2)
         .collect::<ArrayVec<[i16; N]>>()
@@ -340,17 +359,23 @@ fn read_msg_to_poly(msg: &[u8]) -> Result<Poly<Unnormalised>, TryFromIntError> {
 /// output poly is normalised
 /// Example:
 /// poly.decompress(buf, k);
-fn decompress_to_poly(buf: &[u8], sec_level: &SecurityLevel) -> Result<Poly<Normalised>, TryFromIntError> {
+fn decompress_to_poly(
+    buf: &[u8],
+    sec_level: &SecurityLevel,
+) -> Result<Poly<Normalised>, TryFromIntError> {
     match sec_level {
         SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-            let coeffs_arr: [i16; N] = buf.iter()
-                .flat_map(|&byte| (0..2).map(move |i| {
-                    if i == 0 {
-                        (usize::from(byte & 15) * Q + 8) >> 4
-                    } else {
-                        (usize::from(byte >> 4) * Q + 8) >> 4
-                    }
-                }))
+            let coeffs_arr: [i16; N] = buf
+                .iter()
+                .flat_map(|&byte| {
+                    (0..2).map(move |i| {
+                        if i == 0 {
+                            (usize::from(byte & 15) * Q + 8) >> 4
+                        } else {
+                            (usize::from(byte >> 4) * Q + 8) >> 4
+                        }
+                    })
+                })
                 .map(i16::try_from)
                 .collect::<Result<ArrayVec<[i16; N]>, TryFromIntError>>()?
                 .into_inner();
@@ -362,8 +387,8 @@ fn decompress_to_poly(buf: &[u8], sec_level: &SecurityLevel) -> Result<Poly<Norm
         }
         SecurityLevel::TenTwoFour { .. } => {
             let mut coeffs_arr = [0i16; N];
-            for (coeffs_chunk, buf_chunk) in coeffs_arr.chunks_exact_mut(8)
-                .zip(buf.chunks_exact(5)) {
+            for (coeffs_chunk, buf_chunk) in coeffs_arr.chunks_exact_mut(8).zip(buf.chunks_exact(5))
+            {
                 let temp: [u8; 8] = [
                     buf_chunk[0],
                     (buf_chunk[0] >> 5) | (buf_chunk[1] << 3),
@@ -372,20 +397,20 @@ fn decompress_to_poly(buf: &[u8], sec_level: &SecurityLevel) -> Result<Poly<Norm
                     (buf_chunk[2] >> 4) | (buf_chunk[3] << 4),
                     buf_chunk[3] >> 1,
                     (buf_chunk[3] >> 6) | (buf_chunk[4] << 2),
-                    buf_chunk[4] >> 3
+                    buf_chunk[4] >> 3,
                 ];
                 for (coeff, t_elem) in coeffs_chunk.iter_mut().zip(temp.iter()) {
-                    *coeff = i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+                    *coeff =
+                        i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
                 }
             }
             Ok(Poly {
                 coeffs: coeffs_arr,
-                state: Normalised
+                state: Normalised,
             })
         }
     }
 }
-
 
 // #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 // pub struct Poly {

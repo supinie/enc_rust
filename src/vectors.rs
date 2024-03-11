@@ -3,10 +3,10 @@
 use crate::{
     // matrix::{Mat1024, Mat512, Mat768},
     params::{Eta, GetSecLevel, SecurityLevel, K, N, POLYBYTES, Q},
-    polynomials::{Poly, State, Normalised, Unnormalised},
+    polynomials::{Normalised, Poly, State, Unnormalised},
 };
-use tinyvec::ArrayVec;
 use tinyvec::array_vec;
+use tinyvec::ArrayVec;
 
 struct PolyVec<S: State> {
     polynomials: ArrayVec<[Poly<S>; 4]>,
@@ -18,7 +18,9 @@ impl<S: State> PolyVec<S> {
         let polynomials_arr = match k {
             K::Two => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new()),
             K::Three => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new()),
-            K::Four => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new(), Poly::new()),
+            K::Four => {
+                array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new(), Poly::new())
+            }
         };
 
         PolyVec {

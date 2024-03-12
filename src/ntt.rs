@@ -1,9 +1,10 @@
 use crate::{
-    field_operations::{barrett_reduce, montgomery_reduce},
-    params::N,
-    polynomials::Poly,
-};
+ field_operations::{barrett_reduce, montgomery_reduce},
+ params::N,
+ polynomials::{Normalised, Poly, Unnormalised},
+ };
 
+// precomputed powers of the primative root of unity in Montgomery representation for use in ntt()
 #[rustfmt::skip]
 pub const ZETAS: [i16; 128] = [
     2285, 2571, 2970, 1812, 1493, 1422, 287, 202, 3158, 622, 1577, 182,
@@ -19,6 +20,7 @@ pub const ZETAS: [i16; 128] = [
 	2459, 478, 3221, 3021, 996, 991, 958, 1869, 1522, 1628,
 ];
 
+// These keep track of which coeffs to apply Barrett reduction to during inv_ntt()
 #[rustfmt::skip]
 const INV_NTT_REDUCTIONS: [i16; 79] = [
     -1,
@@ -30,31 +32,61 @@ const INV_NTT_REDUCTIONS: [i16; 79] = [
 	-1
 ];
 
-impl Poly {
-    // In place Cooley-Tukey radix-2 Decimation in Time (DIT) NTT algorithm
-    // Example:
-    // poly.ntt();
-    pub(crate) fn ntt(&mut self) {
+impl Poly<Normalised> {
+    /// Cooley-Tukey radix-2 Decimation in Time (DIT) NTT algorithm
+    /// coefficients must be bounded in absolute value by q, 
+    /// and the outputs are bounded in absolute value by 7q.
+    /// If the input is in montgomery or regular form, then so is the output.
+    /// Example:
+    /// ```
+    /// output_poly = poly.ntt();
+    /// ```
+    pub(crate) fn ntt(&self) -> Poly<Unnormalised> {
+        let mut coeffs = self.coeffs;
         let mut k = 0usize;
-        let mut l = N / 2;
-        while l > 1 {
-            let mut offset = 0;
-            while offset < N - l {
+
+        for l in (1..).map(|x| N >> x).take_while(|&l| l > 1) {
+            (0..(N - l)).step_by(2 * l).for_each(|offset| {
                 k += 1;
                 let zeta = i32::from(ZETAS[k]);
 
-                let mut j = offset;
-                while j < offset + l {
-                    let t = montgomery_reduce(zeta * i32::from(self.coeffs[j + l]));
-                    self.coeffs[j + l] = self.coeffs[j] - t;
-                    self.coeffs[j] += t;
-                    j += 1;
-                }
-                offset += 2 * l;
-            }
-            l >>= 1;
+                (offset..offset + l)
+                    .for_each(|j| {
+                        let temp = montgomery_reduce(zeta * i32::from(coeffs[j + l]));
+                        coeffs[j + l] = coeffs[j] - temp;
+                        coeffs[j] += temp;
+                    });
+            });
+        }
+
+        Poly {
+            coeffs,
+            state: Unnormalised,
         }
     }
+
+
+
+        // let mut k = 0usize;
+        // let mut l = N / 2;
+        // while l > 1 {
+        //     let mut offset = 0;
+        //     while offset < N - l {
+        //         k += 1;
+        //         let zeta = i32::from(ZETAS[k]);
+
+                // let mut j = offset;
+                // while j < offset + l {
+                //     let t = montgomery_reduce(zeta * i32::from(self.coeffs[j + l]));
+                //     self.coeffs[j + l] = self.coeffs[j] - t;
+                //     self.coeffs[j] += t;
+                //     j += 1;
+                // }
+        //         offset += 2 * l;
+        //     }
+        //     l >>= 1;
+        // }
+    // }
 
     // In place inverse NTT, with montgomery reduction
     // Example:

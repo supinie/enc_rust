@@ -1,8 +1,8 @@
 use crate::{
- field_operations::{barrett_reduce, montgomery_reduce},
- params::N,
- polynomials::{Normalised, Poly, Unnormalised},
- };
+    field_operations::{barrett_reduce, montgomery_reduce},
+    params::N,
+    polynomials::{Normalised, Poly, Unnormalised},
+};
 
 // precomputed powers of the primative root of unity in Montgomery representation for use in ntt()
 #[rustfmt::skip]

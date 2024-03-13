@@ -1,6 +1,9 @@
+mod ntt;
+mod sample;
+
 use crate::{
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
-    ntt::ZETAS,
+    polynomials::ntt::ZETAS,
     params::{SecurityLevel, N, POLYBYTES, Q, SYMBYTES},
 };
 use core::num::TryFromIntError;
@@ -8,10 +11,11 @@ use tinyvec::ArrayVec;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Poly<S: State> {
-    pub(crate) coeffs: [i16; N],
+    coeffs: [i16; N],
     state: S,
 }
 
+// Normalised coefficients lie within {0..q-1}
 pub struct Normalised;
 pub struct Unnormalised;
 

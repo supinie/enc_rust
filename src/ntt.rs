@@ -22,16 +22,15 @@ pub const ZETAS: [i16; 128] = [
 
 // These keep track of which coeffs to apply Barrett reduction to during inv_ntt()
 #[rustfmt::skip]
-const INV_NTT_REDUCTIONS: [i16; 79] = [
-    -1,
-	-1,
-	16, 17, 48, 49, 80, 81, 112, 113, 144, 145, 176, 177, 208, 209, 240, 241, -1,
-	0, 1, 32, 33, 34, 35, 64, 65, 96, 97, 98, 99, 128, 129, 160, 161, 162, 163, 192, 193, 224, 225, 226, 227, -1,
-	2, 3, 66, 67, 68, 69, 70, 71, 130, 131, 194, 195, 196, 197, 198, 199, -1,
-	4, 5, 6, 7, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, -1,
-	-1
+const INV_NTT_REDUCTIONS: [&[usize]; 7] = [
+    &[],
+	&[],
+	&[16, 17, 48, 49, 80, 81, 112, 113, 144, 145, 176, 177, 208, 209, 240, 241],
+	&[0, 1, 32, 33, 34, 35, 64, 65, 96, 97, 98, 99, 128, 129, 160, 161, 162, 163, 192, 193, 224, 225, 226, 227],
+	&[2, 3, 66, 67, 68, 69, 70, 71, 130, 131, 194, 195, 196, 197, 198, 199],
+	&[4, 5, 6, 7, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143],
+	&[]
 ];
-
 impl Poly<Normalised> {
     /// Cooley-Tukey radix-2 Decimation in Time (DIT) NTT algorithm
     /// coefficients must be bounded in absolute value by q, 
@@ -45,17 +44,17 @@ impl Poly<Normalised> {
         let mut coeffs = self.coeffs;
         let mut k = 0usize;
 
+        // want to start from N / 2 so start from 1 not 0
         for l in (1..).map(|x| N >> x).take_while(|&l| l > 1) {
             (0..(N - l)).step_by(2 * l).for_each(|offset| {
                 k += 1;
                 let zeta = i32::from(ZETAS[k]);
 
-                (offset..offset + l)
-                    .for_each(|j| {
-                        let temp = montgomery_reduce(zeta * i32::from(coeffs[j + l]));
-                        coeffs[j + l] = coeffs[j] - temp;
-                        coeffs[j] += temp;
-                    });
+                for j in offset..offset + l {
+                    let temp = montgomery_reduce(zeta * i32::from(coeffs[j + l]));
+                    coeffs[j + l] = coeffs[j] - temp;
+                    coeffs[j] += temp;
+                }
             });
         }
 
@@ -66,62 +65,36 @@ impl Poly<Normalised> {
     }
 
 
-
-        // let mut k = 0usize;
-        // let mut l = N / 2;
-        // while l > 1 {
-        //     let mut offset = 0;
-        //     while offset < N - l {
-        //         k += 1;
-        //         let zeta = i32::from(ZETAS[k]);
-
-                // let mut j = offset;
-                // while j < offset + l {
-                //     let t = montgomery_reduce(zeta * i32::from(self.coeffs[j + l]));
-                //     self.coeffs[j + l] = self.coeffs[j] - t;
-                //     self.coeffs[j] += t;
-                //     j += 1;
-                // }
-        //         offset += 2 * l;
-        //     }
-        //     l >>= 1;
-        // }
-    // }
-
-    // In place inverse NTT, with montgomery reduction
+    // In inverse NTT, with montgomery reduction
+    // Assumes that all coefficients are bounded in absolute value by q.
+    // Output coefficients are bounded in absolute value q.
+    /// If the input is in montgomery or regular form, then so is the output.
     // Example:
-    // poly.inv_ntt();
-    pub(crate) fn inv_ntt(&mut self) {
+    // ```
+    // new_poly = poly.inv_ntt();
+    // ```
+    pub(crate) fn inv_ntt(&self) {
+        let mut coeffs = self.coeffs;
         let mut k: usize = 127;
-        let mut r: usize = 0;
-        let mut l = 2;
 
-        while l < N {
-            for offset in (0..N - 1).step_by(2 * l) {
-                let min_zeta = i32::from(ZETAS[k]);
-                k -= 1;
-
-                for j in offset..offset + l {
-                    let t = self.coeffs[j + l] - self.coeffs[j];
-                    self.coeffs[j] += self.coeffs[j + l];
-                    self.coeffs[j + l] = montgomery_reduce(min_zeta * i32::from(t));
+        for (l, reductions) in (1..).map(|x| 1 << x)
+            .zip(INV_NTT_REDUCTIONS)
+            .take_while(|(l, _reductions)| *l < N) {
+                (0..(N - 1)).step_by(2 * l).for_each(|offset| {
+                    let min_zeta = i32::from(ZETAS[k]);
+                    k -= 1;
+                    for j in offset..offset + l {
+                        let temp = coeffs[j + l] - coeffs[j];
+                        coeffs[j] += coeffs[j + l];
+                        coeffs[j + l] = montgomery_reduce(min_zeta * i32::from(temp));
+                    }
+                });
+                for &i in reductions {
+                    coeffs[i] = barrett_reduce(coeffs[i]);
                 }
-            }
+        } 
 
-            #[allow(clippy::cast_sign_loss)] // i cannot be negative if we reach where its value is
-            // cast
-            loop {
-                let i = INV_NTT_REDUCTIONS[r];
-                r += 1;
-                if i < 0 {
-                    break;
-                }
-                self.coeffs[i as usize] = barrett_reduce(self.coeffs[i as usize]);
-            }
-            l <<= 1;
-        }
-
-        for coeff in &mut self.coeffs {
+        for coeff in &mut coeffs {
             *coeff = montgomery_reduce(1441 * i32::from(*coeff));
         }
     }

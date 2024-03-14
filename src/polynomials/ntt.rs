@@ -73,7 +73,7 @@ impl Poly<Normalised> {
     // ```
     // new_poly = poly.inv_ntt();
     // ```
-    pub(crate) fn inv_ntt(&self) {
+    pub(crate) fn inv_ntt(&self) -> Self {
         let mut coeffs = self.coeffs;
         let mut k: usize = 127;
 
@@ -96,6 +96,11 @@ impl Poly<Normalised> {
 
         for coeff in &mut coeffs {
             *coeff = montgomery_reduce(1441 * i32::from(*coeff));
+        }
+
+        Self {
+            coeffs,
+            state: Normalised,
         }
     }
 }

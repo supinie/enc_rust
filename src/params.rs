@@ -9,17 +9,19 @@ pub const SHAREDSECRETBYTES: usize = 32;
 
 pub const POLYBYTES: usize = 384;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, IntoPrimitive)]
+#[repr(usize)]
 // Get the usize repr using .into()
 pub enum K {
     Two = 2,
+    #[default]
     Three = 3,
     Four = 4,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
 #[repr(usize)]
+// Get the usize repr using .into()
 pub enum Eta {
     Two = 2,
     Three = 3,
@@ -30,10 +32,6 @@ pub enum SecurityLevel {
     FiveOneTwo { k: K, eta_1: Eta, eta_2: Eta },
     SevenSixEight { k: K, eta_1: Eta, eta_2: Eta },
     TenTwoFour { k: K, eta_1: Eta, eta_2: Eta },
-}
-
-pub trait GetSecLevel {
-    fn sec_level() -> SecurityLevel;
 }
 
 impl SecurityLevel {

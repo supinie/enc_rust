@@ -1,21 +1,75 @@
 // use core::num::TryFromIntError;
-
 use crate::{
-    // matrix::{Mat1024, Mat512, Mat768},
-    params::{Eta, GetSecLevel, SecurityLevel, K, N, POLYBYTES, Q},
-    polynomials::{Normalised, Poly, State, Unnormalised},
+    errors::CrystalsError, 
+    params::{SecurityLevel, K}, 
+    polynomials::{Normalised, Poly, State, Unnormalised}
 };
 use tinyvec::array_vec;
 use tinyvec::ArrayVec;
 
-struct PolyVec<S: State> {
+#[derive(Default)]
+pub struct PolyVec<S: State> {
     polynomials: ArrayVec<[Poly<S>; 4]>,
     sec_level: K,
 }
 
 impl<S: State> PolyVec<S> {
-    fn new(k: K) -> PolyVec<Normalised> {
-        let polynomials_arr = match k {
+    const fn sec_level(&self) -> SecurityLevel {
+        SecurityLevel::new(self.sec_level)
+    }
+
+    fn polynomials(&self) -> &[Poly<S>] {
+        &self.polynomials.as_slice()[..self.sec_level.into()]
+    }
+
+    fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unnormalised>, CrystalsError> {
+        if self.sec_level == addend.sec_level {
+            let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
+            for (augend_poly, addend_poly) in self.polynomials.iter().zip(addend.polynomials.iter()) {
+                polynomials.push(augend_poly.add(addend_poly));
+            }
+
+            Ok(
+                PolyVec {
+                    polynomials,
+                    sec_level: self.sec_level,
+                }
+            )
+        } else {
+            Err(CrystalsError::MismatchedSecurityLevels(self.sec_level, addend.sec_level))
+        }
+    }
+
+    fn barrett_reduce(&self) -> PolyVec<Unnormalised> {
+        let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.barrett_reduce());
+        }
+
+        PolyVec {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
+}
+
+impl PolyVec<Unnormalised> {
+    fn normalise(&self) -> PolyVec<Normalised> {
+        let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.normalise());
+        }
+
+        PolyVec {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
+}
+
+impl PolyVec<Normalised> {
+    fn new(k: K) -> Self {
+        let polynomials = match k {
             K::Two => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new()),
             K::Three => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new()),
             K::Four => {
@@ -23,41 +77,43 @@ impl<S: State> PolyVec<S> {
             }
         };
 
-        PolyVec {
-            polynomials: polynomials_arr,
+        Self {
+            polynomials,
             sec_level: k,
+        }
+    }
+
+    fn ntt(&self) -> PolyVec<Unnormalised> {
+        let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.ntt());
+        }
+
+        PolyVec {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
+
+    fn inv_ntt(&self) -> Self {
+        let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.inv_ntt());
+        }
+
+        Self {
+            polynomials,
+            sec_level: self.sec_level,
         }
     }
 }
 
-// make a normalised impl block for safety
 
 struct Matrix<S: State> {
     vectors: ArrayVec<[PolyVec<S>; 4]>,
     sec_level: K,
 }
 
-// pub type PolyVec512 = ArrayVec<[Poly; 2]>;
-// pub type PolyVec768 = ArrayVec<[Poly; 3]>;
-// pub type PolyVec1024 = ArrayVec<[Poly; 4]>;
-
-// impl GetSecLevel for PolyVec512 {
-//     fn sec_level() -> SecurityLevel {
-//         SecurityLevel::new(K::Two)
-//     }
-// }
-
-// impl GetSecLevel for PolyVec768 {
-//     fn sec_level() -> SecurityLevel {
-//         SecurityLevel::new(K::Three)
-//     }
-// }
-
-// impl GetSecLevel for PolyVec1024 {
-//     fn sec_level() -> SecurityLevel {
-//         SecurityLevel::new(K::Four)
-//     }
-// }
 
 // trait SameSecLevel {}
 

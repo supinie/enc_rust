@@ -16,18 +16,22 @@ pub struct Poly<S: State> {
 }
 
 // Normalised coefficients lie within {0..q-1}
+#[derive(Default)]
 pub struct Normalised;
+#[derive(Default)]
 pub struct Unnormalised;
 
-pub trait State {}
+pub trait State: Default {}
 impl State for Normalised {}
 impl State for Unnormalised {}
 
-impl Default for Poly<Normalised> {
+/// In all cases, `new()` should be used instead, else the state may be incorrect.
+/// Default is defined here for `ArrayVec`.
+impl<S: State> Default for Poly<S> {
     fn default() -> Self {
         Self {
             coeffs: [0; N],
-            state: Normalised,
+            state: Default::default(),
         }
     }
 }
@@ -38,7 +42,7 @@ impl<S: State> Poly<S> {
     /// ```
     /// let new_poly = poly1.add(&poly2);
     /// ```
-    fn add(&self, x: &Self) -> Poly<Unnormalised> {
+    pub(crate) fn add<T: State>(&self, x: &Poly<T>) -> Poly<Unnormalised> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()
@@ -57,7 +61,7 @@ impl<S: State> Poly<S> {
     /// ```
     /// let new_poly = poly1.sub(&poly2);
     /// ```
-    pub(crate) fn sub(&self, x: &Self) -> Poly<Unnormalised> {
+    pub(crate) fn sub<T: State>(&self, x: &Poly<T>) -> Poly<Unnormalised> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()
@@ -116,7 +120,7 @@ impl<S: State> Poly<S> {
     /// Example:
     /// ```
     /// let new_poly = poly1.pointwise_mul(&poly2);
-    pub(crate) fn pointwise_mul(&self, x: &Self) -> Poly<Unnormalised> {
+    pub(crate) fn pointwise_mul<T: State>(&self, x: &Poly<T>) -> Poly<Unnormalised> {
         let mut coeffs_arr = self.coeffs;
         for ((chunk, x_chunk), &zeta) in coeffs_arr
             .chunks_mut(4)
@@ -152,7 +156,7 @@ impl Poly<Unnormalised> {
     /// ```
     /// let new_poly = poly.normalise();
     /// ```
-    fn normalise(&self) -> Poly<Normalised> {
+    pub(crate) fn normalise(&self) -> Poly<Normalised> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()

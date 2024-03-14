@@ -24,6 +24,7 @@
 #![no_std]
 #![allow(clippy::needless_range_loop)]
 
+mod errors;
 mod field_operations;
 // mod indcpa;
 pub mod kem;

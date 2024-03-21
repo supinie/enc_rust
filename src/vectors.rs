@@ -2,7 +2,7 @@
 use crate::{
     errors::CrystalsError, 
     params::{SecurityLevel, K}, 
-    polynomials::{Normalised, Poly, State, Unnormalised}
+    polynomials::{Normalised, Poly, State, Unnormalised, Noise}
 };
 use tinyvec::array_vec;
 use tinyvec::ArrayVec;
@@ -104,6 +104,23 @@ impl PolyVec<Normalised> {
         Self {
             polynomials,
             sec_level: self.sec_level,
+        }
+    }
+}
+
+
+impl PolyVec<Noise> {
+    fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8) -> PolyVec<Noise> {
+        let mut polynomials = ArrayVec::<[Poly<Noise>; 4]>::new();
+        let eta = sec_level.eta_1();
+
+        for _ in 0..sec_level.k().into() {
+            polynomials.push(Poly::derive_noise(seed, nonce, eta));
+        }
+
+        PolyVec {
+            polynomials,
+            sec_level: sec_level.k(),
         }
     }
 }

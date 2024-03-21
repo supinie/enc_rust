@@ -24,7 +24,7 @@ impl Poly<Noise> {
     // n = 4, p = 1/2
     // ie. coefficients are in {-2, -1, 0, 1, 2}
     // with probabilities {1/16, 1/4, 3/8, 1/4, 1/16}
-    pub(crate) fn derive_noise_2(seed: &[u8], nonce: u8) -> Poly<Noise> {
+    fn derive_noise_2(seed: &[u8], nonce: u8) -> Poly<Noise> {
         let key_suffix: [u8; 1] = [nonce];
         let mut hash = Shake256::default();
         hash.update(seed);
@@ -61,7 +61,7 @@ impl Poly<Noise> {
     // n = 6, p = 1/2
     // ie. coefficients are in {-3, -2, -1, 0, 1, 2, 3}
     // with probabilities {1/64, 3/32, 15/64, 5/16, 15/64, 3/32, 1/64}
-    pub(crate) fn derive_noise_3(seed: &[u8], nonce: u8) -> Poly<Noise> {
+    fn derive_noise_3(seed: &[u8], nonce: u8) -> Poly<Noise> {
         let key_suffix: [u8; 1] = [nonce];
         let mut hash = Shake256::default();
         hash.update(seed);

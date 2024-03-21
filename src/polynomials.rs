@@ -20,10 +20,13 @@ pub struct Poly<S: State> {
 pub struct Normalised;
 #[derive(Default)]
 pub struct Unnormalised;
+#[derive(Default)]
+pub struct Noise;
 
 pub trait State: Default {}
 impl State for Normalised {}
 impl State for Unnormalised {}
+impl State for Noise {}
 
 /// In all cases, `new()` should be used instead, else the state may be incorrect.
 /// Default is defined here for `ArrayVec`.

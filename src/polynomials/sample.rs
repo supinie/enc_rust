@@ -1,6 +1,6 @@
 use crate::{
     params::{Eta, N, Q, SYMBYTES},
-    polynomials::{Poly, Unnormalised, Noise},
+    polynomials::{Noise, Poly, Unnormalised},
 };
 use byteorder::{ByteOrder, LittleEndian};
 use rand_core::{CryptoRng, Error, RngCore};
@@ -8,7 +8,6 @@ use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,
 };
-
 
 pub fn random_bytes<R>(buf: &mut [u8], len: usize, rng: &mut R) -> Result<(), Error>
 where
@@ -24,7 +23,7 @@ impl Poly<Noise> {
     // n = 4, p = 1/2
     // ie. coefficients are in {-2, -1, 0, 1, 2}
     // with probabilities {1/16, 1/4, 3/8, 1/4, 1/16}
-    fn derive_noise_2(seed: &[u8], nonce: u8) -> Poly<Noise> {
+    fn derive_noise_2(seed: &[u8], nonce: u8) -> Self {
         let key_suffix: [u8; 1] = [nonce];
         let mut hash = Shake256::default();
         hash.update(seed);
@@ -50,8 +49,8 @@ impl Poly<Noise> {
                 *coeff = coeff_a - coeff_b;
             }
         }
-        
-        Poly {
+
+        Self {
             coeffs,
             state: Noise,
         }
@@ -61,7 +60,7 @@ impl Poly<Noise> {
     // n = 6, p = 1/2
     // ie. coefficients are in {-3, -2, -1, 0, 1, 2, 3}
     // with probabilities {1/64, 3/32, 15/64, 5/16, 15/64, 3/32, 1/64}
-    fn derive_noise_3(seed: &[u8], nonce: u8) -> Poly<Noise> {
+    fn derive_noise_3(seed: &[u8], nonce: u8) -> Self {
         let key_suffix: [u8; 1] = [nonce];
         let mut hash = Shake256::default();
         hash.update(seed);
@@ -91,29 +90,24 @@ impl Poly<Noise> {
             }
         }
 
-        Poly {
+        Self {
             coeffs,
             state: Noise,
         }
     }
 
-    pub(crate) fn derive_noise(seed: &[u8], nonce: u8, eta: Eta) -> Poly<Noise> {
+    pub(crate) fn derive_noise(seed: &[u8], nonce: u8, eta: Eta) -> Self {
         match eta {
-            Eta::Two => {
-                Poly::derive_noise_2(seed, nonce)
-            }
-            Eta::Three => {
-                Poly::derive_noise_3(seed, nonce)
-            }
+            Eta::Two => Self::derive_noise_2(seed, nonce),
+            Eta::Three => Self::derive_noise_3(seed, nonce),
         }
     }
 }
 
-
 impl Poly<Unnormalised> {
     // seed should be of length 32
     // coefficients are reduced
-    pub(crate) fn derive_uniform(seed: &[u8], x: u8, y: u8) -> Poly<Unnormalised> {
+    pub(crate) fn derive_uniform(seed: &[u8], x: u8, y: u8) -> Self {
         let seed_suffix = [x, y];
         let mut buf = [0u8; 168];
 
@@ -155,7 +149,7 @@ impl Poly<Unnormalised> {
             }
         }
 
-        Poly {
+        Self {
             coeffs,
             state: Unnormalised,
         }

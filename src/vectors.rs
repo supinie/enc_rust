@@ -1,8 +1,8 @@
 // use core::num::TryFromIntError;
 use crate::{
-    errors::CrystalsError, 
-    params::{SecurityLevel, K}, 
-    polynomials::{Normalised, Poly, State, Unnormalised, Noise}
+    errors::{CrystalsError, PackingError},
+    params::{SecurityLevel, K, POLYBYTES},
+    polynomials::{decompress_to_poly, unpack_to_poly, Noise, Normalised, Poly, State, Unnormalised},
 };
 use tinyvec::array_vec;
 use tinyvec::ArrayVec;
@@ -14,32 +14,40 @@ pub struct PolyVec<S: State> {
 }
 
 impl<S: State> PolyVec<S> {
+    // Gets the security level of the given polyvec.
     const fn sec_level(&self) -> SecurityLevel {
         SecurityLevel::new(self.sec_level)
     }
 
+    // We don't expose polynomials directly to handle cases where the ArrayVec is not full for a
+    // given security level. This insures we can iterate over polynomials easily.
     fn polynomials(&self) -> &[Poly<S>] {
         &self.polynomials.as_slice()[..self.sec_level.into()]
     }
 
+    // Add two polyvecs pointwise.
+    // They must be the same security level.
     fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unnormalised>, CrystalsError> {
         if self.sec_level == addend.sec_level {
             let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
-            for (augend_poly, addend_poly) in self.polynomials.iter().zip(addend.polynomials.iter()) {
+            for (augend_poly, addend_poly) in self.polynomials.iter().zip(addend.polynomials.iter())
+            {
                 polynomials.push(augend_poly.add(addend_poly));
             }
 
-            Ok(
-                PolyVec {
-                    polynomials,
-                    sec_level: self.sec_level,
-                }
-            )
+            Ok(PolyVec {
+                polynomials,
+                sec_level: self.sec_level,
+            })
         } else {
-            Err(CrystalsError::MismatchedSecurityLevels(self.sec_level, addend.sec_level))
+            Err(CrystalsError::MismatchedSecurityLevels(
+                self.sec_level(),
+                addend.sec_level(),
+            ))
         }
     }
 
+    // Barrett reduce each polynomial in the polyvec
     fn barrett_reduce(&self) -> PolyVec<Unnormalised> {
         let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
         for poly in self.polynomials.iter() {
@@ -54,6 +62,7 @@ impl<S: State> PolyVec<S> {
 }
 
 impl PolyVec<Unnormalised> {
+    // Normalise each polynomial in the polyvec
     fn normalise(&self) -> PolyVec<Normalised> {
         let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
         for poly in self.polynomials.iter() {
@@ -68,6 +77,7 @@ impl PolyVec<Unnormalised> {
 }
 
 impl PolyVec<Normalised> {
+    // Create a new, empty polyvec.
     fn new(k: K) -> Self {
         let polynomials = match k {
             K::Two => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new()),
@@ -83,6 +93,7 @@ impl PolyVec<Normalised> {
         }
     }
 
+    // apply ntt to each polynomial in the polyvec
     fn ntt(&self) -> PolyVec<Unnormalised> {
         let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
         for poly in self.polynomials.iter() {
@@ -95,6 +106,7 @@ impl PolyVec<Normalised> {
         }
     }
 
+    // apply inv_ntt to each polynomial in the polyvec
     fn inv_ntt(&self) -> Self {
         let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
         for poly in self.polynomials.iter() {
@@ -106,11 +118,50 @@ impl PolyVec<Normalised> {
             sec_level: self.sec_level,
         }
     }
+
+    // buf should be of length k * POLYBYTES
+    // packs the polyvec poly-wise into the buffer
+    fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+        if buf.len() != self.polynomials.len() * POLYBYTES {
+            let buffer_sec_level = SecurityLevel::new(K::try_from(buf.len() / POLYBYTES)?);
+            return Err(CrystalsError::MismatchedSecurityLevels(
+                buffer_sec_level,
+                self.sec_level(),
+            )
+            .into());
+        }
+
+        for (k, poly) in self.polynomials.iter().enumerate() {
+            buf[k * POLYBYTES..(k + 1) * POLYBYTES].copy_from_slice(&poly.pack());
+        }
+
+        Ok(())
+    }
+
+    
+    // buf should be of length k * poly_compressed_bytes
+    // compresses the polyvec poly-wise into the buffer
+    fn compress(&self, buf:&mut [u8]) -> Result<(), PackingError> {
+        let bytes_len = self.sec_level().poly_compressed_bytes();
+        if buf.len() != self.polynomials.len() * bytes_len {
+            return Err(CrystalsError::IncorrectBufferLength(
+                buf.len(),
+                self.polynomials.len() * bytes_len,
+            )
+            .into());
+        }
+        
+        let _ = buf.chunks_mut(bytes_len)
+            .zip(self.polynomials.iter())
+            .map(|(buf_chunk, poly)| poly.compress(buf_chunk, &self.sec_level()));
+        
+        Ok(())
+    }
 }
 
-
 impl PolyVec<Noise> {
-    fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8) -> PolyVec<Noise> {
+    // derive a noise polyvec using a given seed and nonce
+    fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8) -> Self {
         let mut polynomials = ArrayVec::<[Poly<Noise>; 4]>::new();
         let eta = sec_level.eta_1();
 
@@ -118,254 +169,59 @@ impl PolyVec<Noise> {
             polynomials.push(Poly::derive_noise(seed, nonce, eta));
         }
 
-        PolyVec {
+        Self {
             polynomials,
             sec_level: sec_level.k(),
         }
     }
 }
 
+// unpack a given buffer into a polyvec poly-wise.
+// The buffer should be of length k * POLYBYTES.
+// If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
+// multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
+fn unpack_to_polyvec(buf: &[u8]) -> Result<PolyVec<Unnormalised>, PackingError> {
+    let sec_level = K::try_from(buf.len() / POLYBYTES)?; // If this fails then we know the
+                                                         // buffer is not of the right size and
+                                                         // so no further checks are needed.
+
+    let polyvec_result = buf
+        .chunks(POLYBYTES)
+        .map(unpack_to_poly)
+        .collect::<Result<ArrayVec<[Poly<Unnormalised>; 4]>, PackingError>>();
+
+    match polyvec_result {
+        Ok(polynomials) => Ok(PolyVec {
+            polynomials,
+            sec_level,
+        }),
+        Err(err) => Err(err),
+    }
+}
+
+// Decompress a given buffer into a polyvec.
+// The buffer should be of length k * POLYBYTES.
+// If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
+// multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
+fn decompress_to_polyvec(buf: &[u8]) -> Result<PolyVec<Normalised>, PackingError> {
+    let k = K::try_from(buf.len() / POLYBYTES)?;
+    let sec_level = SecurityLevel::new(k);
+
+    let polyvec_result = buf
+        .chunks(sec_level.poly_compressed_bytes())
+        .map(|buf_chunk| decompress_to_poly(buf_chunk, &sec_level))
+        .collect::<Result<ArrayVec<[Poly<Normalised>; 4]>, PackingError>>();
+
+    match polyvec_result {
+        Ok(polynomials) => Ok(PolyVec {
+            polynomials,
+            sec_level: k,
+        }),
+        Err(err) => Err(err),
+    }
+}
 
 struct Matrix<S: State> {
     vectors: ArrayVec<[PolyVec<S>; 4]>,
     sec_level: K,
 }
-
-
-// trait SameSecLevel {}
-
-// pub trait PolyVecOperations {
-//     fn new_filled() -> Self;
-//     fn add(&mut self, addend: Self);
-//     fn barrett_reduce(&mut self);
-//     fn normalise(&mut self);
-//     fn ntt(&mut self);
-//     fn inv_ntt(&mut self);
-//     fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: Eta);
-//     fn pack(&self, buf: &mut [u8]);
-//     fn unpack(&mut self, buf: &[u8]);
-//     fn compress(&self, buf: &mut [u8]) -> Result<(), TryFromIntError>;
-//     fn decompress(&mut self, buf: &[u8]) -> Result<(), TryFromIntError>;
-// }
-
-// macro_rules! impl_polyvec {
-//     ($variant:ty) => {
-//         impl PolyVecOperations for $variant {
-//             fn new_filled() -> Self {
-//                 let mut poly_vec = Self::default();
-//                 for _ in 0..poly_vec.capacity() {
-//                     poly_vec.push(Poly::new());
-//                 }
-//                 poly_vec
-//             }
-
-//             fn add(&mut self, addend: Self) {
-//                 for (augend_poly, addend_poly) in self.iter_mut().zip(addend.iter()) {
-//                     augend_poly.add(&addend_poly);
-//                 }
-//             }
-
-//             fn barrett_reduce(&mut self) {
-//                 for poly in self.iter_mut() {
-//                     poly.barrett_reduce();
-//                 }
-//             }
-
-//             fn normalise(&mut self) {
-//                 for poly in self.iter_mut() {
-//                     poly.normalise();
-//                 }
-//             }
-
-//             fn ntt(&mut self) {
-//                 for poly in self.iter_mut() {
-//                     poly.ntt();
-//                 }
-//             }
-
-//             fn inv_ntt(&mut self) {
-//                 for poly in self.iter_mut() {
-//                     poly.inv_ntt();
-//                 }
-//             }
-
-//             fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: Eta) {
-//                 for poly in self.iter_mut() {
-//                     poly.derive_noise(seed, nonce, eta);
-//                 }
-//             }
-
-//             // buf should be of length K * POLYBYTES
-//             fn pack(&self, buf: &mut [u8]) {
-//                 for (k, poly) in self.iter().enumerate() {
-//                     poly.pack(&mut buf[k * POLYBYTES..(k + 1) * POLYBYTES]);
-//                 }
-//             }
-
-//             fn unpack(&mut self, buf: &[u8]) {
-//                 for (k, poly) in self.iter_mut().enumerate() {
-//                     poly.unpack(&buf[k * POLYBYTES..(k + 1) * POLYBYTES]);
-//                 }
-//             }
-
-//             // buf should be of length poly_vec_compressed_bytes
-//             fn compress(&self, buf: &mut [u8]) -> Result<(), TryFromIntError> {
-//                 let k_value: u8 = <$variant as GetSecLevel>::sec_level().k().into();
-
-//                 match <$variant as GetSecLevel>::sec_level() {
-//                     SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-//                         for i in 0..usize::from(k_value) {
-//                             for j in 0..N / 4 {
-//                                 let mut temp = [0u16; 4];
-
-//                                 for k in 0..4 {
-//                                     temp[k] = u16::try_from(self[i].coeffs[4 * j + k])?;
-//                                     temp[k] = temp[k].wrapping_add(u16::try_from(
-//                                         (i16::try_from(temp[k])? >> 15) & i16::try_from(Q)?,
-//                                     )?);
-//                                     temp[k] = u16::try_from(
-//                                         (((u32::from(temp[k]) << 10) + u32::try_from(Q)? / 2)
-//                                             / u32::try_from(Q)?)
-//                                             & 0x3ff,
-//                                     )?;
-//                                 }
-
-//                                 let index = (i * (N / 4) + j) * 5;
-
-//                                 buf[index..index + 5].copy_from_slice(&[
-//                                     temp[0] as u8,
-//                                     ((temp[0] >> 8) | (temp[1] << 2)) as u8,
-//                                     ((temp[1] >> 6) | (temp[2] << 4)) as u8,
-//                                     ((temp[2] >> 4) | (temp[3] << 6)) as u8,
-//                                     (temp[3] >> 2) as u8,
-//                                 ]);
-//                             }
-//                         }
-//                     }
-//                     SecurityLevel::TenTwoFour { .. } => {
-//                         for i in 0..usize::from(k_value) {
-//                             for j in 0..N / 8 {
-//                                 let mut temp = [0u16; 8];
-
-//                                 for k in 0..8 {
-//                                     temp[k] = u16::try_from(self[i].coeffs[8 * j + k])?;
-//                                     temp[k] = temp[k].wrapping_add(u16::try_from(
-//                                         (i16::try_from(temp[k])? >> 15) & i16::try_from(Q)?,
-//                                     )?);
-//                                     temp[k] = u16::try_from(
-//                                         (((u32::from(temp[k]) << 11) + u32::try_from(Q)? / 2)
-//                                             / u32::try_from(Q)?)
-//                                             & 0x7ff,
-//                                     )?;
-//                                 }
-
-//                                 let index = (i * (N / 8) + j) * 11;
-
-//                                 buf[index..index + 11].copy_from_slice(&[
-//                                     temp[0] as u8,
-//                                     ((temp[0] >> 8) | (temp[1] << 3)) as u8,
-//                                     ((temp[1] >> 5) | (temp[2] << 6)) as u8,
-//                                     (temp[2] >> 2) as u8,
-//                                     ((temp[2] >> 10) | (temp[3] << 1)) as u8,
-//                                     ((temp[3] >> 7) | (temp[4] << 4)) as u8,
-//                                     ((temp[4] >> 4) | (temp[5] << 7)) as u8,
-//                                     (temp[5] >> 1) as u8,
-//                                     ((temp[5] >> 9) | (temp[6] << 2)) as u8,
-//                                     ((temp[6] >> 6) | (temp[7] << 5)) as u8,
-//                                     (temp[7] >> 3) as u8,
-//                                 ]);
-//                             }
-//                         }
-//                     }
-//                 }
-//                 Ok(())
-//             }
-
-//             // buf should be of length poly_vec_compressed_bytes
-//             fn decompress(&mut self, buf: &[u8]) -> Result<(), TryFromIntError> {
-//                 let k_value: u8 = <$variant as GetSecLevel>::sec_level().k().into();
-
-//                 match <$variant as GetSecLevel>::sec_level() {
-//                     SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-//                         for i in 0..usize::from(k_value) {
-//                             for j in 0..N / 4 {
-//                                 let index = (i * (N / 4) + j) * 5;
-
-//                                 let temp = (0..4).map(|k| {
-//                                     let shift = (2 * k) as u32;
-//                                     let val = u16::from(buf[index + k] >> shift)
-//                                         | u16::from(buf[index + k + 1]) << (8 - shift);
-//                                     val
-//                                 });
-
-//                                 for (k, val) in temp.enumerate() {
-//                                     self[i].coeffs[4 * j + k] = i16::try_from(
-//                                         ((u32::from(val) & 0x3ff) * u32::try_from(Q)? + 512) >> 10,
-//                                     )?;
-//                                 }
-//                             }
-//                         }
-//                     }
-//                     SecurityLevel::TenTwoFour { .. } => {
-//                         for i in 0..usize::from(k_value) {
-//                             for j in 0..N / 8 {
-//                                 let mut index = (i * (N / 8) + j) * 11;
-
-//                                 let temp = (0..8).map(|k| {
-//                                     let shift = ((3 * k) % 8) as u32;
-//                                     let mut val = u16::from(buf[index + k] >> shift)
-//                                         | u16::from(buf[index + k + 1]) << (8 - shift);
-//                                     if k % 3 == 2 {
-//                                         let mut extra = u16::from(buf[index + k + 2]);
-//                                         if k == 2 {
-//                                             extra <<= 10;
-//                                         } else if k == 5 {
-//                                             extra <<= 9;
-//                                         }
-//                                         val |= extra;
-//                                         index += 1;
-//                                     }
-//                                     val
-//                                 });
-
-//                                 for (k, val) in temp.enumerate() {
-//                                     self[i].coeffs[8 * j + k] = i16::try_from(
-//                                         (u32::from(val & 0x7ff) * u32::try_from(Q)? + 1024) >> 11,
-//                                     )?;
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//                 Ok(())
-//             }
-//         }
-//         impl SameSecLevel for $variant {}
-//     };
-// }
-
-// impl_polyvec!(PolyVec512);
-// impl_polyvec!(PolyVec768);
-// impl_polyvec!(PolyVec1024);
-
-// pub trait LinkSecLevel<P: PolyVecOperations> {}
-// impl LinkSecLevel<PolyVec512> for Mat512 {}
-// impl LinkSecLevel<PolyVec768> for Mat768 {}
-// impl LinkSecLevel<PolyVec1024> for Mat1024 {}
-
-// impl Poly {
-//     pub fn inner_product_pointwise<T>(&mut self, multiplicand: T, multiplier: T)
-//     where
-//         T: PolyVecOperations + IntoIterator<Item = Self>,
-//     {
-//         *self = Self::new(); // Zero output Poly
-//         for (multiplicand_poly, multiplier_poly) in
-//             multiplicand.into_iter().zip(multiplier.into_iter())
-//         {
-//             let mut temp = multiplicand_poly;
-//             temp.pointwise_mul(&multiplier_poly);
-//             self.add(&temp);
-//         }
-//         self.barrett_reduce();
-//     }
-// }

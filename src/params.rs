@@ -1,4 +1,4 @@
-use num_enum::IntoPrimitive;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 pub const N: usize = 256;
 pub const Q: usize = 3329;
@@ -9,9 +9,10 @@ pub const SHAREDSECRETBYTES: usize = 32;
 
 pub const POLYBYTES: usize = 384;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, IntoPrimitive)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(usize)]
 // Get the usize repr using .into()
+// Convert from usize using K::try_from(my_usize)
 pub enum K {
     Two = 2,
     #[default]

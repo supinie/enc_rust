@@ -28,19 +28,19 @@ mod errors;
 mod field_operations;
 // mod indcpa;
 pub mod kem;
-// mod matrix;
+mod matrix;
 pub(crate) mod params;
 mod polynomials;
 mod vectors;
 
-// mod tests {
-//     mod buffer;
-//     mod field_operations;
+mod tests {
+    // mod buffer;
+    mod field_operations;
 //     mod indcpa;
 //     mod matrix;
 //     mod ntt;
-//     mod params;
-//     mod polynomials;
+    mod params;
+    // mod polynomials;
 //     mod sample;
 //     mod vectors;
-// }
+}

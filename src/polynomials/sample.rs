@@ -1,6 +1,7 @@
 use crate::{
+    errors::CrystalsError,
     params::{Eta, N, Q, SYMBYTES},
-    polynomials::{Noise, Poly, Unnormalised},
+    polynomials::{Noise, Poly, Unnormalised}
 };
 use byteorder::{ByteOrder, LittleEndian};
 use rand_core::{CryptoRng, Error, RngCore};
@@ -106,8 +107,11 @@ impl Poly<Noise> {
 
 impl Poly<Unnormalised> {
     // seed should be of length 32
-    // coefficients are reduced
-    pub(crate) fn derive_uniform(seed: &[u8], x: u8, y: u8) -> Self {
+    // coefficients are reduced, but not normalised (close to normal)
+    pub(crate) fn derive_uniform(seed: &[u8], x: u8, y: u8) -> Result<Self, CrystalsError> {
+        if seed.len() != 32 {
+            return Err(CrystalsError::InvalidSeedLength(seed.len(), 32))
+        }
         let seed_suffix = [x, y];
         let mut buf = [0u8; 168];
 
@@ -149,9 +153,9 @@ impl Poly<Unnormalised> {
             }
         }
 
-        Self {
+        Ok(Self {
             coeffs,
             state: Unnormalised,
-        }
+        })
     }
 }

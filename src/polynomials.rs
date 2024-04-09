@@ -194,7 +194,7 @@ impl Poly<Normalised> {
     // ```
     // let poly = Poly::from(&[1i16; N]);
     // ```
-    const fn from(array: &[i16; N]) -> Poly<Unnormalised> {
+    const fn from_arr(array: &[i16; N]) -> Poly<Unnormalised> {
         Poly {
             coeffs: *array,
             state: Unnormalised,

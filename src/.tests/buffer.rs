@@ -6,7 +6,6 @@ pub(in crate::tests) mod buffer_tests {
         tests::{
             params::params_tests::sec_level_strategy, polynomials::poly_tests::new_poly_array,
         },
-        vectors::*,
     };
     use proptest::prelude::*;
     use rand::Rng;
@@ -38,7 +37,7 @@ pub(in crate::tests) mod buffer_tests {
     proptest! {
         #[test]
         fn pack_unpack_poly_test(a in new_poly_array()) {
-            let mut poly = Poly::from(&a);
+            let poly = Poly::from_arr(&[0i16; N]);
             poly.normalise();
             let mut buffer = [0; POLYBYTES];
             poly.pack(&mut buffer);

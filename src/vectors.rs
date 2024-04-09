@@ -4,8 +4,7 @@ use crate::{
     params::{SecurityLevel, K, POLYBYTES},
     polynomials::{decompress_to_poly, unpack_to_poly, Noise, Normalised, Poly, State, Unnormalised},
 };
-use tinyvec::array_vec;
-use tinyvec::ArrayVec;
+use tinyvec::{array_vec, ArrayVec};
 
 #[derive(Default)]
 pub struct PolyVec<S: State> {
@@ -23,6 +22,14 @@ impl<S: State> PolyVec<S> {
     // given security level. This insures we can iterate over polynomials easily.
     fn polynomials(&self) -> &[Poly<S>] {
         &self.polynomials.as_slice()[..self.sec_level.into()]
+    }
+
+    pub(crate) fn from(polynomials:  ArrayVec<[Poly<S>; 4]>) -> Result<Self, CrystalsError> {
+        K::try_from(polynomials.len())
+            .map_or_else(
+                |_| Err(CrystalsError::InternalError()),
+                |sec_level| Ok(Self { polynomials, sec_level })
+            )
     }
 
     // Add two polyvecs pointwise.
@@ -78,7 +85,7 @@ impl PolyVec<Unnormalised> {
 
 impl PolyVec<Normalised> {
     // Create a new, empty polyvec.
-    fn new(k: K) -> Self {
+    pub(crate) fn new(k: K) -> Self {
         let polynomials = match k {
             K::Two => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new()),
             K::Three => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new()),

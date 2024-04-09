@@ -9,6 +9,8 @@ use num_enum::TryFromPrimitiveError;
 pub enum CrystalsError {
     MismatchedSecurityLevels(SecurityLevel, SecurityLevel),
     IncorrectBufferLength(usize, usize),
+    InvalidSeedLength(usize, usize),
+    InternalError(),
 }
 
 impl Display for CrystalsError {
@@ -16,6 +18,8 @@ impl Display for CrystalsError {
         match *self {
             Self::MismatchedSecurityLevels(sec_level_1, sec_level_2) => write!(f, "Mismatched security levels when attempting operation: {sec_level_1:#?} and {sec_level_2:#?}"),
             Self::IncorrectBufferLength(buf_len, expected_buf_len) => write!(f, "Incorrect buffer length for (un)packing. Expected buffer length {expected_buf_len}, got length {buf_len}"),
+            Self::InvalidSeedLength(seed_len, expected_seed_len) => write!(f, "Invalid seed length, expected {expected_seed_len}, got {seed_len}"),
+            Self::InternalError() => write!(f, "Unexpected internal error"),
         }
     }
 }

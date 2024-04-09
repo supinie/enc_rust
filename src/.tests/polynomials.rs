@@ -3,7 +3,6 @@
 pub(in crate::tests) mod poly_tests {
     use crate::{
         field_operations::{barrett_reduce, montgomery_reduce},
-        ntt::ZETAS,
         params::*,
         polynomials::*,
         tests::buffer::buffer_tests::zero_initialise_buffer,
@@ -14,39 +13,39 @@ pub(in crate::tests) mod poly_tests {
         prop::array::uniform(-(Q as i16)..(Q as i16))
     }
 
-    impl Poly {
-        fn pointwise_mul_alt(&mut self, x: &Self) {
-            let mut j: usize = 64;
+    // impl Poly {
+    //     fn pointwise_mul_alt(&mut self, x: &Self) {
+    //         let mut j: usize = 64;
 
-            for i in (0..N).step_by(4) {
-                let zeta = i32::from(ZETAS[j]);
-                j += 1;
+    //         for i in (0..N).step_by(4) {
+    //             let zeta = i32::from(ZETAS[j]);
+    //             j += 1;
 
-                let mut p0 =
-                    montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i + 1]));
-                p0 = montgomery_reduce(i32::from(p0) * zeta);
-                p0 += montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i]));
+    //             let mut p0 =
+    //                 montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i + 1]));
+    //             p0 = montgomery_reduce(i32::from(p0) * zeta);
+    //             p0 += montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i]));
 
-                let mut p1 =
-                    montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
-                p1 += montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i]));
+    //             let mut p1 =
+    //                 montgomery_reduce(i32::from(self.coeffs[i]) * i32::from(x.coeffs[i + 1]));
+    //             p1 += montgomery_reduce(i32::from(self.coeffs[i + 1]) * i32::from(x.coeffs[i]));
 
-                let mut p2 =
-                    montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 3]));
-                p2 = -montgomery_reduce(i32::from(p2) * zeta);
-                p2 += montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 2]));
+    //             let mut p2 =
+    //                 montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 3]));
+    //             p2 = -montgomery_reduce(i32::from(p2) * zeta);
+    //             p2 += montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 2]));
 
-                let mut p3 =
-                    montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 3]));
-                p3 += montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 2]));
+    //             let mut p3 =
+    //                 montgomery_reduce(i32::from(self.coeffs[i + 2]) * i32::from(x.coeffs[i + 3]));
+    //             p3 += montgomery_reduce(i32::from(self.coeffs[i + 3]) * i32::from(x.coeffs[i + 2]));
 
-                self.coeffs[i] = p0;
-                self.coeffs[i + 1] = p1;
-                self.coeffs[i + 2] = p2;
-                self.coeffs[i + 3] = p3;
-            }
-        }
-    }
+    //             self.coeffs[i] = p0;
+    //             self.coeffs[i + 1] = p1;
+    //             self.coeffs[i + 2] = p2;
+    //             self.coeffs[i + 3] = p3;
+    //         }
+    //     }
+    // }
 
     // Test Poly::new()
     #[test]

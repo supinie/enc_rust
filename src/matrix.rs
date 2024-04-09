@@ -1,8 +1,8 @@
 use crate::{
     errors::CrystalsError,
     params::{SecurityLevel, K},
-    polynomials::{Normalised, Poly, State, Unnormalised}, 
-    vectors::PolyVec
+    polynomials::{Normalised, Poly, State, Unnormalised},
+    vectors::PolyVec,
 };
 use tinyvec::{array_vec, ArrayVec};
 
@@ -22,14 +22,17 @@ impl<S: State> Matrix<S> {
     }
 }
 
-
 impl Matrix<Normalised> {
     // Create a new, empty matrix
     fn new(k: K) -> Self {
         let polyvecs = match k {
             K::Two => array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k)),
-            K::Three => array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k), PolyVec::new(k)),
-            K::Four => array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k), PolyVec::new(k), PolyVec::new(k))
+            K::Three => {
+                array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k), PolyVec::new(k))
+            }
+            K::Four => {
+                array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k), PolyVec::new(k), PolyVec::new(k))
+            }
         };
 
         Self {
@@ -44,35 +47,42 @@ impl Matrix<Unnormalised> {
         let mut polyvecs = ArrayVec::<[PolyVec<Unnormalised>; 4]>::new();
         if transpose {
             for i in 0..sec_level.into() {
-                let row: Result<ArrayVec<[Poly<Unnormalised>; 4]>, CrystalsError> = (0..sec_level.into()).map(|j| {
-                    #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
-                    Poly::derive_uniform(seed, i as u8, j as u8)
-                }).collect();
-                
+                let row: Result<ArrayVec<[Poly<Unnormalised>; 4]>, CrystalsError> = (0..sec_level
+                    .into())
+                    .map(|j| {
+                        #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
+                        Poly::derive_uniform(seed, i as u8, j as u8)
+                    })
+                    .collect();
+
                 let arr_vec = row?;
 
                 let polyvec = PolyVec::from(arr_vec)?;
                 polyvecs.push(polyvec);
-            };
+            }
         } else {
             for i in 0..sec_level.into() {
-                let row: Result<ArrayVec<[Poly<Unnormalised>; 4]>, CrystalsError> = (0..sec_level.into()).map(|j| {
-                    #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
-                    Poly::derive_uniform(seed, j as u8, i as u8)
-                }).collect();
-                
+                let row: Result<ArrayVec<[Poly<Unnormalised>; 4]>, CrystalsError> = (0..sec_level
+                    .into())
+                    .map(|j| {
+                        #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
+                        Poly::derive_uniform(seed, j as u8, i as u8)
+                    })
+                    .collect();
+
                 let arr_vec = row?;
 
                 let polyvec = PolyVec::from(arr_vec)?;
                 polyvecs.push(polyvec);
-            };
+            }
         }
 
-        Ok(Self { polyvecs, sec_level })
-
+        Ok(Self {
+            polyvecs,
+            sec_level,
+        })
     }
 }
-
 
 // pub type Mat512 = [PolyVec512; 2];
 // pub type Mat768 = [PolyVec768; 3];

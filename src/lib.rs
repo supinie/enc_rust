@@ -36,11 +36,11 @@ mod vectors;
 mod tests {
     // mod buffer;
     mod field_operations;
-//     mod indcpa;
-//     mod matrix;
-//     mod ntt;
+    //     mod indcpa;
+    //     mod matrix;
+    //     mod ntt;
     mod params;
     // mod polynomials;
-//     mod sample;
-//     mod vectors;
+    //     mod sample;
+    //     mod vectors;
 }

@@ -2,7 +2,9 @@
 use crate::{
     errors::{CrystalsError, PackingError},
     params::{SecurityLevel, K, POLYBYTES},
-    polynomials::{decompress_to_poly, unpack_to_poly, Noise, Normalised, Poly, State, Unnormalised},
+    polynomials::{
+        decompress_to_poly, unpack_to_poly, Noise, Normalised, Poly, State, Unnormalised,
+    },
 };
 use tinyvec::{array_vec, ArrayVec};
 
@@ -24,12 +26,16 @@ impl<S: State> PolyVec<S> {
         &self.polynomials.as_slice()[..self.sec_level.into()]
     }
 
-    pub(crate) fn from(polynomials:  ArrayVec<[Poly<S>; 4]>) -> Result<Self, CrystalsError> {
-        K::try_from(polynomials.len())
-            .map_or_else(
-                |_| Err(CrystalsError::InternalError()),
-                |sec_level| Ok(Self { polynomials, sec_level })
-            )
+    pub(crate) fn from(polynomials: ArrayVec<[Poly<S>; 4]>) -> Result<Self, CrystalsError> {
+        K::try_from(polynomials.len()).map_or_else(
+            |_| Err(CrystalsError::InternalError()),
+            |sec_level| {
+                Ok(Self {
+                    polynomials,
+                    sec_level,
+                })
+            },
+        )
     }
 
     // Add two polyvecs pointwise.
@@ -145,10 +151,9 @@ impl PolyVec<Normalised> {
         Ok(())
     }
 
-    
     // buf should be of length k * poly_compressed_bytes
     // compresses the polyvec poly-wise into the buffer
-    fn compress(&self, buf:&mut [u8]) -> Result<(), PackingError> {
+    fn compress(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         let bytes_len = self.sec_level().poly_compressed_bytes();
         if buf.len() != self.polynomials.len() * bytes_len {
             return Err(CrystalsError::IncorrectBufferLength(
@@ -157,11 +162,12 @@ impl PolyVec<Normalised> {
             )
             .into());
         }
-        
-        let _ = buf.chunks_mut(bytes_len)
+
+        let _ = buf
+            .chunks_mut(bytes_len)
             .zip(self.polynomials.iter())
             .map(|(buf_chunk, poly)| poly.compress(buf_chunk, &self.sec_level()));
-        
+
         Ok(())
     }
 }

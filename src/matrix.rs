@@ -47,8 +47,7 @@ impl Matrix<Unnormalised> {
         let mut polyvecs = ArrayVec::<[PolyVec<Unnormalised>; 4]>::new();
         if transpose {
             for i in 0..sec_level.into() {
-                let row: ArrayVec<[Poly<Unnormalised>; 4]> = (0..sec_level
-                    .into())
+                let row: ArrayVec<[Poly<Unnormalised>; 4]> = (0..sec_level.into())
                     .map(|j| {
                         #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
                         Poly::derive_uniform(seed, i as u8, j as u8)
@@ -60,8 +59,7 @@ impl Matrix<Unnormalised> {
             }
         } else {
             for i in 0..sec_level.into() {
-                let row: ArrayVec<[Poly<Unnormalised>; 4]> = (0..sec_level
-                    .into())
+                let row: ArrayVec<[Poly<Unnormalised>; 4]> = (0..sec_level.into())
                     .map(|j| {
                         #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
                         Poly::derive_uniform(seed, j as u8, i as u8)

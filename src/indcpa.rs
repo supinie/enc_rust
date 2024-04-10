@@ -1,11 +1,11 @@
 use core::num::TryFromIntError;
 
 use crate::{
+    errors::{CrystalsError, PackingError},
     matrix::Matrix,
-    params::{POLYBYTES, SYMBYTES},
-    polynomials::{Poly, State, Normalised, Unnormalised},
-    vectors::{PolyVec, unpack_to_polyvec},
-    errors::PackingError,
+    params::{SecurityLevel, K, POLYBYTES, SYMBYTES},
+    polynomials::{Normalised, Poly, State, Unnormalised},
+    vectors::{unpack_to_polyvec, PolyVec},
 };
 use sha3::{Digest, Sha3_512};
 
@@ -15,28 +15,61 @@ pub struct PrivateKey {
 }
 
 #[derive(Default, PartialEq, Debug, Eq)]
-pub struct PublicKey<S: State> {
+pub struct PublicKey {
     rho: [u8; SYMBYTES],
-    noise: PolyVec<S>,
-    a_t: Matrix<S>,
+    noise: PolyVec<Normalised>,
+    a_t: Matrix<Unnormalised>,
 }
 
 impl PrivateKey {
-    pub fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+    fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         self.secret.pack(buf)
     }
 }
 
 fn unpack_to_private_key(buf: &[u8]) -> Result<PrivateKey, PackingError> {
     let secret = unpack_to_polyvec(buf)?.normalise();
-    Ok(PrivateKey {
-        secret
-    })
+    Ok(PrivateKey { secret })
 }
-//     pub fn unpack(&mut self, buf: &[u8]) {
-//         self.secret.unpack(buf);
-//         self.secret.normalise();
-//     }
+
+impl PublicKey {
+    fn sec_level(&self) -> Result<SecurityLevel, CrystalsError> {
+        if self.noise.sec_level() == self.a_t.sec_level() {
+            Ok(self.noise.sec_level())
+        } else {
+            Err(CrystalsError::MismatchedSecurityLevels(
+                self.noise.sec_level(),
+                self.a_t.sec_level(),
+            ))
+        }
+    }
+
+    fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+        let k: usize = self.sec_level()?.k().into();
+
+        let break_point: usize = POLYBYTES * k;
+        if buf[break_point..].len() == SYMBYTES {
+            self.noise.pack(&mut buf[..break_point])?;
+            buf[break_point..].copy_from_slice(&self.rho[..]);
+            Ok(())
+        } else {
+            Err(CrystalsError::IncorrectBufferLength(buf.len(), break_point + SYMBYTES).into())
+        }
+    }
+}
+
+fn unpack_to_public_key(buf: &[u8]) -> Result<PublicKey, PackingError> {
+    let k = K::try_from((buf.len() - SYMBYTES) / POLYBYTES)?;
+    let k_value: usize = k.into();
+    let break_point: usize = POLYBYTES * k_value;
+
+    let noise = unpack_to_polyvec(&buf[..break_point])?.normalise();
+    let rho: [u8; SYMBYTES] = buf[break_point..].try_into()?;
+
+    let a_t = Matrix::derive(&rho, true, k)?;
+
+    Ok(PublicKey { rho, noise, a_t })
+}
 
 // impl<PV: PolyVecOperations, M: MatOperations + GetSecLevel + LinkSecLevel<PV>> PublicKey<PV, M> {
 //     pub fn pack(&self, buf: &mut [u8]) {

@@ -16,7 +16,7 @@ pub struct PolyVec<S: State> {
 
 impl<S: State> PolyVec<S> {
     // Gets the security level of the given polyvec.
-    const fn sec_level(&self) -> SecurityLevel {
+    pub(crate) const fn sec_level(&self) -> SecurityLevel {
         SecurityLevel::new(self.sec_level)
     }
 
@@ -193,7 +193,7 @@ impl PolyVec<Noise> {
 // The buffer should be of length k * POLYBYTES.
 // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
 // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
-pub(crate) fn unpack_to_polyvec(buf: &[u8]) -> Result<PolyVec<Unnormalised>, PackingError> {
+pub fn unpack_to_polyvec(buf: &[u8]) -> Result<PolyVec<Unnormalised>, PackingError> {
     let sec_level = K::try_from(buf.len() / POLYBYTES)?; // If this fails then we know the
                                                          // buffer is not of the right size and
                                                          // so no further checks are needed.

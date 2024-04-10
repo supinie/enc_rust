@@ -1,5 +1,6 @@
 use crate::params::{SecurityLevel, K};
 use core::{
+    array::TryFromSliceError,
     fmt::{Display, Formatter},
     num::TryFromIntError,
 };
@@ -28,6 +29,7 @@ pub enum PackingError {
     Crystals(CrystalsError),
     TryFromPrimitive(TryFromPrimitiveError<K>),
     TryFromInt(TryFromIntError),
+    TryFromSlice(TryFromSliceError),
 }
 
 impl From<CrystalsError> for PackingError {
@@ -45,5 +47,11 @@ impl From<TryFromPrimitiveError<K>> for PackingError {
 impl From<TryFromIntError> for PackingError {
     fn from(error: TryFromIntError) -> Self {
         Self::TryFromInt(error)
+    }
+}
+
+impl From<TryFromSliceError> for PackingError {
+    fn from(error: TryFromSliceError) -> Self {
+        Self::TryFromSlice(error)
     }
 }

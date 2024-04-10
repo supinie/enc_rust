@@ -13,7 +13,7 @@ pub struct Matrix<S: State> {
 }
 
 impl<S: State + Copy> Matrix<S> {
-    const fn sec_level(&self) -> SecurityLevel {
+    pub(crate) const fn sec_level(&self) -> SecurityLevel {
         SecurityLevel::new(self.sec_level)
     }
 
@@ -67,7 +67,11 @@ impl Matrix<Normalised> {
 }
 
 impl Matrix<Unnormalised> {
-    fn derive(seed: &[u8], transpose: bool, sec_level: K) -> Result<Self, CrystalsError> {
+    pub(crate) fn derive(
+        seed: &[u8],
+        transpose: bool,
+        sec_level: K,
+    ) -> Result<Self, CrystalsError> {
         let mut polyvecs = ArrayVec::<[PolyVec<Unnormalised>; 4]>::new();
         if transpose {
             for i in 0..sec_level.into() {

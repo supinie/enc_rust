@@ -19,7 +19,7 @@ pub struct Poly<S: State> {
 // Normalised coefficients lie within {0..q-1}
 #[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Normalised;
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Unnormalised;
 #[derive(Default, Copy, Clone)]
 pub struct Noise;

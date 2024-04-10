@@ -17,11 +17,11 @@ pub struct Poly<S: State> {
 }
 
 // Normalised coefficients lie within {0..q-1}
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub struct Normalised;
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub struct Unnormalised;
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub struct Noise;
 
 pub trait State: Default {}
@@ -159,7 +159,7 @@ impl Poly<Unnormalised> {
     // Normalised coefficients lie within {0..q-1}
     // Example:
     // ```
-    // let new_poly = poly.normalise();
+    // let normal_poly = poly.normalise();
     // ```
     pub(crate) fn normalise(&self) -> Poly<Normalised> {
         let coeffs_arr: [i16; N] = self

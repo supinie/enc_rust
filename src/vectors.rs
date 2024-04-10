@@ -22,7 +22,7 @@ impl<S: State> PolyVec<S> {
 
     // We don't expose polynomials directly to handle cases where the ArrayVec is not full for a
     // given security level. This insures we can iterate over polynomials easily.
-    fn polynomials(&self) -> &[Poly<S>] {
+    pub(crate) fn polynomials(&self) -> &[Poly<S>] {
         &self.polynomials.as_slice()[..self.sec_level.into()]
     }
 

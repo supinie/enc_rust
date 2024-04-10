@@ -8,7 +8,7 @@ use crate::{
 };
 use tinyvec::{array_vec, ArrayVec};
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Debug, Eq)]
 pub struct PolyVec<S: State> {
     polynomials: ArrayVec<[Poly<S>; 4]>,
     sec_level: K,
@@ -76,7 +76,7 @@ impl<S: State> PolyVec<S> {
 
 impl PolyVec<Unnormalised> {
     // Normalise each polynomial in the polyvec
-    fn normalise(&self) -> PolyVec<Normalised> {
+    pub(crate) fn normalise(&self) -> PolyVec<Normalised> {
         let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
         for poly in self.polynomials.iter() {
             polynomials.push(poly.normalise());
@@ -134,7 +134,7 @@ impl PolyVec<Normalised> {
 
     // buf should be of length k * POLYBYTES
     // packs the polyvec poly-wise into the buffer
-    fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+    pub(crate) fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         if buf.len() != self.polynomials.len() * POLYBYTES {
             let buffer_sec_level = SecurityLevel::new(K::try_from(buf.len() / POLYBYTES)?);
             return Err(CrystalsError::MismatchedSecurityLevels(
@@ -193,7 +193,7 @@ impl PolyVec<Noise> {
 // The buffer should be of length k * POLYBYTES.
 // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
 // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
-fn unpack_to_polyvec(buf: &[u8]) -> Result<PolyVec<Unnormalised>, PackingError> {
+pub(crate) fn unpack_to_polyvec(buf: &[u8]) -> Result<PolyVec<Unnormalised>, PackingError> {
     let sec_level = K::try_from(buf.len() / POLYBYTES)?; // If this fails then we know the
                                                          // buffer is not of the right size and
                                                          // so no further checks are needed.

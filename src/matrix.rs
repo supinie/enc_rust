@@ -6,7 +6,7 @@ use crate::{
 };
 use tinyvec::{array_vec, ArrayVec};
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Debug, Eq)]
 pub struct Matrix<S: State> {
     polyvecs: ArrayVec<[PolyVec<S>; 4]>,
     sec_level: K,

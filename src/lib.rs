@@ -26,7 +26,7 @@
 
 mod errors;
 mod field_operations;
-// mod indcpa;
+mod indcpa;
 pub mod kem;
 mod matrix;
 pub(crate) mod params;

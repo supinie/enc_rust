@@ -17,7 +17,7 @@ impl<S: State + Copy> Matrix<S> {
         SecurityLevel::new(self.sec_level)
     }
 
-    fn vectors(&self) -> &[PolyVec<S>] {
+    pub(crate) fn vectors(&self) -> &[PolyVec<S>] {
         &self.polyvecs.as_slice()[..self.sec_level.into()]
     }
 

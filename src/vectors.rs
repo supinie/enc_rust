@@ -1,7 +1,7 @@
 // use core::num::TryFromIntError;
 use crate::{
     errors::{CrystalsError, PackingError},
-    params::{SecurityLevel, K, POLYBYTES},
+    params::{SecurityLevel, K, POLYBYTES, N},
     polynomials::{
         Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced
     },
@@ -236,10 +236,17 @@ impl PolyVec<Montgomery> {
             sec_level: sec_level.k(),
         }
     }
+
+    pub(crate) fn inner_product_pointwise(&self, polyvec: &Self) -> Poly<Unreduced> {
+        let poly = self
+            .polynomials()
+            .iter()
+            .zip(polyvec.polynomials())
+            .map(|(&multiplicand, multiplier)| multiplicand.pointwise_mul(multiplier))
+            .fold(Poly::from_arr(&[0i16; N]), |acc, x| acc.add(&x));
+
+        poly 
+    }
 }
 
 
-// struct Matrix<S: State> {
-//     vectors: ArrayVec<[PolyVec<S>; 4]>,
-//     sec_level: K,
-// }

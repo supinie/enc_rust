@@ -155,6 +155,44 @@ impl<S: State + Unnormalised> Poly<S> {
     }
 }
 
+impl<S: State + Reduced> Poly<S> {
+    // Pointwise multiplication of two polynomials,
+    // If the inputs are of montgomery form, then so will the output, bounded by 2q.
+    // If the inputs are not of montgomery form, then the output will also be unnormalised.
+    // Products of coefficients of the two polynomials must be strictly bound by 2^15 q.
+    // Example:
+    // ```
+    // let new_poly = poly1.pointwise_mul(&poly2);
+    // ```
+    pub(crate) fn pointwise_mul<T: State>(&self, x: &Poly<T>) -> Poly<Unreduced> {
+        let mut coeffs_arr = self.coeffs;
+        for ((chunk, x_chunk), &zeta) in coeffs_arr
+            .chunks_mut(4)
+            .zip(x.coeffs.chunks(4))
+            .zip(ZETAS.iter().skip(64))
+        {
+            let mut temp = [0i16; 4];
+
+            for (i, coeff) in temp.iter_mut().enumerate() {
+                if i % 2 == 0 {
+                    let sign: i16 = if i == 2 { -1 } else { 1 };
+                    *coeff = montgomery_reduce(i32::from(chunk[i + 1]) * i32::from(x_chunk[i + 1]));
+                    *coeff = sign * montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
+                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i]));
+                } else {
+                    *coeff = montgomery_reduce(i32::from(chunk[i - 1]) * i32::from(x_chunk[i]));
+                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
+                }
+            }
+            chunk.copy_from_slice(&temp);
+        }
+        Poly {
+            coeffs: coeffs_arr,
+            state: Unreduced,
+        }
+    }
+}
+
 impl Poly<Normalised> {
     // const function equivelent of `default` (`default` is needed for `ArrayVec`)
     // Example:
@@ -174,7 +212,7 @@ impl Poly<Normalised> {
     // ```
     // let poly = Poly::from(&[1i16; N]);
     // ```
-    const fn from_arr(array: &[i16; N]) -> Poly<Unreduced> {
+    pub(crate) const fn from_arr(array: &[i16; N]) -> Poly<Unreduced> {
         Poly {
             coeffs: *array,
             state: Unreduced,
@@ -309,41 +347,6 @@ impl Poly<Normalised> {
         }
     }
 
-    // Pointwise multiplication of two polynomials,
-    // If the inputs are of montgomery form, then so will the output, bounded by 2q.
-    // If the inputs are not of montgomery form, then the output will also be unnormalised.
-    // Products of coefficients of the two polynomials must be strictly bound by 2^15 q.
-    // Example:
-    // ```
-    // let new_poly = poly1.pointwise_mul(&poly2);
-    // ```
-    pub(crate) fn pointwise_mul<T: State>(&self, x: &Poly<T>) -> Poly<Unreduced> {
-        let mut coeffs_arr = self.coeffs;
-        for ((chunk, x_chunk), &zeta) in coeffs_arr
-            .chunks_mut(4)
-            .zip(x.coeffs.chunks(4))
-            .zip(ZETAS.iter().skip(64))
-        {
-            let mut temp = [0i16; 4];
-
-            for (i, coeff) in temp.iter_mut().enumerate() {
-                if i % 2 == 0 {
-                    let sign: i16 = if i == 2 { -1 } else { 1 };
-                    *coeff = montgomery_reduce(i32::from(chunk[i + 1]) * i32::from(x_chunk[i + 1]));
-                    *coeff = sign * montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
-                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i]));
-                } else {
-                    *coeff = montgomery_reduce(i32::from(chunk[i - 1]) * i32::from(x_chunk[i]));
-                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
-                }
-            }
-            chunk.copy_from_slice(&temp);
-        }
-        Poly {
-            coeffs: coeffs_arr,
-            state: Unreduced,
-        }
-    }
 
 
     // Unpacks a buffer of POLYBYTES bytes into a polynomial

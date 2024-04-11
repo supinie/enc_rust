@@ -116,53 +116,6 @@ fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKe
     ))
 }
 
-// pub fn generate_key_pair<PV, M>(seed: &[u8]) -> (PrivateKey<PV>, PublicKey<PV, M>)
-// where
-//     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
-//     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
-// {
-//     let mut pub_key = PublicKey {
-//         rho: [0u8; SYMBYTES],
-//         noise: PV::new_filled(),
-//         a_t: M::new(),
-//     };
-//     let mut priv_key = PrivateKey {
-//         secret: PV::new_filled(),
-//     };
-
-//     let mut expanded_seed = [0u8; 2 * SYMBYTES];
-//     let mut hash = Sha3_512::new();
-//     hash.update(seed);
-
-//     expanded_seed.copy_from_slice(&hash.finalize());
-
-//     pub_key.rho[..].copy_from_slice(&expanded_seed[..32]);
-//     pub_key.a_t = M::derive(&pub_key.rho, false);
-//     let sigma = &expanded_seed[32..]; // seed for noise
-
-//     priv_key
-//         .secret
-//         .derive_noise(sigma, 0, PV::sec_level().eta_1());
-//     priv_key.secret.ntt();
-//     priv_key.secret.normalise();
-
-//     for (mut poly, vec) in pub_key.noise.into_iter().zip(pub_key.a_t) {
-//         poly.inner_product_pointwise(vec, priv_key.secret);
-//         poly.mont_form();
-//     }
-
-//     let mut error = PV::new_filled();
-//     let k_value: u8 = M::sec_level().k().into();
-//     error.derive_noise(sigma, k_value, M::sec_level().eta_1());
-//     error.ntt();
-
-//     pub_key.noise.add(error);
-//     pub_key.noise.normalise();
-
-//     pub_key.a_t.transpose();
-
-//     (priv_key, pub_key)
-// }
 
 // // pub fn encrypt<'a, PV, M>(
 // pub fn encrypt<PV, M>(

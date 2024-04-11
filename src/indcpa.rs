@@ -1,8 +1,8 @@
 use crate::{
-    errors::{CrystalsError, PackingError, KeyGenerationError},
+    errors::{CrystalsError, EncryptionDecryptionError, KeyGenerationError, PackingError},
     matrix::Matrix,
     params::{SecurityLevel, K, POLYBYTES, SYMBYTES},
-    polynomials::{Normalised, Montgomery, Poly},
+    polynomials::{Montgomery, Normalised, Poly, Unreduced},
     vectors::PolyVec,
 };
 use sha3::{Digest, Sha3_512};
@@ -24,11 +24,11 @@ impl PrivateKey {
     fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         self.secret.pack(buf)
     }
-}
 
-fn unpack_to_private_key(buf: &[u8]) -> Result<PrivateKey, PackingError> {
-    let secret = PolyVec::unpack(buf)?.normalise();
-    Ok(PrivateKey { secret })
+    fn unpack(buf: &[u8]) -> Result<PrivateKey, PackingError> {
+        let secret = PolyVec::unpack(buf)?.normalise();
+        Ok(PrivateKey { secret })
+    }
 }
 
 impl PublicKey {
@@ -55,22 +55,25 @@ impl PublicKey {
             Err(CrystalsError::IncorrectBufferLength(buf.len(), break_point + SYMBYTES).into())
         }
     }
+
+    fn unpack(buf: &[u8]) -> Result<PublicKey, PackingError> {
+        let k = K::try_from((buf.len() - SYMBYTES) / POLYBYTES)?;
+        let k_value: usize = k.into();
+        let break_point: usize = POLYBYTES * k_value;
+
+        let noise = PolyVec::unpack(&buf[..break_point])?.normalise();
+        let rho: [u8; SYMBYTES] = buf[break_point..].try_into()?;
+
+        let a_t = Matrix::derive(&rho, true, k)?;
+
+        Ok(PublicKey { rho, noise, a_t })
+    }
 }
 
-fn unpack_to_public_key(buf: &[u8]) -> Result<PublicKey, PackingError> {
-    let k = K::try_from((buf.len() - SYMBYTES) / POLYBYTES)?;
-    let k_value: usize = k.into();
-    let break_point: usize = POLYBYTES * k_value;
-
-    let noise = PolyVec::unpack(&buf[..break_point])?.normalise();
-    let rho: [u8; SYMBYTES] = buf[break_point..].try_into()?;
-
-    let a_t = Matrix::derive(&rho, true, k)?;
-
-    Ok(PublicKey { rho, noise, a_t })
-}
-
-fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKey, PublicKey), KeyGenerationError> {
+fn generate_key_pair(
+    seed: &[u8],
+    sec_level: SecurityLevel,
+) -> Result<(PrivateKey, PublicKey), KeyGenerationError> {
     let mut expanded_seed = [0u8; 2 * SYMBYTES];
     let mut hash = Sha3_512::new();
     hash.update(seed);
@@ -79,17 +82,14 @@ fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKe
 
     let rho: [u8; SYMBYTES] = expanded_seed[..SYMBYTES].try_into()?;
     let a = Matrix::derive(&rho, false, sec_level.k())?;
-    
-    let sigma = &expanded_seed[32..];   // seed for noise
-    
-    let secret = PolyVec::derive_noise(sec_level, sigma, 0)
-        .ntt()
-        .normalise();
+
+    let sigma = &expanded_seed[32..]; // seed for noise
+
+    let secret = PolyVec::derive_noise(sec_level, sigma, 0, sec_level.eta_1()).ntt().normalise();
 
     let k_value: usize = sec_level.k().into();
-    #[allow(clippy::cast_possible_truncation)]  // k_value can only be 2, 3, 4
-    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8)
-        .ntt();
+    #[allow(clippy::cast_possible_truncation)] // k_value can only be 2, 3, 4
+    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8, sec_level.eta_1()).ntt();
 
     let noise_arr: ArrayVec<[Poly<Montgomery>; 4]> = a
         .vectors()
@@ -98,22 +98,46 @@ fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKe
         .map(|poly| poly.mont_form())
         .collect::<ArrayVec<[Poly<Montgomery>; 4]>>();
 
-    let noise = PolyVec::from(noise_arr)?
-        .add(&error)?
-        .normalise();
+    let noise = PolyVec::from(noise_arr)?.add(&error)?.normalise();
 
     let a_t = a.transpose()?;
 
-    Ok((
-        PrivateKey {
-            secret,
-        },
-        PublicKey {
-            rho,
-            noise,
-            a_t,
-        }
-    ))
+    Ok((PrivateKey { secret }, PublicKey { rho, noise, a_t }))
+}
+
+fn encrypt(
+    pub_key: &PublicKey,
+    message: &[u8],     // length SYMBYTES
+    seed: &[u8]        // length SYMBYTES
+) -> Result<ArrayVec<[u8; 1568]>, EncryptionDecryptionError> {    // 1568 == max indcpa_bytes
+    let sec_level = pub_key.sec_level()?;
+    let k_value: u8 = sec_level.k().into() as u8;
+    let msg_poly = Poly::read_msg(message)?;
+    
+    let rh = PolyVec::derive_noise(sec_level, seed, 0, sec_level.eta_1())
+        .ntt()
+        .barrett_reduce();
+
+    let error_1 = PolyVec::derive_noise(sec_level, seed, k_value, sec_level.eta_2());
+    let error_2 = Poly::derive_noise(seed, k_value * 2, sec_level.eta_2());
+    
+    let u = PolyVec::from(pub_key.a_t
+        .vectors()
+        .iter()
+        .map(|row| row.inner_product_pointwise(&rh))
+        .collect::<ArrayVec<[Poly<Unreduced>; 4]>>())?
+        .inv_ntt()
+        .add(&error_1)?
+        .normalise();
+
+    let v = pub_key.noise.inner_product_pointwise(&rh)
+        .barrett_reduce()
+        .inv_ntt()
+        .add(&msg_poly)
+        .add(&error_2)
+        .normalise();
+
+    let ciphertext_bytes = 
 }
 
 

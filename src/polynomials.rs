@@ -133,7 +133,6 @@ impl<S: State> Poly<S> {
     }
 }
 
-
 impl<S: State + Unnormalised> Poly<S> {
     // Normalise coefficients of given polynomial
     // Normalised coefficients lie within {0..q-1}
@@ -347,8 +346,6 @@ impl Poly<Normalised> {
         }
     }
 
-
-
     // Unpacks a buffer of POLYBYTES bytes into a polynomial
     // poly will NOT be normalised, but 0 <= coeffs < 4096
     // Example:
@@ -385,19 +382,23 @@ impl Poly<Normalised> {
     // ```
     // let read_result = read_msg_to_poly(msg_buf);
     // ```
-    fn read_msg(msg: [u8; SYMBYTES]) -> Result<Poly<Unreduced>, TryFromIntError> {
-        let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
-        let coeffs_arr: [i16; N] = msg
-            .iter()
-            .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
-            .map(|mask| mask & q_plus_one_over_2)
-            .collect::<ArrayVec<[i16; N]>>()
-            .into_inner();
+    pub(crate) fn read_msg(msg: &[u8]) -> Result<Poly<Unreduced>, PackingError> {
+        if msg.len() == SYMBYTES {
+            let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
+            let coeffs_arr: [i16; N] = msg
+                .iter()
+                .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
+                .map(|mask| mask & q_plus_one_over_2)
+                .collect::<ArrayVec<[i16; N]>>()
+                .into_inner();
 
-        Ok(Poly {
-            coeffs: coeffs_arr,
-            state: Unreduced,
-        })
+            Ok(Poly {
+                coeffs: coeffs_arr,
+                state: Unreduced,
+            })
+        } else {
+            Err(CrystalsError::IncorrectBufferLength(msg.len(), SYMBYTES).into())
+        }
     }
 
     // Decompresses buffer into a polynomial
@@ -408,10 +409,7 @@ impl Poly<Normalised> {
     // ```
     // let decompress_result = decompress_to_poly(buf, k);
     // ```
-    pub fn decompress(
-        buf: &[u8],
-        sec_level: &SecurityLevel,
-    ) -> Result<Self, PackingError> {
+    pub fn decompress(buf: &[u8], sec_level: &SecurityLevel) -> Result<Self, PackingError> {
         if buf.len() != sec_level.poly_compressed_bytes() {
             return Err(CrystalsError::IncorrectBufferLength(
                 buf.len(),
@@ -444,7 +442,8 @@ impl Poly<Normalised> {
             }
             SecurityLevel::TenTwoFour { .. } => {
                 let mut coeffs_arr = [0i16; N];
-                for (coeffs_chunk, buf_chunk) in coeffs_arr.chunks_exact_mut(8).zip(buf.chunks_exact(5))
+                for (coeffs_chunk, buf_chunk) in
+                    coeffs_arr.chunks_exact_mut(8).zip(buf.chunks_exact(5))
                 {
                     let temp: [u8; 8] = [
                         buf_chunk[0],
@@ -457,8 +456,9 @@ impl Poly<Normalised> {
                         buf_chunk[4] >> 3,
                     ];
                     for (coeff, t_elem) in coeffs_chunk.iter_mut().zip(temp.iter()) {
-                        *coeff =
-                            i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+                        *coeff = i16::try_from(
+                            ((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5,
+                        )?;
                     }
                 }
                 Ok(Self {

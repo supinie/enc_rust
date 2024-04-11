@@ -1,10 +1,8 @@
 // use core::num::TryFromIntError;
 use crate::{
     errors::{CrystalsError, PackingError},
-    params::{SecurityLevel, K, POLYBYTES, N},
-    polynomials::{
-        Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced
-    },
+    params::{Eta, SecurityLevel, K, N, POLYBYTES},
+    polynomials::{Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced},
 };
 use tinyvec::{array_vec, ArrayVec};
 
@@ -40,7 +38,10 @@ impl<S: State> PolyVec<S> {
 
     // Add two polyvecs pointwise.
     // They must be the same security level.
-    pub(crate) fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unreduced>, CrystalsError> {
+    pub(crate) fn add<T: State>(
+        &self,
+        addend: &PolyVec<T>,
+    ) -> Result<PolyVec<Unreduced>, CrystalsError> {
         if self.sec_level == addend.sec_level {
             let mut polynomials = ArrayVec::<[Poly<Unreduced>; 4]>::new();
             for (augend_poly, addend_poly) in self.polynomials.iter().zip(addend.polynomials.iter())
@@ -61,13 +62,26 @@ impl<S: State> PolyVec<S> {
     }
 
     // Barrett reduce each polynomial in the polyvec
-    fn barrett_reduce(&self) -> PolyVec<Barrett> {
+    pub(crate) fn barrett_reduce(&self) -> PolyVec<Barrett> {
         let mut polynomials = ArrayVec::<[Poly<Barrett>; 4]>::new();
         for poly in self.polynomials.iter() {
             polynomials.push(poly.barrett_reduce());
         }
 
         PolyVec {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
+    
+    // apply inv_ntt to each polynomial in the polyvec
+    pub(crate) fn inv_ntt(&self) -> Self {
+        let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.inv_ntt());
+        }
+
+        Self {
             polynomials,
             sec_level: self.sec_level,
         }
@@ -89,7 +103,6 @@ impl<S: State + Unnormalised> PolyVec<S> {
     }
 }
 
-
 impl<S: State + Reduced + Copy> PolyVec<S> {
     // apply ntt to each polynomial in the polyvec
     pub(crate) fn ntt(&self) -> PolyVec<Unreduced> {
@@ -104,18 +117,6 @@ impl<S: State + Reduced + Copy> PolyVec<S> {
         }
     }
 
-    // apply inv_ntt to each polynomial in the polyvec
-    fn inv_ntt(&self) -> Self {
-        let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
-        for poly in self.polynomials.iter() {
-            polynomials.push(poly.inv_ntt());
-        }
-
-        Self {
-            polynomials,
-            sec_level: self.sec_level,
-        }
-    }
 }
 
 impl PolyVec<Normalised> {
@@ -134,7 +135,6 @@ impl PolyVec<Normalised> {
             sec_level: k,
         }
     }
-
 
     // buf should be of length k * POLYBYTES
     // packs the polyvec poly-wise into the buffer
@@ -223,7 +223,7 @@ impl PolyVec<Normalised> {
 
 impl PolyVec<Montgomery> {
     // derive a noise polyvec using a given seed and nonce
-    pub(crate) fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8) -> Self {
+    pub(crate) fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8, eta: Eta) -> Self {
         let mut polynomials = ArrayVec::<[Poly<Montgomery>; 4]>::new();
         let eta = sec_level.eta_1();
 
@@ -239,7 +239,10 @@ impl PolyVec<Montgomery> {
 }
 
 impl<S: State + Reduced + Copy> PolyVec<S> {
-    pub(crate) fn inner_product_pointwise<T: State + Reduced>(&self, polyvec: &PolyVec<T>) -> Poly<Unreduced> {
+    pub(crate) fn inner_product_pointwise<T: State + Reduced>(
+        &self,
+        polyvec: &PolyVec<T>,
+    ) -> Poly<Unreduced> {
         let poly = self
             .polynomials()
             .iter()
@@ -247,8 +250,6 @@ impl<S: State + Reduced + Copy> PolyVec<S> {
             .map(|(&multiplicand, multiplier)| multiplicand.pointwise_mul(multiplier))
             .fold(Poly::from_arr(&[0i16; N]), |acc, x| acc.add(&x));
 
-        poly 
+        poly
     }
 }
-
-

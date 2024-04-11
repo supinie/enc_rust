@@ -72,3 +72,27 @@ impl From<TryFromSliceError> for KeyGenerationError {
         Self::TryFromSlice(error)
     }
 }
+
+pub enum EncryptionDecryptionError {
+    Crystals(CrystalsError),
+    TryFromInt(TryFromIntError),
+    Packing(PackingError),
+}
+
+impl From<CrystalsError> for EncryptionDecryptionError {
+    fn from(error: CrystalsError) -> Self {
+        Self::Crystals(error)
+    }
+}
+
+impl From<TryFromIntError> for EncryptionDecryptionError {
+    fn from(error: TryFromIntError) -> Self {
+        Self::TryFromInt(error)
+    }
+}
+
+impl From<PackingError> for EncryptionDecryptionError {
+    fn from(error: PackingError) -> Self {
+        Self::Packing(error)
+    }
+}

@@ -1,7 +1,7 @@
 use crate::{
     field_operations::{barrett_reduce, montgomery_reduce},
     params::N,
-    polynomials::{Reduced, Poly, Unreduced, State},
+    polynomials::{Poly, Reduced, State, Unreduced},
 };
 
 // precomputed powers of the primative root of unity in Montgomery representation for use in ntt()
@@ -64,7 +64,9 @@ impl<S: State + Reduced + Copy> Poly<S> {
             state: Unreduced,
         }
     }
+}
 
+impl<S: State> Poly<S> {
     // In inverse NTT, with montgomery reduction
     // Assumes that all coefficients are bounded in absolute value by q.
     // Output coefficients are bounded in absolute value q.

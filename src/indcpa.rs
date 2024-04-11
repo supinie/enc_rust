@@ -2,10 +2,11 @@ use crate::{
     errors::{CrystalsError, PackingError, KeyGenerationError},
     matrix::Matrix,
     params::{SecurityLevel, K, POLYBYTES, SYMBYTES},
-    polynomials::{Normalised, Montgomery},
+    polynomials::{Normalised, Montgomery, Poly},
     vectors::PolyVec,
 };
 use sha3::{Digest, Sha3_512};
+use tinyvec::ArrayVec;
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct PrivateKey {
@@ -69,25 +70,51 @@ fn unpack_to_public_key(buf: &[u8]) -> Result<PublicKey, PackingError> {
     Ok(PublicKey { rho, noise, a_t })
 }
 
-// fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKey, PublicKey), KeyGenerationError> {
-//     let mut expanded_seed = [0u8; 2 * SYMBYTES];
-//     let mut hash = Sha3_512::new();
-//     hash.update(seed);
+fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKey, PublicKey), KeyGenerationError> {
+    let mut expanded_seed = [0u8; 2 * SYMBYTES];
+    let mut hash = Sha3_512::new();
+    hash.update(seed);
 
-//     expanded_seed.copy_from_slice(&hash.finalize());
+    expanded_seed.copy_from_slice(&hash.finalize());
 
-//     let rho: [u8; SYMBYTES] = expanded_seed[..SYMBYTES].try_into()?;
-//     let a = Matrix::derive(&rho, false, sec_level.k())?;
+    let rho: [u8; SYMBYTES] = expanded_seed[..SYMBYTES].try_into()?;
+    let a = Matrix::derive(&rho, false, sec_level.k())?;
     
-//     let sigma = &expanded_seed[32..];   // seed for noise
+    let sigma = &expanded_seed[32..];   // seed for noise
     
-//     let secret = PolyVec::derive_noise(sec_level, sigma, 0)
-//         .ntt()
-//         .normalise();
+    let secret = PolyVec::derive_noise(sec_level, sigma, 0)
+        .ntt()
+        .normalise();
 
+    let k_value: usize = sec_level.k().into();
+    #[allow(clippy::cast_possible_truncation)]  // k_value can only be 2, 3, 4
+    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8)
+        .ntt();
 
+    let noise_arr: ArrayVec<[Poly<Montgomery>; 4]> = a
+        .vectors()
+        .iter()
+        .map(|row| row.inner_product_pointwise(&secret))
+        .map(|poly| poly.mont_form())
+        .collect::<ArrayVec<[Poly<Montgomery>; 4]>>();
 
-// }
+    let noise = PolyVec::from(noise_arr)?
+        .add(&error)?
+        .normalise();
+
+    let a_t = a.transpose()?;
+
+    Ok((
+        PrivateKey {
+            secret,
+        },
+        PublicKey {
+            rho,
+            noise,
+            a_t,
+        }
+    ))
+}
 
 // pub fn generate_key_pair<PV, M>(seed: &[u8]) -> (PrivateKey<PV>, PublicKey<PV, M>)
 // where

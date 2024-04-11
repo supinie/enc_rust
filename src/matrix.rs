@@ -21,7 +21,7 @@ impl<S: State + Copy> Matrix<S> {
         &self.polyvecs.as_slice()[..self.sec_level.into()]
     }
 
-    fn transpose(&self) -> Result<Self, CrystalsError> {
+    pub(crate) fn transpose(&self) -> Result<Self, CrystalsError> {
         let mut raw_matrix = [ArrayVec::<[Poly<S>; 4]>::new(); 4];
         self.vectors()
             .iter()

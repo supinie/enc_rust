@@ -8,7 +8,7 @@ use crate::{
 };
 use tinyvec::{array_vec, ArrayVec};
 
-#[derive(Default, PartialEq, Debug, Eq)]
+#[derive(Copy, Clone, Default, PartialEq, Debug, Eq)]
 pub struct PolyVec<S: State> {
     polynomials: ArrayVec<[Poly<S>; 4]>,
     sec_level: K,
@@ -40,7 +40,7 @@ impl<S: State> PolyVec<S> {
 
     // Add two polyvecs pointwise.
     // They must be the same security level.
-    fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unreduced>, CrystalsError> {
+    pub(crate) fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unreduced>, CrystalsError> {
         if self.sec_level == addend.sec_level {
             let mut polynomials = ArrayVec::<[Poly<Unreduced>; 4]>::new();
             for (augend_poly, addend_poly) in self.polynomials.iter().zip(addend.polynomials.iter())
@@ -236,8 +236,10 @@ impl PolyVec<Montgomery> {
             sec_level: sec_level.k(),
         }
     }
+}
 
-    pub(crate) fn inner_product_pointwise(&self, polyvec: &Self) -> Poly<Unreduced> {
+impl<S: State + Reduced + Copy> PolyVec<S> {
+    pub(crate) fn inner_product_pointwise<T: State + Reduced>(&self, polyvec: &PolyVec<T>) -> Poly<Unreduced> {
         let poly = self
             .polynomials()
             .iter()

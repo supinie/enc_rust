@@ -1,7 +1,7 @@
 use crate::{
     errors::CrystalsError,
     params::{Eta, N, Q, SYMBYTES},
-    polynomials::{Noise, Poly, Unnormalised},
+    polynomials::{Montgomery, Poly},
 };
 use byteorder::{ByteOrder, LittleEndian};
 use rand_core::{CryptoRng, Error, RngCore};
@@ -18,7 +18,7 @@ where
     Ok(())
 }
 
-impl Poly<Noise> {
+impl Poly<Montgomery> {
     // Sample our polynomial from a centered binomial distribution
     // given a uniformly distributed array of bytes
     // n = 4, p = 1/2
@@ -53,7 +53,7 @@ impl Poly<Noise> {
 
         Self {
             coeffs,
-            state: Noise,
+            state: Montgomery,
         }
     }
 
@@ -93,7 +93,7 @@ impl Poly<Noise> {
 
         Self {
             coeffs,
-            state: Noise,
+            state: Montgomery,
         }
     }
 
@@ -103,11 +103,9 @@ impl Poly<Noise> {
             Eta::Three => Self::derive_noise_3(seed, nonce),
         }
     }
-}
 
-impl Poly<Unnormalised> {
     // seed should be of length 32
-    // coefficients are reduced, but not normalised (close to normal)
+    // coefficients are reduced, but not normalised (close to normal) {0..q}
     pub(crate) fn derive_uniform(seed: &[u8], x: u8, y: u8) -> Result<Self, CrystalsError> {
         if seed.len() != 32 {
             return Err(CrystalsError::InvalidSeedLength(seed.len(), 32));
@@ -155,7 +153,7 @@ impl Poly<Unnormalised> {
 
         Ok(Self {
             coeffs,
-            state: Unnormalised,
+            state: Montgomery,
         })
     }
 }

@@ -3,7 +3,7 @@ use crate::{
     errors::{CrystalsError, PackingError},
     params::{SecurityLevel, K, POLYBYTES},
     polynomials::{
-        decompress_to_poly, unpack_to_poly, Noise, Normalised, Poly, State, Unnormalised,
+        Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced
     },
 };
 use tinyvec::{array_vec, ArrayVec};
@@ -40,9 +40,9 @@ impl<S: State> PolyVec<S> {
 
     // Add two polyvecs pointwise.
     // They must be the same security level.
-    fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unnormalised>, CrystalsError> {
+    fn add<T: State>(&self, addend: &PolyVec<T>) -> Result<PolyVec<Unreduced>, CrystalsError> {
         if self.sec_level == addend.sec_level {
-            let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
+            let mut polynomials = ArrayVec::<[Poly<Unreduced>; 4]>::new();
             for (augend_poly, addend_poly) in self.polynomials.iter().zip(addend.polynomials.iter())
             {
                 polynomials.push(augend_poly.add(addend_poly));
@@ -61,8 +61,8 @@ impl<S: State> PolyVec<S> {
     }
 
     // Barrett reduce each polynomial in the polyvec
-    fn barrett_reduce(&self) -> PolyVec<Unnormalised> {
-        let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
+    fn barrett_reduce(&self) -> PolyVec<Barrett> {
+        let mut polynomials = ArrayVec::<[Poly<Barrett>; 4]>::new();
         for poly in self.polynomials.iter() {
             polynomials.push(poly.barrett_reduce());
         }
@@ -74,7 +74,7 @@ impl<S: State> PolyVec<S> {
     }
 }
 
-impl PolyVec<Unnormalised> {
+impl<S: State + Unnormalised> PolyVec<S> {
     // Normalise each polynomial in the polyvec
     pub(crate) fn normalise(&self) -> PolyVec<Normalised> {
         let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
@@ -83,6 +83,35 @@ impl PolyVec<Unnormalised> {
         }
 
         PolyVec {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
+}
+
+
+impl<S: State + Reduced + Copy> PolyVec<S> {
+    // apply ntt to each polynomial in the polyvec
+    pub(crate) fn ntt(&self) -> PolyVec<Unreduced> {
+        let mut polynomials = ArrayVec::<[Poly<Unreduced>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.ntt());
+        }
+
+        PolyVec {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
+
+    // apply inv_ntt to each polynomial in the polyvec
+    fn inv_ntt(&self) -> Self {
+        let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.inv_ntt());
+        }
+
+        Self {
             polynomials,
             sec_level: self.sec_level,
         }
@@ -106,31 +135,6 @@ impl PolyVec<Normalised> {
         }
     }
 
-    // apply ntt to each polynomial in the polyvec
-    fn ntt(&self) -> PolyVec<Unnormalised> {
-        let mut polynomials = ArrayVec::<[Poly<Unnormalised>; 4]>::new();
-        for poly in self.polynomials.iter() {
-            polynomials.push(poly.ntt());
-        }
-
-        PolyVec {
-            polynomials,
-            sec_level: self.sec_level,
-        }
-    }
-
-    // apply inv_ntt to each polynomial in the polyvec
-    fn inv_ntt(&self) -> Self {
-        let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
-        for poly in self.polynomials.iter() {
-            polynomials.push(poly.inv_ntt());
-        }
-
-        Self {
-            polynomials,
-            sec_level: self.sec_level,
-        }
-    }
 
     // buf should be of length k * POLYBYTES
     // packs the polyvec poly-wise into the buffer
@@ -170,12 +174,57 @@ impl PolyVec<Normalised> {
 
         Ok(())
     }
+
+    // unpack a given buffer into a polyvec poly-wise.
+    // The buffer should be of length k * POLYBYTES.
+    // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
+    // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
+    pub fn unpack(buf: &[u8]) -> Result<PolyVec<Unreduced>, PackingError> {
+        let sec_level = K::try_from(buf.len() / POLYBYTES)?; // If this fails then we know the
+                                                             // buffer is not of the right size and
+                                                             // so no further checks are needed.
+
+        let polyvec_result = buf
+            .chunks(POLYBYTES)
+            .map(Poly::unpack)
+            .collect::<Result<ArrayVec<[Poly<Unreduced>; 4]>, PackingError>>();
+
+        match polyvec_result {
+            Ok(polynomials) => Ok(PolyVec {
+                polynomials,
+                sec_level,
+            }),
+            Err(err) => Err(err),
+        }
+    }
+
+    // Decompress a given buffer into a polyvec.
+    // The buffer should be of length k * POLYBYTES.
+    // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
+    // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
+    fn decompress(buf: &[u8]) -> Result<Self, PackingError> {
+        let k = K::try_from(buf.len() / POLYBYTES)?;
+        let sec_level = SecurityLevel::new(k);
+
+        let polyvec_result = buf
+            .chunks(sec_level.poly_compressed_bytes())
+            .map(|buf_chunk| Poly::decompress(buf_chunk, &sec_level))
+            .collect::<Result<ArrayVec<[Poly<Normalised>; 4]>, PackingError>>();
+
+        match polyvec_result {
+            Ok(polynomials) => Ok(Self {
+                polynomials,
+                sec_level: k,
+            }),
+            Err(err) => Err(err),
+        }
+    }
 }
 
-impl PolyVec<Noise> {
+impl PolyVec<Montgomery> {
     // derive a noise polyvec using a given seed and nonce
-    fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8) -> Self {
-        let mut polynomials = ArrayVec::<[Poly<Noise>; 4]>::new();
+    pub(crate) fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8) -> Self {
+        let mut polynomials = ArrayVec::<[Poly<Montgomery>; 4]>::new();
         let eta = sec_level.eta_1();
 
         for _ in 0..sec_level.k().into() {
@@ -189,52 +238,8 @@ impl PolyVec<Noise> {
     }
 }
 
-// unpack a given buffer into a polyvec poly-wise.
-// The buffer should be of length k * POLYBYTES.
-// If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
-// multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
-pub fn unpack_to_polyvec(buf: &[u8]) -> Result<PolyVec<Unnormalised>, PackingError> {
-    let sec_level = K::try_from(buf.len() / POLYBYTES)?; // If this fails then we know the
-                                                         // buffer is not of the right size and
-                                                         // so no further checks are needed.
 
-    let polyvec_result = buf
-        .chunks(POLYBYTES)
-        .map(unpack_to_poly)
-        .collect::<Result<ArrayVec<[Poly<Unnormalised>; 4]>, PackingError>>();
-
-    match polyvec_result {
-        Ok(polynomials) => Ok(PolyVec {
-            polynomials,
-            sec_level,
-        }),
-        Err(err) => Err(err),
-    }
-}
-
-// Decompress a given buffer into a polyvec.
-// The buffer should be of length k * POLYBYTES.
-// If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
-// multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
-fn decompress_to_polyvec(buf: &[u8]) -> Result<PolyVec<Normalised>, PackingError> {
-    let k = K::try_from(buf.len() / POLYBYTES)?;
-    let sec_level = SecurityLevel::new(k);
-
-    let polyvec_result = buf
-        .chunks(sec_level.poly_compressed_bytes())
-        .map(|buf_chunk| decompress_to_poly(buf_chunk, &sec_level))
-        .collect::<Result<ArrayVec<[Poly<Normalised>; 4]>, PackingError>>();
-
-    match polyvec_result {
-        Ok(polynomials) => Ok(PolyVec {
-            polynomials,
-            sec_level: k,
-        }),
-        Err(err) => Err(err),
-    }
-}
-
-struct Matrix<S: State> {
-    vectors: ArrayVec<[PolyVec<S>; 4]>,
-    sec_level: K,
-}
+// struct Matrix<S: State> {
+//     vectors: ArrayVec<[PolyVec<S>; 4]>,
+//     sec_level: K,
+// }

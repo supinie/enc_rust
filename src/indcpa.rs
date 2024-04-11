@@ -1,11 +1,9 @@
-use core::num::TryFromIntError;
-
 use crate::{
-    errors::{CrystalsError, PackingError},
+    errors::{CrystalsError, PackingError, KeyGenerationError},
     matrix::Matrix,
     params::{SecurityLevel, K, POLYBYTES, SYMBYTES},
-    polynomials::{Normalised, Poly, State, Unnormalised},
-    vectors::{unpack_to_polyvec, PolyVec},
+    polynomials::{Normalised, Montgomery},
+    vectors::PolyVec,
 };
 use sha3::{Digest, Sha3_512};
 
@@ -18,7 +16,7 @@ pub struct PrivateKey {
 pub struct PublicKey {
     rho: [u8; SYMBYTES],
     noise: PolyVec<Normalised>,
-    a_t: Matrix<Unnormalised>,
+    a_t: Matrix<Montgomery>,
 }
 
 impl PrivateKey {
@@ -28,7 +26,7 @@ impl PrivateKey {
 }
 
 fn unpack_to_private_key(buf: &[u8]) -> Result<PrivateKey, PackingError> {
-    let secret = unpack_to_polyvec(buf)?.normalise();
+    let secret = PolyVec::unpack(buf)?.normalise();
     Ok(PrivateKey { secret })
 }
 
@@ -63,7 +61,7 @@ fn unpack_to_public_key(buf: &[u8]) -> Result<PublicKey, PackingError> {
     let k_value: usize = k.into();
     let break_point: usize = POLYBYTES * k_value;
 
-    let noise = unpack_to_polyvec(&buf[..break_point])?.normalise();
+    let noise = PolyVec::unpack(&buf[..break_point])?.normalise();
     let rho: [u8; SYMBYTES] = buf[break_point..].try_into()?;
 
     let a_t = Matrix::derive(&rho, true, k)?;
@@ -71,22 +69,24 @@ fn unpack_to_public_key(buf: &[u8]) -> Result<PublicKey, PackingError> {
     Ok(PublicKey { rho, noise, a_t })
 }
 
-// impl<PV: PolyVecOperations, M: MatOperations + GetSecLevel + LinkSecLevel<PV>> PublicKey<PV, M> {
-//     pub fn pack(&self, buf: &mut [u8]) {
-//         self.noise.pack(buf);
-//         let k_value: u8 = M::sec_level().k().into();
-//         let start_index = usize::from(k_value) * POLYBYTES;
-//         buf[start_index..].copy_from_slice(&self.rho[..]);
-//     }
+// fn generate_key_pair(seed: &[u8], sec_level: SecurityLevel) -> Result<(PrivateKey, PublicKey), KeyGenerationError> {
+//     let mut expanded_seed = [0u8; 2 * SYMBYTES];
+//     let mut hash = Sha3_512::new();
+//     hash.update(seed);
 
-//     pub fn unpack(&mut self, buf: &[u8]) {
-//         self.noise.unpack(buf);
-//         self.noise.normalise();
-//         let k_value: u8 = M::sec_level().k().into();
-//         let start_index = usize::from(k_value) * POLYBYTES;
-//         self.rho[..].copy_from_slice(&buf[start_index..]);
-//         self.a_t = M::derive(&self.rho, true);
-//     }
+//     expanded_seed.copy_from_slice(&hash.finalize());
+
+//     let rho: [u8; SYMBYTES] = expanded_seed[..SYMBYTES].try_into()?;
+//     let a = Matrix::derive(&rho, false, sec_level.k())?;
+    
+//     let sigma = &expanded_seed[32..];   // seed for noise
+    
+//     let secret = PolyVec::derive_noise(sec_level, sigma, 0)
+//         .ntt()
+//         .normalise();
+
+
+
 // }
 
 // pub fn generate_key_pair<PV, M>(seed: &[u8]) -> (PrivateKey<PV>, PublicKey<PV, M>)

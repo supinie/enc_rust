@@ -1,7 +1,7 @@
 use crate::{
     field_operations::{barrett_reduce, montgomery_reduce},
     params::N,
-    polynomials::{Normalised, Poly, Unnormalised},
+    polynomials::{Reduced, Poly, Unreduced, State},
 };
 
 // precomputed powers of the primative root of unity in Montgomery representation for use in ntt()
@@ -31,7 +31,8 @@ const INV_NTT_REDUCTIONS: [&[usize]; 7] = [
 	&[4, 5, 6, 7, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143],
 	&[]
 ];
-impl Poly<Normalised> {
+
+impl<S: State + Reduced + Copy> Poly<S> {
     // Cooley-Tukey radix-2 Decimation in Time (DIT) NTT algorithm
     // coefficients must be bounded in absolute value by q,
     // and the outputs are bounded in absolute value by 7q.
@@ -40,7 +41,7 @@ impl Poly<Normalised> {
     // ```
     // let output_poly = poly.ntt();
     // ```
-    pub(crate) fn ntt(&self) -> Poly<Unnormalised> {
+    pub(crate) fn ntt(&self) -> Poly<Unreduced> {
         let mut coeffs = self.coeffs;
         let mut k = 0usize;
 
@@ -60,7 +61,7 @@ impl Poly<Normalised> {
 
         Poly {
             coeffs,
-            state: Unnormalised,
+            state: Unreduced,
         }
     }
 
@@ -101,7 +102,7 @@ impl Poly<Normalised> {
 
         Self {
             coeffs,
-            state: Normalised,
+            state: self.state,
         }
     }
 }

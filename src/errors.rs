@@ -55,3 +55,20 @@ impl From<TryFromSliceError> for PackingError {
         Self::TryFromSlice(error)
     }
 }
+
+pub enum KeyGenerationError {
+    Crystals(CrystalsError),
+    TryFromSlice(TryFromSliceError),
+}
+
+impl From<CrystalsError> for KeyGenerationError {
+    fn from(error: CrystalsError) -> Self {
+        Self::Crystals(error)
+    }
+}
+
+impl From<TryFromSliceError> for KeyGenerationError {
+    fn from(error: TryFromSliceError) -> Self {
+        Self::TryFromSlice(error)
+    }
+}

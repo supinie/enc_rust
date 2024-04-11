@@ -19,15 +19,30 @@ pub struct Poly<S: State> {
 // Normalised coefficients lie within {0..q-1}
 #[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Normalised;
+// Barrett reduced (almost normal) coefficients lie within {0..q}
 #[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
-pub struct Unnormalised;
-#[derive(Default, Copy, Clone)]
-pub struct Noise;
+pub struct Barrett;
+// Montogomery form coefficients lie within {-q..q}
+#[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
+pub struct Montgomery;
+#[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
+pub struct Unreduced;
 
 pub trait State: Default {}
 impl State for Normalised {}
-impl State for Unnormalised {}
-impl State for Noise {}
+impl State for Barrett {}
+impl State for Montgomery {}
+impl State for Unreduced {}
+
+pub trait Unnormalised: Default {}
+impl Unnormalised for Barrett {}
+impl Unnormalised for Montgomery {}
+impl Unnormalised for Unreduced {}
+
+pub trait Reduced: Default {}
+impl Reduced for Normalised {}
+impl Reduced for Barrett {}
+impl Reduced for Montgomery {}
 
 // In all cases, `new()` should be used instead, else the state may be incorrect.
 // Default is defined here for `ArrayVec`.
@@ -46,7 +61,7 @@ impl<S: State> Poly<S> {
     // ```
     // let new_poly = poly1.add(&poly2);
     // ```
-    pub(crate) fn add<T: State>(&self, x: &Poly<T>) -> Poly<Unnormalised> {
+    pub(crate) fn add<T: State>(&self, x: &Poly<T>) -> Poly<Unreduced> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()
@@ -56,7 +71,7 @@ impl<S: State> Poly<S> {
             .into_inner();
         Poly {
             coeffs: coeffs_arr,
-            state: Unnormalised,
+            state: Unreduced,
         }
     }
 
@@ -65,7 +80,7 @@ impl<S: State> Poly<S> {
     // ```
     // let new_poly = poly1.sub(&poly2);
     // ```
-    pub(crate) fn sub<T: State>(&self, x: &Poly<T>) -> Poly<Unnormalised> {
+    pub(crate) fn sub<T: State>(&self, x: &Poly<T>) -> Poly<Unreduced> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()
@@ -75,7 +90,7 @@ impl<S: State> Poly<S> {
             .into_inner();
         Poly {
             coeffs: coeffs_arr,
-            state: Unnormalised,
+            state: Unreduced,
         }
     }
 
@@ -85,7 +100,7 @@ impl<S: State> Poly<S> {
     // ```
     // let reduced_poly = poly.barrett_reduce();
     // ```
-    pub(crate) fn barrett_reduce(&self) -> Poly<Unnormalised> {
+    pub(crate) fn barrett_reduce(&self) -> Poly<Barrett> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()
@@ -94,7 +109,7 @@ impl<S: State> Poly<S> {
             .into_inner();
         Poly {
             coeffs: coeffs_arr,
-            state: Unnormalised,
+            state: Barrett,
         }
     }
 
@@ -104,7 +119,7 @@ impl<S: State> Poly<S> {
     // ```
     // let reduced_poly = poly.mont_form();
     // ```
-    pub(crate) fn mont_form(&self) -> Poly<Unnormalised> {
+    pub(crate) fn mont_form(&self) -> Poly<Montgomery> {
         let coeffs_arr: [i16; N] = self
             .coeffs
             .iter()
@@ -113,48 +128,13 @@ impl<S: State> Poly<S> {
             .into_inner();
         Poly {
             coeffs: coeffs_arr,
-            state: Unnormalised,
-        }
-    }
-
-    // Pointwise multiplication of two polynomials,
-    // If the inputs are of montgomery form, then so will the output, bounded by 2q.
-    // If the inputs are not of montgomery form, then the output will also be unnormalised.
-    // Products of coefficients of the two polynomials must be strictly bound by 2^15 q.
-    // Example:
-    // ```
-    // let new_poly = poly1.pointwise_mul(&poly2);
-    // ```
-    pub(crate) fn pointwise_mul<T: State>(&self, x: &Poly<T>) -> Poly<Unnormalised> {
-        let mut coeffs_arr = self.coeffs;
-        for ((chunk, x_chunk), &zeta) in coeffs_arr
-            .chunks_mut(4)
-            .zip(x.coeffs.chunks(4))
-            .zip(ZETAS.iter().skip(64))
-        {
-            let mut temp = [0i16; 4];
-
-            for (i, coeff) in temp.iter_mut().enumerate() {
-                if i % 2 == 0 {
-                    let sign: i16 = if i == 2 { -1 } else { 1 };
-                    *coeff = montgomery_reduce(i32::from(chunk[i + 1]) * i32::from(x_chunk[i + 1]));
-                    *coeff = sign * montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
-                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i]));
-                } else {
-                    *coeff = montgomery_reduce(i32::from(chunk[i - 1]) * i32::from(x_chunk[i]));
-                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
-                }
-            }
-            chunk.copy_from_slice(&temp);
-        }
-        Poly {
-            coeffs: coeffs_arr,
-            state: Unnormalised,
+            state: Montgomery,
         }
     }
 }
 
-impl Poly<Unnormalised> {
+
+impl<S: State + Unnormalised> Poly<S> {
     // Normalise coefficients of given polynomial
     // Normalised coefficients lie within {0..q-1}
     // Example:
@@ -194,15 +174,15 @@ impl Poly<Normalised> {
     // ```
     // let poly = Poly::from(&[1i16; N]);
     // ```
-    const fn from_arr(array: &[i16; N]) -> Poly<Unnormalised> {
+    const fn from_arr(array: &[i16; N]) -> Poly<Unreduced> {
         Poly {
             coeffs: *array,
-            state: Unnormalised,
+            state: Unreduced,
         }
     }
 
     // Packs given poly into a 384-byte (POLYBYTES size) buffer
-    // must be normalised
+    // Poly must be normalised
     // Example:
     // ```
     // let buf = poly.pack();
@@ -328,124 +308,161 @@ impl Poly<Normalised> {
             }
         }
     }
-}
 
-// Unpacks a buffer of POLYBYTES bytes into a polynomial
-// poly will NOT be normalised, but 0 <= coeffs < 4096
-// Example:
-// ```
-// unpacked_poly = unpack_to_poly(buf);
-// ```
-pub fn unpack_to_poly(buf: &[u8]) -> Result<Poly<Unnormalised>, PackingError> {
-    if buf.len() != POLYBYTES {
-        return Err(CrystalsError::IncorrectBufferLength(buf.len(), POLYBYTES).into());
-    }
-    let coeffs_arr: [i16; N] = buf
-        .chunks_exact(3)
-        .flat_map(|chunk| chunk.windows(2).enumerate())
-        .map(|(index, pair)| {
-            if index % 2 == 0 {
-                i16::from(pair[0]) | ((i16::from(pair[1]) << 8) & 0xfff)
-            } else {
-                i16::from(pair[0] >> 4) | ((i16::from(pair[1]) << 4) & 0xfff)
-            }
-        })
-        .collect::<ArrayVec<[i16; N]>>()
-        .into_inner();
+    // Pointwise multiplication of two polynomials,
+    // If the inputs are of montgomery form, then so will the output, bounded by 2q.
+    // If the inputs are not of montgomery form, then the output will also be unnormalised.
+    // Products of coefficients of the two polynomials must be strictly bound by 2^15 q.
+    // Example:
+    // ```
+    // let new_poly = poly1.pointwise_mul(&poly2);
+    // ```
+    pub(crate) fn pointwise_mul<T: State>(&self, x: &Poly<T>) -> Poly<Unreduced> {
+        let mut coeffs_arr = self.coeffs;
+        for ((chunk, x_chunk), &zeta) in coeffs_arr
+            .chunks_mut(4)
+            .zip(x.coeffs.chunks(4))
+            .zip(ZETAS.iter().skip(64))
+        {
+            let mut temp = [0i16; 4];
 
-    Ok(Poly {
-        coeffs: coeffs_arr,
-        state: Unnormalised,
-    })
-}
-
-// Converts a message buffer into a polynomial
-// msg should be of length `SYMBYTES` (32)
-// poly will not be normalised
-// Example:
-// ```
-// let read_result = read_msg_to_poly(msg_buf);
-// ```
-fn read_msg_to_poly(msg: [u8; SYMBYTES]) -> Result<Poly<Unnormalised>, TryFromIntError> {
-    let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
-    let coeffs_arr: [i16; N] = msg
-        .iter()
-        .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
-        .map(|mask| mask & q_plus_one_over_2)
-        .collect::<ArrayVec<[i16; N]>>()
-        .into_inner();
-
-    Ok(Poly {
-        coeffs: coeffs_arr,
-        state: Unnormalised,
-    })
-}
-
-// Decompresses buffer into a polynomial
-// is dependent on the security level
-// buf should be of length `poly_compressed_bytes`
-// output poly is normalised
-// Example:
-// ```
-// let decompress_result = decompress_to_poly(buf, k);
-// ```
-pub fn decompress_to_poly(
-    buf: &[u8],
-    sec_level: &SecurityLevel,
-) -> Result<Poly<Normalised>, PackingError> {
-    if buf.len() != sec_level.poly_compressed_bytes() {
-        return Err(CrystalsError::IncorrectBufferLength(
-            buf.len(),
-            sec_level.poly_compressed_bytes(),
-        )
-        .into());
-    }
-
-    match sec_level {
-        SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
-            let coeffs_arr: [i16; N] = buf
-                .iter()
-                .flat_map(|&byte| {
-                    (0..2).map(move |i| {
-                        if i == 0 {
-                            (usize::from(byte & 15) * Q + 8) >> 4
-                        } else {
-                            (usize::from(byte >> 4) * Q + 8) >> 4
-                        }
-                    })
-                })
-                .map(i16::try_from)
-                .collect::<Result<ArrayVec<[i16; N]>, TryFromIntError>>()?
-                .into_inner();
-
-            Ok(Poly {
-                coeffs: coeffs_arr,
-                state: Normalised,
-            })
-        }
-        SecurityLevel::TenTwoFour { .. } => {
-            let mut coeffs_arr = [0i16; N];
-            for (coeffs_chunk, buf_chunk) in coeffs_arr.chunks_exact_mut(8).zip(buf.chunks_exact(5))
-            {
-                let temp: [u8; 8] = [
-                    buf_chunk[0],
-                    (buf_chunk[0] >> 5) | (buf_chunk[1] << 3),
-                    buf_chunk[1] >> 2,
-                    (buf_chunk[1] >> 7) | (buf_chunk[2] << 1),
-                    (buf_chunk[2] >> 4) | (buf_chunk[3] << 4),
-                    buf_chunk[3] >> 1,
-                    (buf_chunk[3] >> 6) | (buf_chunk[4] << 2),
-                    buf_chunk[4] >> 3,
-                ];
-                for (coeff, t_elem) in coeffs_chunk.iter_mut().zip(temp.iter()) {
-                    *coeff =
-                        i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+            for (i, coeff) in temp.iter_mut().enumerate() {
+                if i % 2 == 0 {
+                    let sign: i16 = if i == 2 { -1 } else { 1 };
+                    *coeff = montgomery_reduce(i32::from(chunk[i + 1]) * i32::from(x_chunk[i + 1]));
+                    *coeff = sign * montgomery_reduce(i32::from(*coeff) * i32::from(zeta));
+                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i]));
+                } else {
+                    *coeff = montgomery_reduce(i32::from(chunk[i - 1]) * i32::from(x_chunk[i]));
+                    *coeff += montgomery_reduce(i32::from(chunk[i]) * i32::from(x_chunk[i - 1]));
                 }
             }
-            Ok(Poly {
-                coeffs: coeffs_arr,
-                state: Normalised,
+            chunk.copy_from_slice(&temp);
+        }
+        Poly {
+            coeffs: coeffs_arr,
+            state: Unreduced,
+        }
+    }
+
+
+    // Unpacks a buffer of POLYBYTES bytes into a polynomial
+    // poly will NOT be normalised, but 0 <= coeffs < 4096
+    // Example:
+    // ```
+    // unpacked_poly = unpack_to_poly(buf);
+    // ```
+    pub fn unpack(buf: &[u8]) -> Result<Poly<Unreduced>, PackingError> {
+        if buf.len() != POLYBYTES {
+            return Err(CrystalsError::IncorrectBufferLength(buf.len(), POLYBYTES).into());
+        }
+        let coeffs_arr: [i16; N] = buf
+            .chunks_exact(3)
+            .flat_map(|chunk| chunk.windows(2).enumerate())
+            .map(|(index, pair)| {
+                if index % 2 == 0 {
+                    i16::from(pair[0]) | ((i16::from(pair[1]) << 8) & 0xfff)
+                } else {
+                    i16::from(pair[0] >> 4) | ((i16::from(pair[1]) << 4) & 0xfff)
+                }
             })
+            .collect::<ArrayVec<[i16; N]>>()
+            .into_inner();
+
+        Ok(Poly {
+            coeffs: coeffs_arr,
+            state: Unreduced,
+        })
+    }
+
+    // Converts a message buffer into a polynomial
+    // msg should be of length `SYMBYTES` (32)
+    // poly will not be normalised
+    // Example:
+    // ```
+    // let read_result = read_msg_to_poly(msg_buf);
+    // ```
+    fn read_msg(msg: [u8; SYMBYTES]) -> Result<Poly<Unreduced>, TryFromIntError> {
+        let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
+        let coeffs_arr: [i16; N] = msg
+            .iter()
+            .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
+            .map(|mask| mask & q_plus_one_over_2)
+            .collect::<ArrayVec<[i16; N]>>()
+            .into_inner();
+
+        Ok(Poly {
+            coeffs: coeffs_arr,
+            state: Unreduced,
+        })
+    }
+
+    // Decompresses buffer into a polynomial
+    // is dependent on the security level
+    // buf should be of length `poly_compressed_bytes`
+    // output poly is normalised
+    // Example:
+    // ```
+    // let decompress_result = decompress_to_poly(buf, k);
+    // ```
+    pub fn decompress(
+        buf: &[u8],
+        sec_level: &SecurityLevel,
+    ) -> Result<Self, PackingError> {
+        if buf.len() != sec_level.poly_compressed_bytes() {
+            return Err(CrystalsError::IncorrectBufferLength(
+                buf.len(),
+                sec_level.poly_compressed_bytes(),
+            )
+            .into());
+        }
+
+        match sec_level {
+            SecurityLevel::FiveOneTwo { .. } | SecurityLevel::SevenSixEight { .. } => {
+                let coeffs_arr: [i16; N] = buf
+                    .iter()
+                    .flat_map(|&byte| {
+                        (0..2).map(move |i| {
+                            if i == 0 {
+                                (usize::from(byte & 15) * Q + 8) >> 4
+                            } else {
+                                (usize::from(byte >> 4) * Q + 8) >> 4
+                            }
+                        })
+                    })
+                    .map(i16::try_from)
+                    .collect::<Result<ArrayVec<[i16; N]>, TryFromIntError>>()?
+                    .into_inner();
+
+                Ok(Self {
+                    coeffs: coeffs_arr,
+                    state: Normalised,
+                })
+            }
+            SecurityLevel::TenTwoFour { .. } => {
+                let mut coeffs_arr = [0i16; N];
+                for (coeffs_chunk, buf_chunk) in coeffs_arr.chunks_exact_mut(8).zip(buf.chunks_exact(5))
+                {
+                    let temp: [u8; 8] = [
+                        buf_chunk[0],
+                        (buf_chunk[0] >> 5) | (buf_chunk[1] << 3),
+                        buf_chunk[1] >> 2,
+                        (buf_chunk[1] >> 7) | (buf_chunk[2] << 1),
+                        (buf_chunk[2] >> 4) | (buf_chunk[3] << 4),
+                        buf_chunk[3] >> 1,
+                        (buf_chunk[3] >> 6) | (buf_chunk[4] << 2),
+                        buf_chunk[4] >> 3,
+                    ];
+                    for (coeff, t_elem) in coeffs_chunk.iter_mut().zip(temp.iter()) {
+                        *coeff =
+                            i16::try_from(((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5)?;
+                    }
+                }
+                Ok(Self {
+                    coeffs: coeffs_arr,
+                    state: Normalised,
+                })
+            }
         }
     }
 }

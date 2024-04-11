@@ -1,7 +1,7 @@
 use crate::{
     errors::CrystalsError,
     params::{SecurityLevel, K},
-    polynomials::{Normalised, Poly, State, Unnormalised},
+    polynomials::{Montgomery, Normalised, Poly, State},
     vectors::PolyVec,
 };
 use tinyvec::{array_vec, ArrayVec};
@@ -66,33 +66,33 @@ impl Matrix<Normalised> {
     }
 }
 
-impl Matrix<Unnormalised> {
+impl Matrix<Montgomery> {
     pub(crate) fn derive(
         seed: &[u8],
         transpose: bool,
         sec_level: K,
     ) -> Result<Self, CrystalsError> {
-        let mut polyvecs = ArrayVec::<[PolyVec<Unnormalised>; 4]>::new();
+        let mut polyvecs = ArrayVec::<[PolyVec<Montgomery>; 4]>::new();
         if transpose {
             for i in 0..sec_level.into() {
-                let row: ArrayVec<[Poly<Unnormalised>; 4]> = (0..sec_level.into())
+                let row: ArrayVec<[Poly<Montgomery>; 4]> = (0..sec_level.into())
                     .map(|j| {
                         #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
                         Poly::derive_uniform(seed, i as u8, j as u8)
                     })
-                    .collect::<Result<ArrayVec<[Poly<Unnormalised>; 4]>, CrystalsError>>()?;
+                    .collect::<Result<ArrayVec<[Poly<Montgomery>; 4]>, CrystalsError>>()?;
 
                 let polyvec = PolyVec::from(row)?;
                 polyvecs.push(polyvec);
             }
         } else {
             for i in 0..sec_level.into() {
-                let row: ArrayVec<[Poly<Unnormalised>; 4]> = (0..sec_level.into())
+                let row: ArrayVec<[Poly<Montgomery>; 4]> = (0..sec_level.into())
                     .map(|j| {
                         #[allow(clippy::cast_possible_truncation)] // we know that max i, j is 4
                         Poly::derive_uniform(seed, j as u8, i as u8)
                     })
-                    .collect::<Result<ArrayVec<[Poly<Unnormalised>; 4]>, CrystalsError>>()?;
+                    .collect::<Result<ArrayVec<[Poly<Montgomery>; 4]>, CrystalsError>>()?;
 
                 let polyvec = PolyVec::from(row)?;
                 polyvecs.push(polyvec);

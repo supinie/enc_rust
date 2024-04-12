@@ -156,20 +156,19 @@ impl PolyVec<Normalised> {
         Ok(())
     }
 
-    // buf should be of length k * poly_compressed_bytes
+    // buf should be of length poly_vec_compressed_bytes
     // compresses the polyvec poly-wise into the buffer
     pub(crate) fn compress(&self, buf: &mut [u8]) -> Result<(), PackingError> {
-        let bytes_len = self.sec_level().poly_compressed_bytes();
-        if buf.len() != self.polynomials.len() * bytes_len {
+        if buf.len() != self.sec_level().poly_vec_compressed_bytes() {
             return Err(CrystalsError::IncorrectBufferLength(
                 buf.len(),
-                self.polynomials.len() * bytes_len,
+                self.sec_level().poly_vec_compressed_bytes(),
             )
             .into());
         }
 
         let _ = buf
-            .chunks_mut(bytes_len)
+            .chunks_mut(self.sec_level().poly_compressed_bytes())
             .zip(self.polynomials.iter())
             .map(|(buf_chunk, poly)| poly.compress(buf_chunk, &self.sec_level()));
 
@@ -200,7 +199,7 @@ impl PolyVec<Normalised> {
     }
 
     // Decompress a given buffer into a polyvec.
-    // The buffer should be of length k * POLYBYTES.
+    // The buffer should be of length poly_compressed_bytes.
     // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
     // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
     pub(crate) fn decompress(buf: &[u8]) -> Result<Self, PackingError> {

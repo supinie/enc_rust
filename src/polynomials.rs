@@ -249,7 +249,7 @@ impl Poly<Normalised> {
     // poly should be normalised
     // Example:
     // ```
-    // let msg_result = match poly.write_msg()?;
+    // let msg_result = poly.write_msg()?;
     // ```
     pub(crate) fn write_msg(&self) -> Result<[u8; SYMBYTES], TryFromIntError> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]

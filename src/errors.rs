@@ -25,6 +25,7 @@ impl Display for CrystalsError {
     }
 }
 
+#[derive(Debug)]
 pub enum PackingError {
     Crystals(CrystalsError),
     TryFromPrimitive(TryFromPrimitiveError<K>),
@@ -56,6 +57,7 @@ impl From<TryFromSliceError> for PackingError {
     }
 }
 
+#[derive(Debug)]
 pub enum KeyGenerationError {
     Crystals(CrystalsError),
     TryFromSlice(TryFromSliceError),
@@ -73,6 +75,7 @@ impl From<TryFromSliceError> for KeyGenerationError {
     }
 }
 
+#[derive(Debug)]
 pub enum EncryptionDecryptionError {
     Crystals(CrystalsError),
     TryFromInt(TryFromIntError),

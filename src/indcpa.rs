@@ -74,7 +74,7 @@ impl PublicKey {
     }
 }
 
-fn generate_key_pair(
+pub fn generate_key_pair(
     seed: &[u8],
     sec_level: SecurityLevel,
 ) -> Result<(PrivateKey, PublicKey), KeyGenerationError> {
@@ -111,7 +111,7 @@ fn generate_key_pair(
     Ok((PrivateKey { secret }, PublicKey { rho, noise, a_t }))
 }
 
-fn encrypt(
+pub fn encrypt(
     pub_key: &PublicKey,
     message: &[u8], // length SYMBYTES
     seed: &[u8],    // length SYMBYTES
@@ -165,7 +165,7 @@ fn encrypt(
     Ok(ciphertext_bytes)
 }
 
-fn decrypt(
+pub fn decrypt(
     priv_key: &PrivateKey,
     ciphertext: &ArrayVec<[u8; 2048]>,
 ) -> Result<[u8; SYMBYTES], EncryptionDecryptionError> {

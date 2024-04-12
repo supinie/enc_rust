@@ -73,19 +73,6 @@ impl<S: State> PolyVec<S> {
             sec_level: self.sec_level,
         }
     }
-    
-    // apply inv_ntt to each polynomial in the polyvec
-    pub(crate) fn inv_ntt(&self) -> Self {
-        let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
-        for poly in self.polynomials.iter() {
-            polynomials.push(poly.inv_ntt());
-        }
-
-        Self {
-            polynomials,
-            sec_level: self.sec_level,
-        }
-    }
 }
 
 impl<S: State + Unnormalised> PolyVec<S> {
@@ -103,20 +90,34 @@ impl<S: State + Unnormalised> PolyVec<S> {
     }
 }
 
-impl<S: State + Reduced + Copy> PolyVec<S> {
-    // apply ntt to each polynomial in the polyvec
-    pub(crate) fn ntt(&self) -> PolyVec<Unreduced> {
-        let mut polynomials = ArrayVec::<[Poly<Unreduced>; 4]>::new();
+impl<S: State + Copy> PolyVec<S> {
+    // apply inv_ntt to each polynomial in the polyvec
+    pub(crate) fn inv_ntt(&self) -> Self {
+        let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
         for poly in self.polynomials.iter() {
-            polynomials.push(poly.ntt());
+            polynomials.push(poly.inv_ntt());
         }
 
-        PolyVec {
+        Self {
             polynomials,
             sec_level: self.sec_level,
         }
     }
+}
 
+impl<S: State + Reduced + Copy> PolyVec<S> {
+    // apply ntt to each polynomial in the polyvec
+    pub(crate) fn ntt(&self) -> Self {
+        let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
+        for poly in self.polynomials.iter() {
+            polynomials.push(poly.ntt());
+        }
+
+        Self {
+            polynomials,
+            sec_level: self.sec_level,
+        }
+    }
 }
 
 impl PolyVec<Normalised> {
@@ -157,7 +158,7 @@ impl PolyVec<Normalised> {
 
     // buf should be of length k * poly_compressed_bytes
     // compresses the polyvec poly-wise into the buffer
-    fn compress(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+    pub(crate) fn compress(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         let bytes_len = self.sec_level().poly_compressed_bytes();
         if buf.len() != self.polynomials.len() * bytes_len {
             return Err(CrystalsError::IncorrectBufferLength(
@@ -182,7 +183,7 @@ impl PolyVec<Normalised> {
     pub fn unpack(buf: &[u8]) -> Result<PolyVec<Unreduced>, PackingError> {
         let sec_level = K::try_from(buf.len() / POLYBYTES)?; // If this fails then we know the
                                                              // buffer is not of the right size and
-                                                             // so no further checks are needed.
+                                                             // so no further checks are needed.;
 
         let polyvec_result = buf
             .chunks(POLYBYTES)
@@ -202,7 +203,7 @@ impl PolyVec<Normalised> {
     // The buffer should be of length k * POLYBYTES.
     // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
     // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
-    fn decompress(buf: &[u8]) -> Result<Self, PackingError> {
+    pub(crate) fn decompress(buf: &[u8]) -> Result<Self, PackingError> {
         let k = K::try_from(buf.len() / POLYBYTES)?;
         let sec_level = SecurityLevel::new(k);
 
@@ -225,7 +226,6 @@ impl PolyVec<Montgomery> {
     // derive a noise polyvec using a given seed and nonce
     pub(crate) fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8, eta: Eta) -> Self {
         let mut polynomials = ArrayVec::<[Poly<Montgomery>; 4]>::new();
-        let eta = sec_level.eta_1();
 
         for _ in 0..sec_level.k().into() {
             polynomials.push(Poly::derive_noise(seed, nonce, eta));

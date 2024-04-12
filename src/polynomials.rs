@@ -409,7 +409,7 @@ impl Poly<Normalised> {
     // ```
     // let decompress_result = decompress_to_poly(buf, k);
     // ```
-    pub fn decompress(buf: &[u8], sec_level: &SecurityLevel) -> Result<Self, PackingError> {
+    pub(crate) fn decompress(buf: &[u8], sec_level: &SecurityLevel) -> Result<Self, PackingError> {
         if buf.len() != sec_level.poly_compressed_bytes() {
             return Err(CrystalsError::IncorrectBufferLength(
                 buf.len(),

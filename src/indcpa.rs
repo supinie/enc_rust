@@ -21,13 +21,17 @@ pub struct PublicKey {
 }
 
 impl PrivateKey {
+    const fn sec_level(&self) -> SecurityLevel {
+        self.secret.sec_level()
+    }
+
     fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         self.secret.pack(buf)
     }
 
-    fn unpack(buf: &[u8]) -> Result<PrivateKey, PackingError> {
+    fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let secret = PolyVec::unpack(buf)?.normalise();
-        Ok(PrivateKey { secret })
+        Ok(Self { secret })
     }
 }
 
@@ -56,7 +60,7 @@ impl PublicKey {
         }
     }
 
-    fn unpack(buf: &[u8]) -> Result<PublicKey, PackingError> {
+    fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let k = K::try_from((buf.len() - SYMBYTES) / POLYBYTES)?;
         let k_value: usize = k.into();
         let break_point: usize = POLYBYTES * k_value;
@@ -66,7 +70,7 @@ impl PublicKey {
 
         let a_t = Matrix::derive(&rho, true, k)?;
 
-        Ok(PublicKey { rho, noise, a_t })
+        Ok(Self { rho, noise, a_t })
     }
 }
 
@@ -85,7 +89,9 @@ fn generate_key_pair(
 
     let sigma = &expanded_seed[32..]; // seed for noise
 
-    let secret = PolyVec::derive_noise(sec_level, sigma, 0, sec_level.eta_1()).ntt().normalise();
+    let secret = PolyVec::derive_noise(sec_level, sigma, 0, sec_level.eta_1())
+        .ntt()
+        .normalise();
 
     let k_value: usize = sec_level.k().into();
     #[allow(clippy::cast_possible_truncation)] // k_value can only be 2, 3, 4
@@ -107,97 +113,84 @@ fn generate_key_pair(
 
 fn encrypt(
     pub_key: &PublicKey,
-    message: &[u8],     // length SYMBYTES
-    seed: &[u8]        // length SYMBYTES
-) -> Result<ArrayVec<[u8; 1568]>, EncryptionDecryptionError> {    // 1568 == max indcpa_bytes
+    message: &[u8], // length SYMBYTES
+    seed: &[u8],    // length SYMBYTES
+) -> Result<ArrayVec<[u8; 2048]>, EncryptionDecryptionError> {
+    // must be able to contain max
+    // indcpa bytes, but trait bounds
+    // only satisfied for powers of 2
+    // when > 32.
     let sec_level = pub_key.sec_level()?;
-    let k_value: u8 = sec_level.k().into() as u8;
+    let k_value: usize = sec_level.k().into();
     let msg_poly = Poly::read_msg(message)?;
-    
+
     let rh = PolyVec::derive_noise(sec_level, seed, 0, sec_level.eta_1())
         .ntt()
         .barrett_reduce();
 
-    let error_1 = PolyVec::derive_noise(sec_level, seed, k_value, sec_level.eta_2());
-    let error_2 = Poly::derive_noise(seed, k_value * 2, sec_level.eta_2());
-    
-    let u = PolyVec::from(pub_key.a_t
-        .vectors()
-        .iter()
-        .map(|row| row.inner_product_pointwise(&rh))
-        .collect::<ArrayVec<[Poly<Unreduced>; 4]>>())?
-        .inv_ntt()
-        .add(&error_1)?
-        .normalise();
+    #[allow(clippy::cast_possible_truncation)] // k_value will never be truncated
+    let error_1 = PolyVec::derive_noise(sec_level, seed, k_value as u8, sec_level.eta_2());
+    #[allow(clippy::cast_possible_truncation)] // k_value will never be truncated
+    let error_2 = Poly::derive_noise(seed, k_value as u8 * 2, sec_level.eta_2());
 
-    let v = pub_key.noise.inner_product_pointwise(&rh)
+    //  u = A_t r + e_1
+    let u = PolyVec::from(
+        pub_key
+            .a_t
+            .vectors()
+            .iter()
+            .map(|row| row.inner_product_pointwise(&rh))
+            .collect::<ArrayVec<[Poly<Unreduced>; 4]>>(),
+    )?
+    .inv_ntt()
+    .add(&error_1)?
+    .normalise();
+
+    //  v = <t, r> + e_2 + message
+    let v = pub_key
+        .noise
+        .inner_product_pointwise(&rh)
         .barrett_reduce()
         .inv_ntt()
         .add(&msg_poly)
         .add(&error_2)
         .normalise();
 
-    let ciphertext_bytes = 
+    let mut ciphertext_bytes = ArrayVec::from_array_len([0u8; 2048], sec_level.indcpa_bytes());
+
+    let (u_bytes, v_bytes) = ciphertext_bytes.split_at_mut(sec_level.poly_vec_compressed_bytes());
+    u.compress(u_bytes)?;
+    v.compress(v_bytes, &sec_level)?;
+
+    Ok(ciphertext_bytes)
 }
 
+fn decrypt(
+    priv_key: &PrivateKey,
+    ciphertext: &ArrayVec<[u8; 2048]>,
+) -> Result<[u8; SYMBYTES], EncryptionDecryptionError> {
+    let sec_level = priv_key.sec_level();
+    if ciphertext.len() == sec_level.indcpa_bytes() {
+        let (u_bytes, v_bytes) = ciphertext.split_at(sec_level.poly_vec_compressed_bytes());
+        let u = PolyVec::decompress(u_bytes)?.ntt();
+        let v = Poly::decompress(v_bytes, &sec_level)?;
 
-// // pub fn encrypt<'a, PV, M>(
-// pub fn encrypt<PV, M>(
-//     pub_key: &PublicKey<PV, M>,
-//     plaintext: &[u8],
-//     seed: &[u8],
-//     // output_buf: &'a mut [u8],
-//     output_buf: &mut [u8],
-//     // ) -> Result<&'a [u8], TryFromIntError>
-// ) -> Result<(), TryFromIntError>
-// where
-//     PV: PolyVecOperations + GetSecLevel + Default + IntoIterator<Item = Poly> + Copy,
-//     M: MatOperations + GetSecLevel + LinkSecLevel<PV> + New + IntoIterator<Item = PV> + Copy,
-// {
-//     let mut m = Poly::new();
-//     m.read_msg(plaintext)?;
+        //  m = v - <s, u>
+        let m = v
+            .sub(
+                &priv_key
+                    .secret
+                    .inner_product_pointwise(&u)
+                    .barrett_reduce()
+                    .inv_ntt(),
+            )
+            .normalise();
 
-//     let mut rh = PV::new_filled();
-//     rh.derive_noise(seed, 0, PV::sec_level().eta_1());
-//     rh.ntt();
-//     // rh.barrett_reduce();
-
-//     let k_value: u8 = PV::sec_level().k().into();
-//     let mut error_1 = PV::new_filled();
-//     error_1.derive_noise(seed, k_value, PV::sec_level().eta_2());
-//     let mut error_2 = Poly::new();
-//     error_2.derive_noise(seed, 2 * k_value, PV::sec_level().eta_2());
-
-//     let mut u = PV::new_filled();
-//     for (mut poly, vec) in u.into_iter().zip(pub_key.a_t) {
-//         poly.inner_product_pointwise(vec, rh);
-//     }
-//     u.inv_ntt();
-//     u.add(error_1);
-//     u.barrett_reduce();
-
-//     let mut v = Poly::new();
-//     v.inner_product_pointwise(pub_key.noise, rh);
-//     // v.barrett_reduce();
-//     v.inv_ntt();
-
-//     v.add(&m);
-//     v.add(&error_2);
-
-//     v.barrett_reduce();
-
-//     // u.normalise();
-//     // v.normalise();
-
-//     let poly_vec_compressed_bytes: usize = PV::sec_level().poly_vec_compressed_bytes();
-//     u.compress(output_buf)?;
-//     v.compress(
-//         &mut output_buf[poly_vec_compressed_bytes..],
-//         &PV::sec_level(),
-//     )?;
-
-//     Ok(())
-// }
+        Ok(m.write_msg()?)
+    } else {
+        Err(CrystalsError::IncorrectBufferLength(ciphertext.len(), sec_level.indcpa_bytes()).into())
+    }
+}
 
 // // pub fn decrypt<'a, PV>(
 // pub fn decrypt<PV>(

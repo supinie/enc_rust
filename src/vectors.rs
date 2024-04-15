@@ -170,6 +170,7 @@ impl PolyVec<Normalised> {
         let _ = buf
             .chunks_mut(self.sec_level().poly_compressed_bytes())
             .zip(self.polynomials.iter())
+            // This is applying it to the buf_chunk not the buf
             .map(|(buf_chunk, poly)| poly.compress(buf_chunk, &self.sec_level()));
 
         Ok(())

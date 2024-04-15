@@ -382,7 +382,7 @@ impl Poly<Normalised> {
     // poly will not be normalised
     // Example:
     // ```
-    // let read_result = read_msg_to_poly(msg_buf);
+    // let read_result = Poly::read_msg(msg_buf);
     // ```
     pub(crate) fn read_msg(msg: &[u8]) -> Result<Poly<Unreduced>, PackingError> {
         if msg.len() == SYMBYTES {
@@ -409,7 +409,7 @@ impl Poly<Normalised> {
     // output poly is normalised
     // Example:
     // ```
-    // let decompress_result = decompress_to_poly(buf, k);
+    // let decompress_result = Poly::decompress(buf, k);
     // ```
     pub(crate) fn decompress(buf: &[u8], sec_level: &SecurityLevel) -> Result<Self, PackingError> {
         if buf.len() != sec_level.poly_compressed_bytes() {

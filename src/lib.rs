@@ -20,9 +20,8 @@
     unused_lifetimes,
     unused_qualifications
 )]
-// pedantic
 #![no_std]
-#![allow(clippy::needless_range_loop)]
+// #![allow(clippy::needless_range_loop)]
 
 mod errors;
 mod field_operations;
@@ -36,11 +35,11 @@ mod vectors;
 mod tests {
     // mod buffer;
     mod field_operations;
-        // mod indcpa;
+    // mod indcpa;
     //     mod matrix;
-    //     mod ntt;
+    mod ntt;
     mod params;
     mod polynomials;
     //     mod sample;
-    //     mod vectors;
+    mod vectors;
 }

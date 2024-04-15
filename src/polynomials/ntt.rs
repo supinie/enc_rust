@@ -69,8 +69,9 @@ impl<S: State + Reduced + Copy> Poly<S> {
 impl<S: State + Copy> Poly<S> {
     // In inverse NTT, with montgomery reduction
     // Assumes that all coefficients are bounded in absolute value by q.
-    // Output coefficients are bounded in absolute value q.
+    // If so, output coefficients are bounded in absolute value q.
     // If the input is in montgomery or regular form, then so is the output.
+    // coefficients must be bounded in absolute value by 3713.
     // Example:
     // ```
     // let new_poly = poly.inv_ntt();

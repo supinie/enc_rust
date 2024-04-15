@@ -57,6 +57,8 @@ impl<S: State> Default for Poly<S> {
 
 impl<S: State> Poly<S> {
     // Sets self to self + x
+    // The coeffs of self and x should be small enough that no overflow can occur.
+    // If in doubt, reduce first.
     // Example:
     // ```
     // let new_poly = poly1.add(&poly2);
@@ -313,7 +315,7 @@ impl Poly<Normalised> {
                     buf_chunk.copy_from_slice(
                         &t.chunks_exact(2)
                             .map(|chunk| chunk[0] | (chunk[1] << 4))
-                            .collect::<ArrayVec<[u8; N]>>()
+                            .collect::<ArrayVec<[u8; 4]>>()
                             .into_inner(),
                     );
                 }
@@ -350,7 +352,7 @@ impl Poly<Normalised> {
     // poly will NOT be normalised, but 0 <= coeffs < 4096
     // Example:
     // ```
-    // unpacked_poly = unpack_to_poly(buf);
+    // unpacked_poly = Poly::unpack(buf);
     // ```
     pub fn unpack(buf: &[u8]) -> Result<Poly<Unreduced>, PackingError> {
         if buf.len() != POLYBYTES {

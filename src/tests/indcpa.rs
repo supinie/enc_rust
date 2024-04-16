@@ -19,10 +19,16 @@ mod indcpa_tests {
     fn key_gen_enc_dec() {
         let key_seed = generate_random_seed();
         let cipher_seed = generate_random_seed();
-        let plaintext = generate_random_seed();
+        // let plaintext = generate_random_seed();
+        let plaintext: [u8; 32] = core::array::from_fn(|i| (i + 1) as u8);
 
-        let (_priv_key, pub_key) = generate_key_pair(&key_seed, SecurityLevel::new(K::Three)).unwrap();
+
+        let (priv_key, pub_key) = generate_key_pair(&key_seed, SecurityLevel::new(K::Three)).unwrap();
         
-        let _ = encrypt(&pub_key, &plaintext, &cipher_seed).unwrap();
+        let ciphertext = encrypt(&pub_key, &plaintext, &cipher_seed).unwrap();
+
+        let message = decrypt(&priv_key, &ciphertext).unwrap();
+
+        assert_eq!(message, plaintext);
     }
 }

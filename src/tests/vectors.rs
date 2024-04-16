@@ -111,5 +111,25 @@ mod vec_tests {
 
             let output = poly_vec.normalise().compress(&mut buf[..end]).unwrap();
         }
+
+        #[test]
+        fn unpack_test(poly_vec in new_poly_vec()) {
+            let mut buf = [0u8; 4 * POLYBYTES]; // max buf length
+            let k: usize = poly_vec.sec_level().k().into();
+
+            let _result = poly_vec.normalise().pack(&mut buf[..k * POLYBYTES]).unwrap();
+
+            let unpacked = PolyVec::unpack(&buf[..k * POLYBYTES]).unwrap();
+        }
+
+        #[test]
+        fn decompress_test(poly_vec in new_poly_vec()) {
+            let mut buf = [0u8; 4 * 160]; // max poly_vec_compressed_bytes
+            let end = poly_vec.sec_level().poly_vec_compressed_bytes();
+
+            let _result = poly_vec.normalise().compress(&mut buf[..end]).unwrap();
+
+            let decompressed = PolyVec::decompress(&buf[..end]).unwrap();
+        }
     }
 }

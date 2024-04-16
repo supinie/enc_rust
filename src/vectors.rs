@@ -1,4 +1,3 @@
-// use core::num::TryFromIntError;
 use crate::{
     errors::{CrystalsError, PackingError},
     params::{Eta, SecurityLevel, K, N, POLYBYTES},
@@ -170,8 +169,6 @@ impl PolyVec<Normalised> {
         let _ = buf
             .chunks_mut(self.sec_level().poly_compressed_bytes())
             .zip(self.polynomials.iter())
-            // This is applying it to the buf_chunk not the buf
-            // .map(|(buf_chunk, poly)| poly.compress(buf_chunk, &self.sec_level()));
             .for_each(|(buf_chunk, poly)| { let _ = poly.compress(buf_chunk, &self.sec_level()); } );
 
         Ok(())
@@ -201,12 +198,16 @@ impl PolyVec<Normalised> {
     }
 
     // Decompress a given buffer into a polyvec.
-    // The buffer should be of length poly_compressed_bytes.
+    // The buffer should be of length poly_vec_compressed_bytes.
     // If the length of the buffer is incorrect, the operation can still succeed provided it is a valid
-    // multiple of POLYBYTES, and will result in a polyvec of incorrect security level.
+    // poly_vec_compressed_bytes, and will result in a polyvec of incorrect security level.
     pub(crate) fn decompress(buf: &[u8]) -> Result<Self, PackingError> {
-        let k = K::try_from(buf.len() / POLYBYTES)?;
-        let sec_level = SecurityLevel::new(k);
+        let sec_level = match buf.len() {
+            256 => Ok(SecurityLevel::new(K::Two)),
+            384 => Ok(SecurityLevel::new(K::Three)),
+            640 => Ok(SecurityLevel::new(K::Four)),
+            _ => Err(PackingError::Crystals(CrystalsError::IncorrectBufferLength(buf.len(), 0)))
+        }?;
 
         let polyvec_result = buf
             .chunks(sec_level.poly_compressed_bytes())
@@ -216,7 +217,7 @@ impl PolyVec<Normalised> {
         match polyvec_result {
             Ok(polynomials) => Ok(Self {
                 polynomials,
-                sec_level: k,
+                sec_level: sec_level.k(),
             }),
             Err(err) => Err(err),
         }

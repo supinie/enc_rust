@@ -56,6 +56,10 @@ impl<S: State> Default for Poly<S> {
 }
 
 impl<S: State> Poly<S> {
+    pub(crate) fn coeffs(&self) -> &[i16; N] {
+        &self.coeffs
+    }
+
     // Sets self to self + x
     // The coeffs of self and x should be small enough that no overflow can occur.
     // If in doubt, reduce first.

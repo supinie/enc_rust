@@ -7,6 +7,7 @@ pub(in crate::tests) mod poly_tests {
         params::*,
         tests::params::params_tests::sec_level_strategy,
     };
+    use more_asserts::assert_le;
     use proptest::prelude::*;
 
     pub(in crate::tests) fn new_limited_poly_array() -> impl Strategy<Value = [i16; N]> {
@@ -139,5 +140,48 @@ pub(in crate::tests) mod poly_tests {
 
             let decompressed_poly = Poly::decompress(&buf[..sec_level.poly_compressed_bytes()], &sec_level).unwrap();
         }
+
+        #[test]
+        fn pack_unpack_test(poly in new_poly()) {
+            let buf = poly.normalise().pack();
+
+            let unpacked = Poly::unpack(&buf).unwrap();
+
+            assert_eq!(poly.normalise(), unpacked.normalise());
+        }
+
+        #[test]
+        fn compress_decompress_test(
+            poly in new_poly(),
+            sec_level in sec_level_strategy()
+        ) {
+            let mut buf = [0u8; 160];
+            let _ = poly
+                .normalise()
+                .compress(&mut buf[..sec_level.poly_compressed_bytes()], &sec_level)
+                .unwrap();
+
+            let decompressed = Poly::decompress(&buf[..sec_level.poly_compressed_bytes()], &sec_level).unwrap();
+
+            for (original_coeff, new_coeff) in poly
+                .normalise()
+                .coeffs()
+                .iter()
+                .zip(decompressed.coeffs().iter()) {
+                    if (original_coeff - new_coeff).abs() < 150 {
+                        assert_le!((original_coeff - new_coeff).abs(), 150, "original: {original_coeff}, new: {new_coeff}");
+                    } else {
+                        assert_le!(Q as i16 - (original_coeff - new_coeff).abs(), 150, "original: {original_coeff}, new: {new_coeff}");
+                    }
+            }
+        }
+
+        // #[test]
+        // fn write_read_msg_test(poly in new_poly()) {
+        //     let msg = poly.normalise().write_msg().unwrap();
+        //     let new_poly = Poly::read_msg(&msg).unwrap();
+            
+        //     assert_eq!(poly, new_poly);
+        // }
     }
 }

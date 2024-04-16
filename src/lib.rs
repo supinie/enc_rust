@@ -36,7 +36,7 @@ mod tests {
     // mod buffer;
     mod field_operations;
     mod indcpa;
-    //     mod matrix;
+    mod matrix;
     mod ntt;
     mod sample;
     mod params;

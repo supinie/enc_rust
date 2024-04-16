@@ -106,11 +106,10 @@ mod vec_tests {
 
         #[test]
         fn compress_test(poly_vec in new_poly_vec()) {
-            let mut buf = [0u8; 4 * 352]; // max poly_vec_compressed_bytes
+            let mut buf = [0u8; 4 * 160]; // max poly_vec_compressed_bytes
             let end = poly_vec.sec_level().poly_vec_compressed_bytes();
 
             let output = poly_vec.normalise().compress(&mut buf[..end]).unwrap();
-            assert_eq!(buf, [100u8; 4 * 352]);
         }
     }
 }

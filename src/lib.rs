@@ -35,7 +35,7 @@ mod vectors;
 mod tests {
     // mod buffer;
     mod field_operations;
-    // mod indcpa;
+    mod indcpa;
     //     mod matrix;
     mod ntt;
     mod params;

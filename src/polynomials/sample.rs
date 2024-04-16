@@ -1,43 +1,59 @@
 use crate::{
-    params::{Eta, N, Q},
-    polynomials::Poly,
+    errors::CrystalsError,
+    params::{Eta, N, Q, SYMBYTES},
+    polynomials::{Montgomery, Poly},
 };
 use byteorder::{ByteOrder, LittleEndian};
-use core::num::TryFromIntError;
+use rand_core::{CryptoRng, Error, RngCore};
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,
 };
 
-impl Poly {
+pub fn random_bytes<R>(buf: &mut [u8], len: usize, rng: &mut R) -> Result<(), Error>
+where
+    R: RngCore + CryptoRng,
+{
+    rng.try_fill_bytes(&mut buf[..len])?;
+    Ok(())
+}
+
+impl Poly<Montgomery> {
     // Sample our polynomial from a centered binomial distribution
+    // given a uniformly distributed array of bytes
     // n = 4, p = 1/2
     // ie. coefficients are in {-2, -1, 0, 1, 2}
     // with probabilities {1/16, 1/4, 3/8, 1/4, 1/16}
-    pub(crate) fn derive_noise_2(&mut self, seed: &[u8], nonce: u8) {
+    fn derive_noise_2(seed: &[u8], nonce: u8) -> Self {
         let key_suffix: [u8; 1] = [nonce];
         let mut hash = Shake256::default();
         hash.update(seed);
         hash.update(&key_suffix);
 
-        let mut entropy_buf = [0u8; 128];
+        let mut entropy_buf = [0u8; SYMBYTES * 4];
         hash.finalize_xof().read(&mut entropy_buf);
 
-        for i in 0..16 {
-            let coeff_bytes = &entropy_buf[i * 8..(i + 1) * 8];
+        let mut coeffs = [0i16; N];
+
+        for (i, coeff_bytes) in entropy_buf.chunks_exact(8).enumerate() {
             let coeff_sum = LittleEndian::read_u64(coeff_bytes);
 
             let mut accumulated_sum = coeff_sum & 0x5555_5555_5555_5555;
             accumulated_sum += (coeff_sum >> 1) & 0x5555_5555_5555_5555;
 
             #[allow(clippy::cast_possible_truncation)]
-            for j in 0..16 {
+            for coeff in coeffs.iter_mut().skip(16 * i).take(16) {
                 let coeff_a = (accumulated_sum as i16) & 0x3;
                 accumulated_sum >>= 2;
                 let coeff_b = (accumulated_sum as i16) & 0x3;
                 accumulated_sum >>= 2;
-                self.coeffs[16 * i + j] = coeff_a - coeff_b;
+                *coeff = coeff_a - coeff_b;
             }
+        }
+
+        Self {
+            coeffs,
+            state: Montgomery,
         }
     }
 
@@ -45,49 +61,59 @@ impl Poly {
     // n = 6, p = 1/2
     // ie. coefficients are in {-3, -2, -1, 0, 1, 2, 3}
     // with probabilities {1/64, 3/32, 15/64, 5/16, 15/64, 3/32, 1/64}
-    pub(crate) fn derive_noise_3(&mut self, seed: &[u8], nonce: u8) {
+    fn derive_noise_3(seed: &[u8], nonce: u8) -> Self {
         let key_suffix: [u8; 1] = [nonce];
         let mut hash = Shake256::default();
         hash.update(seed);
         hash.update(&key_suffix);
 
-        let mut entropy_buf = [0u8; 192 + 2];
+        let mut entropy_buf = [0u8; SYMBYTES * 6];
         hash.finalize_xof().read(&mut entropy_buf);
 
-        for i in 0..32 {
-            let coeff_bytes = &entropy_buf[i * 6..i * 6 + 8];
-            let coeff_sum = LittleEndian::read_u64(coeff_bytes);
+        let mut coeffs = [0i16; N];
+
+        for (i, coeff_bytes) in entropy_buf.chunks_exact(6).enumerate() {
+            //must be able to read 8 bytes even though we only use 6.
+            let coeff_sum = LittleEndian::read_u64(&[coeff_bytes, &[0u8; 2]].concat());
 
             let mut accumulated_sum = coeff_sum & 0x2492_4924_9249;
             accumulated_sum += (coeff_sum >> 1) & 0x2492_4924_9249;
             accumulated_sum += (coeff_sum >> 2) & 0x2492_4924_9249;
 
             #[allow(clippy::cast_possible_truncation)]
-            for j in 0..8 {
+            for coeff in coeffs.iter_mut().skip(8 * i).take(8) {
                 let coeff_a = (accumulated_sum as i16) & 0x7;
                 accumulated_sum >>= 3;
                 let coeff_b = (accumulated_sum as i16) & 0x7;
                 accumulated_sum >>= 3;
-                self.coeffs[8 * i + j] = coeff_a - coeff_b;
+
+                *coeff = coeff_a - coeff_b;
             }
+        }
+
+        Self {
+            coeffs,
+            state: Montgomery,
         }
     }
 
-    pub(crate) fn derive_noise(&mut self, seed: &[u8], nonce: u8, eta: Eta) {
+    pub(crate) fn derive_noise(seed: &[u8], nonce: u8, eta: Eta) -> Self {
         match eta {
-            Eta::Two => {
-                self.derive_noise_2(seed, nonce);
-            }
-            Eta::Three => {
-                self.derive_noise_3(seed, nonce);
-            }
+            Eta::Two => Self::derive_noise_2(seed, nonce),
+            Eta::Three => Self::derive_noise_3(seed, nonce),
         }
     }
 
-    //seed should be of length 32
-    pub(crate) fn derive_uniform(&mut self, seed: &[u8], x: u8, y: u8) {
-        let mut seed_suffix = [x, y];
+    // seed should be of length 32
+    // coefficients are reduced, but not normalised (close to normal) {0..q}
+    pub(crate) fn derive_uniform(seed: &[u8], x: u8, y: u8) -> Result<Self, CrystalsError> {
+        if seed.len() != 32 {
+            return Err(CrystalsError::InvalidSeedLength(seed.len(), 32));
+        }
+        let seed_suffix = [x, y];
         let mut buf = [0u8; 168];
+
+        let mut coeffs = [0i16; N];
 
         let mut i = 0;
         'outer: loop {
@@ -97,14 +123,14 @@ impl Poly {
             let mut reader = hash.finalize_xof();
             reader.read(&mut buf);
 
-            let mut chunk_iter = buf.chunks_exact_mut(3);
+            let chunk_iter = buf.chunks_exact_mut(3);
             for chunk in chunk_iter {
                 let t1 = (u16::from(chunk[0]) | (u16::from(chunk[1]) << 8)) & 0xfff;
                 let t2 = ((u16::from(chunk[1]) >> 4) | (u16::from(chunk[2]) << 4)) & 0xfff;
 
                 #[allow(clippy::cast_possible_wrap)]
                 if usize::from(t1) < Q {
-                    self.coeffs[i] = t1 as i16;
+                    coeffs[i] = t1 as i16;
                     i += 1;
                     if i == N {
                         break 'outer;
@@ -113,7 +139,7 @@ impl Poly {
 
                 #[allow(clippy::cast_possible_wrap)]
                 if usize::from(t2) < Q {
-                    self.coeffs[i] = t2 as i16;
+                    coeffs[i] = t2 as i16;
                     i += 1;
                     if i == N {
                         break 'outer;
@@ -124,5 +150,10 @@ impl Poly {
                 }
             }
         }
+
+        Ok(Self {
+            coeffs,
+            state: Montgomery,
+        })
     }
 }

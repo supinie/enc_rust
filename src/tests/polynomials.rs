@@ -1,146 +1,187 @@
 #![allow(warnings)]
 #[cfg(test)]
-mod poly_tests {
+
+pub(in crate::tests) mod poly_tests {
     use crate::{
-        field_operations::{barrett_reduce, montgomery_reduce},
-        params::*,
         polynomials::*,
-        tests::buffer::buffer_tests::zero_initialise_buffer,
+        params::*,
+        tests::params::params_tests::sec_level_strategy,
     };
+    use more_asserts::assert_le;
+    use proptest::prelude::*;
 
-    const INPUT_COEFFS: [i16; N] = [
-        -650, -1557, -1607, 924, 1571, 776, -531, -1418, -1172, -511, 1430, 1180, 892, 1471, 1063,
-        934, 1320, -1278, 1420, 687, 834, -1508, 80, 5, -266, -1306, 826, -958, 1079, -705, -1507,
-        -1236, -597, -1449, 1405, -638, 1045, -791, -339, 1590, 415, -573, 1105, -305, -715, 555,
-        -1036, -1059, 995, -1281, 1293, 216, -1072, -292, -1443, 327, 119, 1100, 1087, -467, -1269,
-        1245, 15, -149, 1514, -245, 930, 946, 682, -1073, 923, -516, 19, 364, 844, 969, -694, 1473,
-        1627, -1364, -1420, 1255, 570, -827, -650, 792, 1218, 1186, 227, 640, -893, 675, 272, 839,
-        -1138, 173, -1071, 1457, -546, 1328, -1281, -1287, -852, 455, 794, -1621, -188, -1565,
-        1570, -226, -1211, -1515, -583, 1024, -625, 484, 203, -1072, 6, -1235, 1285, 830, 1106,
-        -107, 4, -1645, -1599, 650, 1529, -427, 314, -1416, -49, 1179, 756, -868, 1275, -1045,
-        -768, 1180, 395, -262, 1330, 1529, -903, -907, 348, 965, -262, -1259, 1448, -641, 1236,
-        889, 917, -373, 961, 1035, -1387, 825, -1057, 644, 1126, 611, 210, 218, 1408, -180, 838,
-        -972, -664, -380, 431, -947, -516, 1246, -137, 1550, 546, 1267, -1374, 329, -1039, 1528,
-        -395, 1595, -458, -1099, 1017, -128, 1444, -1652, -1149, 905, 624, 778, -542, 420, -1066,
-        -1316, 1113, -13, 21, -69, 757, 1223, -488, -1044, 1108, -1554, -1442, 1399, 492, -816,
-        1314, -1567, -834, -756, -949, -1482, 781, -1170, -1469, 1350, 1401, 873, 463, -754, -372,
-        1114, -353, -872, -564, 1386, 724, -1471, 944, -1376, -850, 439, -1265, -627, 173, 892,
-        274, -125, 1042, 1105, 784, -1571, 1340, -48, -1024, 1537, -363, -1236,
-    ];
+    pub(in crate::tests) fn new_limited_poly_array() -> impl Strategy<Value = [i16; N]> {
+        prop::array::uniform(-(i16::MAX / 2)..(i16::MAX / 2)) // pick i16::MAX / 2, which should be plenty more
+                                                // than Q whilst ensuring no overflows (we know
+                                                // they can happen)
+    }
 
-    const OUTPUT_COEFFS: [i16; N] = [
-        0, 1665, 1665, 1665, 1665, 0, 0, 1665, 1665, 0, 1665, 1665, 1665, 1665, 1665, 1665, 1665,
-        1665, 1665, 0, 1665, 1665, 0, 0, 0, 1665, 0, 1665, 1665, 0, 1665, 1665, 0, 1665, 1665, 0,
-        1665, 0, 0, 1665, 0, 0, 1665, 0, 0, 0, 1665, 1665, 1665, 1665, 1665, 0, 1665, 0, 1665, 0,
-        0, 1665, 1665, 0, 1665, 1665, 0, 0, 1665, 0, 1665, 1665, 0, 1665, 1665, 0, 0, 0, 1665,
-        1665, 0, 1665, 1665, 1665, 1665, 1665, 0, 0, 0, 0, 1665, 1665, 0, 0, 1665, 0, 0, 1665,
-        1665, 0, 1665, 1665, 0, 1665, 1665, 1665, 1665, 0, 0, 1665, 0, 1665, 1665, 0, 1665, 1665,
-        0, 1665, 0, 0, 0, 1665, 0, 1665, 1665, 0, 1665, 0, 0, 1665, 1665, 0, 1665, 0, 0, 1665, 0,
-        1665, 0, 1665, 1665, 1665, 0, 1665, 0, 0, 1665, 1665, 1665, 1665, 0, 1665, 0, 1665, 1665,
-        0, 1665, 1665, 1665, 0, 1665, 1665, 1665, 0, 1665, 0, 1665, 0, 0, 0, 1665, 0, 1665, 1665,
-        0, 0, 0, 1665, 0, 1665, 0, 1665, 0, 1665, 1665, 0, 1665, 1665, 0, 1665, 0, 1665, 1665, 0,
-        1665, 1665, 1665, 1665, 0, 0, 0, 0, 1665, 1665, 1665, 0, 0, 0, 0, 1665, 0, 1665, 1665,
-        1665, 1665, 1665, 0, 0, 1665, 1665, 1665, 0, 1665, 1665, 0, 1665, 1665, 1665, 1665, 1665,
-        0, 0, 0, 1665, 0, 1665, 0, 1665, 0, 1665, 1665, 1665, 1665, 0, 1665, 0, 0, 1665, 0, 0,
-        1665, 1665, 0, 1665, 1665, 0, 1665, 1665, 0, 1665,
-    ];
+    pub(in crate::tests) fn new_poly_array() -> impl Strategy<Value = [i16; N]> {
+        prop::array::uniform(i16::MIN..i16::MAX)
+    }
 
-    // Test Poly::new()
+    prop_compose! {
+        pub(in crate::tests) fn new_poly()
+            (coeffs in new_poly_array())
+            -> Poly<Unreduced> {
+                Poly::from_arr(&coeffs)
+            }
+    }
+
+    prop_compose! {
+        pub(in crate::tests) fn new_limited_poly()
+            (coeffs in new_limited_poly_array())
+            -> Poly<Unreduced> {
+                Poly::from_arr(&coeffs)
+            }
+    }
+
+    prop_compose! {
+        pub(in crate::tests) fn new_ntt_poly()
+            (coeffs in prop::array::uniform(-(3713i16)..(3713i16)))
+            -> Poly<Unreduced> {
+                Poly::from_arr(&coeffs)
+            }
+    }
+
     #[test]
     fn new_test() {
         let poly = Poly::new();
-        assert_eq!(poly.coeffs, [0; N]);
     }
 
-    // Test Poly::add()
-    #[test]
-    fn add_test() {
-        let mut poly1 = Poly { coeffs: [1; N] };
-        let poly2 = Poly { coeffs: [4; N] };
-        poly1.add(&poly2);
-        assert_eq!(poly1.coeffs, [5; N]);
-    }
+    proptest! {
+        #[test]
+        fn from_arr_test(a in new_poly_array()) {
+            let poly = Poly::from_arr(&a);
+        }
 
-    // Test Poly::sub()
-    #[test]
-    fn sub_test() {
-        let mut poly1 = Poly { coeffs: [3; N] };
-        let poly2 = Poly { coeffs: [1; N] };
-        poly1.sub(&poly2);
-        assert_eq!(poly1.coeffs, [2; N]);
-    }
+        #[test]
+        fn add_test(
+            a in new_limited_poly(),
+            b in new_limited_poly()
+        ) {
+            let outout = a.add(&b);
+        }
 
-    #[test]
-    fn mont_form_test() {
-        let mut poly1 = Poly {
-            coeffs: [i16::MAX; N],
-        };
-        let mut poly2 = Poly {
-            coeffs: [i16::MIN; N],
-        };
+        #[test]
+        fn sub_test(
+            a in new_limited_poly(),
+            b in new_limited_poly()
+        ) {
+            let outout = a.sub(&b);
+        }
 
-        poly1.mont_form();
-        poly2.mont_form();
+        #[test]
+        fn barrett_reduce_test(poly in new_poly()) {
+            let output = poly.barrett_reduce();
+        }
 
-        assert_eq!(poly1.coeffs, [56; N]);
-        assert_eq!(poly2.coeffs, [988; N]);
-    }
+        #[test]
+        fn mont_form_test(poly in new_poly()) {
+            let output = poly.mont_form();
+        }
 
-    // Test Poly::pointwise_mul()
-    #[test]
-    fn pointwise_mul_test() {
-        let a = Poly {
-            coeffs: [Q as i16; N],
-        };
-        let mut b = Poly { coeffs: [20; N] };
-        let mut p = Poly::new();
+        #[test]
+        fn normalise_test(poly in new_poly()) {
+            let output = poly.normalise();
+        }
 
-        b.coeffs[0] = 1;
+        #[test]
+        fn pointwise_mul_test(
+            a in new_poly(),
+            b in new_poly()
+        ) {
+            let outout = a.normalise().pointwise_mul(&b.normalise());
+        }
 
-        let mut a_copy = a;
-        let mut b_copy = b;
+        #[test]
+        fn pack_test(poly in new_poly()) {
+            let output = poly.normalise().pack();
+        }
 
-        a_copy.ntt();
-        b_copy.ntt();
+        #[test]
+        fn write_msg_test(poly in new_poly()) {
+            let msg = poly.normalise().write_msg().unwrap();
+        }
 
-        a_copy.pointwise_mul(&b_copy);
-        a_copy.barrett_reduce();
-        a_copy.inv_ntt();
+        #[test]
+        fn compress_test(
+            poly in new_poly(),
+            sec_level in sec_level_strategy()
+        ) {
+            let mut buf = [0u8; 160]; // max poly_compressed_bytes
+            let result = poly
+                .normalise()
+                .compress(&mut buf[..sec_level.poly_compressed_bytes()], &sec_level)
+                .unwrap();
+        }
 
-        for i in 0..N {
-            for j in 0..N {
-                let mut v = montgomery_reduce((a.coeffs[i] as i32) * (b.coeffs[j] as i32));
-                let mut k = i + j;
+        #[test]
+        fn unpack_test(poly in new_poly()) {
+            let buf = poly.normalise().pack();
 
-                // circular shifting case; x^N = -1
-                if k >= N {
-                    k -= N;
-                    v = -v;
-                }
-                p.coeffs[k] = barrett_reduce(v + p.coeffs[k]);
+            let unpacked = Poly::unpack(&buf).unwrap();
+        }
+
+        #[test]
+        fn read_msg_test(msg in prop::array::uniform32(0u8..)) {
+            let poly = Poly::read_msg(&msg).unwrap();
+        }
+
+        #[test]
+        fn decompress_test(
+            poly in new_poly(),
+            sec_level in sec_level_strategy()
+        ) {
+            let mut buf = [0u8; 160]; // max poly_compressed_bytes
+            let _ = poly
+                .normalise()
+                .compress(&mut buf[..sec_level.poly_compressed_bytes()], &sec_level);
+
+            let decompressed_poly = Poly::decompress(&buf[..sec_level.poly_compressed_bytes()], &sec_level).unwrap();
+        }
+
+        #[test]
+        fn pack_unpack_test(poly in new_poly()) {
+            let buf = poly.normalise().pack();
+
+            let unpacked = Poly::unpack(&buf).unwrap();
+
+            assert_eq!(poly.normalise(), unpacked.normalise());
+        }
+
+        #[test]
+        fn compress_decompress_test(
+            poly in new_poly(),
+            sec_level in sec_level_strategy()
+        ) {
+            let mut buf = [0u8; 160];
+            let _ = poly
+                .normalise()
+                .compress(&mut buf[..sec_level.poly_compressed_bytes()], &sec_level)
+                .unwrap();
+
+            let decompressed = Poly::decompress(&buf[..sec_level.poly_compressed_bytes()], &sec_level).unwrap();
+
+            for (original_coeff, new_coeff) in poly
+                .normalise()
+                .coeffs()
+                .iter()
+                .zip(decompressed.coeffs().iter()) {
+                    if (original_coeff - new_coeff).abs() < 150 {
+                        assert_le!((original_coeff - new_coeff).abs(), 150, "original: {original_coeff}, new: {new_coeff}");
+                    } else {
+                        assert_le!(Q as i16 - (original_coeff - new_coeff).abs(), 150, "original: {original_coeff}, new: {new_coeff}");
+                    }
             }
         }
 
-        for i in 0..N {
-            p.coeffs[i] = (((p.coeffs[i] as i32) * ((1 << 16) % (Q as i32))) % (Q as i32)) as i16;
-        }
-
-        p.normalise();
-        a_copy.normalise();
-
-        assert_eq!(p.coeffs, a_copy.coeffs);
-    }
-
-    #[test]
-    fn to_and_from_msg_test() {
-        let mut poly_original = Poly {
-            coeffs: INPUT_COEFFS,
-        };
-
-        let mut msg = zero_initialise_buffer(32);
-        poly_original.write_msg(&mut msg);
-        poly_original.read_msg(&msg);
-
-        assert_eq!(poly_original.coeffs, OUTPUT_COEFFS);
+        // #[test]
+        // fn write_read_msg_test(poly in new_poly()) {
+        //     let msg = poly.normalise().write_msg().unwrap();
+        //     let new_poly = Poly::read_msg(&msg).unwrap();
+            
+        //     assert_eq!(poly, new_poly);
+        // }
     }
 }

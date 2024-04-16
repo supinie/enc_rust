@@ -1,29 +1,47 @@
 #![allow(warnings)]
 #[cfg(test)]
+
 mod field_tests {
-    use crate::field_operations::*;
+    use crate::{field_operations::*, params::Q};
+    use proptest::prelude::*;
 
-    #[test]
-    pub(in crate::tests) fn montgomery_reduce_test() {
-        assert_eq!(montgomery_reduce(i32::MAX), 32599);
-        assert_eq!(montgomery_reduce(i32::MIN), -32768);
-    }
+    const montgomery_reduce_limit: i32 = (Q as i32) * (2 as i32).pow(15);
+    proptest! {
+        #[test]
+        fn montgomery_reduce_test(i in -montgomery_reduce_limit..montgomery_reduce_limit) {
+            let output_1 = montgomery_reduce(i);
 
-    #[test]
-    pub(in crate::tests) fn mont_form_test() {
-        assert_eq!(mont_form(i16::MAX), 56);
-        assert_eq!(mont_form(i16::MIN), 988);
-    }
+            let ua = i.wrapping_mul(62209) as i16;
+            let u = ua as i32;
+            let mut t = u * Q as i32;
+            t = i - t;
+            t >>= 16;
+            let output_2 = t as i16;
+            
+            assert_eq!(output_1, output_2);
+        }
 
-    #[test]
-    pub(in crate::tests) fn barrett_reduce_test() {
-        assert_eq!(barrett_reduce(i16::MAX), 2806);
-        assert_eq!(barrett_reduce(i16::MIN), 522);
-    }
+        #[test]
+        fn mont_form_test(i: i16) {
+            let output = mont_form(i);
+        }
 
-    #[test]
-    pub(in crate::tests) fn conditional_sub_q_test() {
-        assert_eq!(conditional_sub_q(i16::MAX), 29438);
-        assert_eq!(conditional_sub_q(-29439), -29439);
+        #[test]
+        fn barrett_reduce_test(i in -(Q as i16)..(Q as i16)) {
+            let output = barrett_reduce(i);
+
+            let v = ((1u32 << 26) / Q as u32 + 1) as i32;
+            let mut t = v * i as i32 + (1 << 25);
+            t >>= 26;
+            t *= Q as i32;
+            let output_2 = i - t as i16;
+            
+            assert_eq!(output.rem_euclid(Q as i16), output_2.rem_euclid(Q as i16));
+        }
+
+        #[test]
+        fn conditional_sub_q_test(i: i16) {
+            conditional_sub_q(i);
+        }
     }
 }

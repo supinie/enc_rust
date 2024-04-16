@@ -1,4 +1,4 @@
-use num_enum::IntoPrimitive;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 pub const N: usize = 256;
 pub const Q: usize = 3329;
@@ -9,17 +9,20 @@ pub const SHAREDSECRETBYTES: usize = 32;
 
 pub const POLYBYTES: usize = 384;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(usize)]
 // Get the usize repr using .into()
+// Convert from usize using K::try_from(my_usize)
 pub enum K {
     Two = 2,
+    #[default]
     Three = 3,
     Four = 4,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]
 #[repr(usize)]
+// Get the usize repr using .into()
 pub enum Eta {
     Two = 2,
     Three = 3,
@@ -30,10 +33,6 @@ pub enum SecurityLevel {
     FiveOneTwo { k: K, eta_1: Eta, eta_2: Eta },
     SevenSixEight { k: K, eta_1: Eta, eta_2: Eta },
     TenTwoFour { k: K, eta_1: Eta, eta_2: Eta },
-}
-
-pub trait GetSecLevel {
-    fn sec_level() -> SecurityLevel;
 }
 
 impl SecurityLevel {
@@ -98,8 +97,8 @@ impl SecurityLevel {
 
     pub const fn poly_vec_compressed_bytes(self) -> usize {
         match self {
-            Self::FiveOneTwo { k, .. } | Self::SevenSixEight { k, .. } => (k as usize) * 320,
-            Self::TenTwoFour { k, .. } => (k as usize) * 352,
+            Self::FiveOneTwo { k, .. } | Self::SevenSixEight { k, .. } => (k as usize) * 128,
+            Self::TenTwoFour { k, .. } => (k as usize) * 160,
         }
     }
 

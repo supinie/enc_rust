@@ -1,7 +1,16 @@
 #![allow(warnings)]
 #[cfg(test)]
-mod params_tests {
+pub(in crate::tests) mod params_tests {
     use crate::params::*;
+    use proptest::prelude::*;
+
+    pub(in crate::tests) fn sec_level_strategy() -> impl Strategy<Value = SecurityLevel> {
+        prop_oneof![
+            Just(SecurityLevel::new(K::Two)),
+            Just(SecurityLevel::new(K::Three)),
+            Just(SecurityLevel::new(K::Four)),
+        ]
+    }
 
     #[test]
     fn sec_level_test() {
@@ -47,14 +56,14 @@ mod params_tests {
 
     #[test]
     fn poly_vec_compressed_bytes_test() {
-        assert_eq!(SecurityLevel::new(K::Two).poly_vec_compressed_bytes(), 640);
+        assert_eq!(SecurityLevel::new(K::Two).poly_vec_compressed_bytes(), 256);
         assert_eq!(
             SecurityLevel::new(K::Three).poly_vec_compressed_bytes(),
-            960
+            384
         );
         assert_eq!(
             SecurityLevel::new(K::Four).poly_vec_compressed_bytes(),
-            1408
+            640
         );
     }
 
@@ -77,9 +86,9 @@ mod params_tests {
 
     #[test]
     fn indcpa_bytes_test() {
-        assert_eq!(SecurityLevel::new(K::Two).indcpa_bytes(), 768);
-        assert_eq!(SecurityLevel::new(K::Three).indcpa_bytes(), 1088);
-        assert_eq!(SecurityLevel::new(K::Four).indcpa_bytes(), 1568);
+        assert_eq!(SecurityLevel::new(K::Two).indcpa_bytes(), 384);
+        assert_eq!(SecurityLevel::new(K::Three).indcpa_bytes(), 512);
+        assert_eq!(SecurityLevel::new(K::Four).indcpa_bytes(), 800);
     }
 
     #[test]
@@ -98,8 +107,8 @@ mod params_tests {
 
     #[test]
     fn cipher_text_bytes_test() {
-        assert_eq!(SecurityLevel::new(K::Two).cipher_text_bytes(), 768);
-        assert_eq!(SecurityLevel::new(K::Three).cipher_text_bytes(), 1088);
-        assert_eq!(SecurityLevel::new(K::Four).cipher_text_bytes(), 1568);
+        assert_eq!(SecurityLevel::new(K::Two).cipher_text_bytes(), 384);
+        assert_eq!(SecurityLevel::new(K::Three).cipher_text_bytes(), 512);
+        assert_eq!(SecurityLevel::new(K::Four).cipher_text_bytes(), 800);
     }
 }

@@ -1,5 +1,6 @@
 // REMOVE BEFORE FINAL, DEVELOPMENT ONLY
-#![allow(unused)]
+// #![allow(unused)]
+#![allow(dead_code)]
 // REMOVE BEFORE FINAL, DEVELOPMENT ONLY
 #![forbid(unsafe_code)]
 #![warn(
@@ -19,27 +20,26 @@
     unused_lifetimes,
     unused_qualifications
 )]
-// pedantic
 #![no_std]
-#![allow(clippy::needless_range_loop)]
+// #![allow(clippy::needless_range_loop)]
 
+mod errors;
 mod field_operations;
 mod indcpa;
 pub mod kem;
 mod matrix;
-mod ntt;
 pub(crate) mod params;
 mod polynomials;
-mod sample;
 mod vectors;
 
 mod tests {
-    mod buffer;
+    // mod buffer;
     mod field_operations;
+    mod indcpa;
     mod matrix;
     mod ntt;
+    mod sample;
     mod params;
     mod polynomials;
-    mod sample;
     mod vectors;
 }

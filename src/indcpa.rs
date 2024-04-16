@@ -95,7 +95,8 @@ pub fn generate_key_pair(
 
     let k_value: usize = sec_level.k().into();
     #[allow(clippy::cast_possible_truncation)] // k_value can only be 2, 3, 4
-    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8, sec_level.eta_1()).ntt();
+    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8, sec_level.eta_1())
+        .ntt();
 
     let noise_arr: ArrayVec<[Poly<Montgomery>; 4]> = a
         .vectors()
@@ -105,6 +106,7 @@ pub fn generate_key_pair(
         .collect::<ArrayVec<[Poly<Montgomery>; 4]>>();
 
     let noise = PolyVec::from(noise_arr)?.add(&error)?.normalise();
+
 
     let a_t = a.transpose()?;
 
@@ -131,7 +133,7 @@ pub fn encrypt(
     #[allow(clippy::cast_possible_truncation)] // k_value will never be truncated
     let error_1 = PolyVec::derive_noise(sec_level, seed, k_value as u8, sec_level.eta_2());
     #[allow(clippy::cast_possible_truncation)] // k_value will never be truncated
-    let error_2 = Poly::derive_noise(seed, k_value as u8 * 2, sec_level.eta_2());
+    let error_2 = Poly::derive_noise(seed, (k_value as u8) * 2, sec_level.eta_2());
 
     //  u = A_t r + e_1
     let u = PolyVec::from(
@@ -141,10 +143,11 @@ pub fn encrypt(
             .iter()
             .map(|row| row.inner_product_pointwise(&rh))
             .collect::<ArrayVec<[Poly<Unreduced>; 4]>>(),
-    )?
-    .inv_ntt()
-    .add(&error_1)?
-    .normalise();
+        )?
+        .barrett_reduce()
+        .inv_ntt()
+        .add(&error_1)?
+        .normalise();
 
     //  v = <t, r> + e_2 + message
     let v = pub_key
@@ -182,7 +185,7 @@ pub fn decrypt(
                     .secret
                     .inner_product_pointwise(&u)
                     .barrett_reduce()
-                    .inv_ntt(),
+                    .inv_ntt()
             )
             .normalise();
 

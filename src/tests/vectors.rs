@@ -131,5 +131,24 @@ mod vec_tests {
 
             let decompressed = PolyVec::decompress(&buf[..end]).unwrap();
         }
+
+        #[test]
+        fn derive_noise_test(
+            sec_level in sec_level_strategy(),
+            seed in prop::array::uniform32(u8::MIN..u8::MAX),
+            nonce in (u8::MIN..u8::MAX),
+        ) {
+            let output_1 = PolyVec::derive_noise(sec_level, &seed, nonce, sec_level.eta_1());
+            let output_2 = PolyVec::derive_noise(sec_level, &seed, nonce, sec_level.eta_2());
+        }
+
+        #[test]
+        fn inner_product_pointwise_test(
+            poly_vec_1 in new_limited_poly_vec(4),
+            poly_vec_2 in new_limited_poly_vec(4),
+        ) {
+            let poly = poly_vec_1.normalise().inner_product_pointwise(&poly_vec_2.normalise());
+            let poly = poly_vec_1.barrett_reduce().inner_product_pointwise(&poly_vec_2.barrett_reduce());
+        }
     }
 }

@@ -166,7 +166,7 @@ impl PolyVec<Normalised> {
             .into());
         }
 
-        let _ = buf
+        buf
             .chunks_mut(self.sec_level().poly_compressed_bytes())
             .zip(self.polynomials.iter())
             .for_each(|(buf_chunk, poly)| { let _ = poly.compress(buf_chunk, &self.sec_level()); } );

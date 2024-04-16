@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #[cfg(test)]
 mod indcpa_tests {
     use crate::{

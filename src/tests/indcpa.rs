@@ -1,15 +1,11 @@
 #![allow(warnings)]
 #[cfg(test)]
 mod indcpa_tests {
-    use crate::{
-        indcpa::*,
-        params::*,
-        tests::params::params_tests::sec_level_strategy,
-    };
+    use crate::{indcpa::*, params::*, tests::params::params_tests::sec_level_strategy};
+    use proptest::prelude::*;
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
     use tinyvec::ArrayVec;
-    use proptest::prelude::*;
 
     pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
         let mut rng = StdRng::from_entropy();
@@ -34,7 +30,7 @@ mod indcpa_tests {
         ) {
             // let plaintext = generate_random_seed();
             let plaintext: [u8; 32] = core::array::from_fn(|i| (i + 1) as u8);
-            
+
             let ciphertext = pub_key.encrypt(&plaintext, &cipher_seed).unwrap();
 
             let message = priv_key.decrypt(&ciphertext).unwrap();
@@ -97,7 +93,7 @@ mod indcpa_tests {
                 panic!()
             }
             let bad_ciphertext = ArrayVec::<[u8; 2048]>::from_array_len([0u8; 2048], bad_bytes_len);
-            
+
             let decrypt_err = priv_key.decrypt(&bad_ciphertext).unwrap();
         }
     }

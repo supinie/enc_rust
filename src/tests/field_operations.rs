@@ -17,7 +17,7 @@ mod field_tests {
             t = i - t;
             t >>= 16;
             let output_2 = t as i16;
-            
+
             assert_eq!(output_1, output_2);
         }
 
@@ -35,7 +35,7 @@ mod field_tests {
             t >>= 26;
             t *= Q as i32;
             let output_2 = i - t as i16;
-            
+
             assert_eq!(output.rem_euclid(Q as i16), output_2.rem_euclid(Q as i16));
         }
 

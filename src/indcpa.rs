@@ -53,19 +53,22 @@ impl PrivateKey {
                         .secret
                         .inner_product_pointwise(&u)
                         .barrett_reduce()
-                        .inv_ntt()
+                        .inv_ntt(),
                 )
                 .normalise();
 
             Ok(m.write_msg()?)
         } else {
-            Err(CrystalsError::IncorrectBufferLength(ciphertext.len(), sec_level.indcpa_bytes()).into())
+            Err(
+                CrystalsError::IncorrectBufferLength(ciphertext.len(), sec_level.indcpa_bytes())
+                    .into(),
+            )
         }
     }
 }
 
 impl PublicKey {
-    pub(crate) fn sec_level(&self) -> SecurityLevel {
+    pub(crate) const fn sec_level(&self) -> SecurityLevel {
         self.noise.sec_level()
         // no need to check as can only create through our own method
         // if self.noise.sec_level() == self.a_t.sec_level() {
@@ -130,17 +133,16 @@ impl PublicKey {
 
         //  u = A_t r + e_1
         let u = PolyVec::from(
-            self
-                .a_t
+            self.a_t
                 .vectors()
                 .iter()
                 .map(|row| row.inner_product_pointwise(&rh))
                 .collect::<ArrayVec<[Poly<Unreduced>; 4]>>(),
-            )?
-            .barrett_reduce()
-            .inv_ntt()
-            .add(&error_1)?
-            .normalise();
+        )?
+        .barrett_reduce()
+        .inv_ntt()
+        .add(&error_1)?
+        .normalise();
 
         //  v = <t, r> + e_2 + message
         let v = self
@@ -154,7 +156,8 @@ impl PublicKey {
 
         let mut ciphertext_bytes = ArrayVec::from_array_len([0u8; 2048], sec_level.indcpa_bytes());
 
-        let (u_bytes, v_bytes) = ciphertext_bytes.split_at_mut(sec_level.poly_vec_compressed_bytes());
+        let (u_bytes, v_bytes) =
+            ciphertext_bytes.split_at_mut(sec_level.poly_vec_compressed_bytes());
         u.compress(u_bytes)?;
         v.compress(v_bytes, &sec_level)?;
 
@@ -183,8 +186,7 @@ pub fn generate_indcpa_key_pair(
 
     let k_value: usize = sec_level.k().into();
     #[allow(clippy::cast_possible_truncation)] // k_value can only be 2, 3, 4
-    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8, sec_level.eta_1())
-        .ntt();
+    let error = PolyVec::derive_noise(sec_level, sigma, k_value as u8, sec_level.eta_1()).ntt();
 
     let noise_arr: ArrayVec<[Poly<Montgomery>; 4]> = a
         .vectors()
@@ -195,10 +197,7 @@ pub fn generate_indcpa_key_pair(
 
     let noise = PolyVec::from(noise_arr)?.add(&error)?.normalise();
 
-
     let a_t = a.transpose()?;
 
     Ok((PrivateKey { secret }, PublicKey { rho, noise, a_t }))
 }
-
-

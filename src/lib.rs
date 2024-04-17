@@ -38,8 +38,8 @@ mod tests {
     mod indcpa;
     mod matrix;
     mod ntt;
-    mod sample;
     mod params;
     mod polynomials;
+    mod sample;
     mod vectors;
 }

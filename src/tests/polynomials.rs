@@ -2,18 +2,14 @@
 #[cfg(test)]
 
 pub(in crate::tests) mod poly_tests {
-    use crate::{
-        polynomials::*,
-        params::*,
-        tests::params::params_tests::sec_level_strategy,
-    };
+    use crate::{params::*, polynomials::*, tests::params::params_tests::sec_level_strategy};
     use more_asserts::assert_le;
     use proptest::prelude::*;
 
     pub(in crate::tests) fn new_limited_poly_array() -> impl Strategy<Value = [i16; N]> {
         prop::array::uniform(-(i16::MAX / 2)..(i16::MAX / 2)) // pick i16::MAX / 2, which should be plenty more
-                                                // than Q whilst ensuring no overflows (we know
-                                                // they can happen)
+                                                              // than Q whilst ensuring no overflows (we know
+                                                              // they can happen)
     }
 
     pub(in crate::tests) fn new_poly_array() -> impl Strategy<Value = [i16; N]> {
@@ -180,7 +176,7 @@ pub(in crate::tests) mod poly_tests {
         // fn write_read_msg_test(poly in new_poly()) {
         //     let msg = poly.normalise().write_msg().unwrap();
         //     let new_poly = Poly::read_msg(&msg).unwrap();
-            
+
         //     assert_eq!(poly, new_poly);
         // }
     }

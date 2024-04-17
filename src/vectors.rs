@@ -166,10 +166,11 @@ impl PolyVec<Normalised> {
             .into());
         }
 
-        buf
-            .chunks_mut(self.sec_level().poly_compressed_bytes())
+        buf.chunks_mut(self.sec_level().poly_compressed_bytes())
             .zip(self.polynomials.iter())
-            .for_each(|(buf_chunk, poly)| { let _ = poly.compress(buf_chunk, &self.sec_level()); } );
+            .for_each(|(buf_chunk, poly)| {
+                let _ = poly.compress(buf_chunk, &self.sec_level());
+            });
 
         Ok(())
     }
@@ -206,7 +207,9 @@ impl PolyVec<Normalised> {
             256 => Ok(SecurityLevel::new(K::Two)),
             384 => Ok(SecurityLevel::new(K::Three)),
             640 => Ok(SecurityLevel::new(K::Four)),
-            _ => Err(PackingError::Crystals(CrystalsError::IncorrectBufferLength(buf.len(), 0)))
+            _ => Err(PackingError::Crystals(
+                CrystalsError::IncorrectBufferLength(buf.len(), 0),
+            )),
         }?;
 
         let polyvec_result = buf

@@ -2,11 +2,7 @@
 #[cfg(test)]
 
 pub(in crate::tests) mod ntt_tests {
-    use crate::{
-        polynomials::*,
-        params::*,
-        tests::polynomials::poly_tests::*,
-    };
+    use crate::{params::*, polynomials::*, tests::polynomials::poly_tests::*};
     use proptest::prelude::*;
 
     proptest! {

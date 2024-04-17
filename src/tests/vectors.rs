@@ -3,15 +3,11 @@
 
 mod vec_tests {
     use crate::{
-        vectors::*,
-        polynomials::*,
         params::*,
-        tests::polynomials::poly_tests::{
-            new_poly,
-            new_limited_poly,
-            new_ntt_poly,
-        },
+        polynomials::*,
         tests::params::params_tests::sec_level_strategy,
+        tests::polynomials::poly_tests::{new_limited_poly, new_ntt_poly, new_poly},
+        vectors::*,
     };
     use proptest::prelude::*;
     use tinyvec::ArrayVec;

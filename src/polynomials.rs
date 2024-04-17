@@ -56,7 +56,7 @@ impl<S: State> Default for Poly<S> {
 }
 
 impl<S: State> Poly<S> {
-    pub(crate) fn coeffs(&self) -> &[i16; N] {
+    pub(crate) const fn coeffs(&self) -> &[i16; N] {
         &self.coeffs
     }
 

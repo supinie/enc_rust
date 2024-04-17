@@ -3,12 +3,9 @@
 
 pub(in crate::tests) mod sample_tests {
     use crate::{
-        polynomials::*,
         params::*,
-        tests::{
-            polynomials::poly_tests::*,
-            params::params_tests::sec_level_strategy,
-        },
+        polynomials::*,
+        tests::{params::params_tests::sec_level_strategy, polynomials::poly_tests::*},
     };
     use proptest::prelude::*;
 

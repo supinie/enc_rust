@@ -3,7 +3,8 @@
 
 mod matrix_tests {
     use crate::{
-        matrix::*, params::*, polynomials::Montgomery, tests::params::params_tests::sec_level_strategy
+        matrix::*, params::*, polynomials::Montgomery,
+        tests::params::params_tests::sec_level_strategy,
     };
     use proptest::prelude::*;
     use tinyvec::ArrayVec;
@@ -15,7 +16,7 @@ mod matrix_tests {
                 Matrix::derive(&seed, transpose, sec_level.k()).unwrap()
             }
     }
-    
+
     proptest! {
         #[test]
         fn derive_test(

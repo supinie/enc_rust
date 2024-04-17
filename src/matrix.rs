@@ -1,10 +1,10 @@
 use crate::{
     errors::CrystalsError,
     params::{SecurityLevel, K},
-    polynomials::{Montgomery, Normalised, Poly, State},
+    polynomials::{Montgomery, Poly, State},
     vectors::PolyVec,
 };
-use tinyvec::{array_vec, ArrayVec};
+use tinyvec::ArrayVec;
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct Matrix<S: State> {
@@ -42,26 +42,6 @@ impl<S: State + Copy> Matrix<S> {
                 sec_level: self.sec_level,
             }),
             Err(err) => Err(err),
-        }
-    }
-}
-
-impl Matrix<Normalised> {
-    // Create a new, empty matrix
-    fn new(k: K) -> Self {
-        let polyvecs = match k {
-            K::Two => array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k)),
-            K::Three => {
-                array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k), PolyVec::new(k))
-            }
-            K::Four => {
-                array_vec!([PolyVec<Normalised>; 4] => PolyVec::new(k), PolyVec::new(k), PolyVec::new(k), PolyVec::new(k))
-            }
-        };
-
-        Self {
-            polyvecs,
-            sec_level: k,
         }
     }
 }

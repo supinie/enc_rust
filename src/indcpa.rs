@@ -25,11 +25,13 @@ impl PrivateKey {
         self.secret.sec_level()
     }
 
-    fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+    // buf should be of length k * POLYBYTES
+    pub(crate) fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         self.secret.pack(buf)
     }
 
-    fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
+    // buf should be of length k * POLYBYTES
+    pub(crate) fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let secret = PolyVec::unpack(buf)?.normalise();
         Ok(Self { secret })
     }
@@ -47,7 +49,8 @@ impl PublicKey {
         }
     }
 
-    fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
+    // buf should be of length k * POLYBYTES + SYMBYTES
+    pub fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         let k: usize = self.sec_level()?.k().into();
 
         let break_point: usize = POLYBYTES * k;
@@ -60,7 +63,8 @@ impl PublicKey {
         }
     }
 
-    fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
+    // buf should be of length k * POLYBYTES + SYMBYTES
+    pub fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let k = K::try_from((buf.len() - SYMBYTES) / POLYBYTES)?;
         let k_value: usize = k.into();
         let break_point: usize = POLYBYTES * k_value;

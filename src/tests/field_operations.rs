@@ -5,10 +5,19 @@ mod field_tests {
     use crate::{field_operations::*, params::Q};
     use proptest::prelude::*;
 
-    const montgomery_reduce_limit: i32 = (Q as i32) * (2 as i32).pow(15);
+    const MONTGOMERY_REDUCE_LIMIT: i32 = (Q as i32) * (2 as i32).pow(15);
+
+    fn modQ(x: i32) -> i16 {
+        let mut y = (x % Q as i32) as i16;
+        if y < 0 {
+            y += Q as i16;
+        }
+        y
+    }
+
     proptest! {
         #[test]
-        fn montgomery_reduce_test(i in -montgomery_reduce_limit..montgomery_reduce_limit) {
+        fn montgomery_reduce_test(i in -MONTGOMERY_REDUCE_LIMIT..MONTGOMERY_REDUCE_LIMIT) {
             let output_1 = montgomery_reduce(i);
 
             let ua = i.wrapping_mul(62209) as i16;
@@ -22,8 +31,18 @@ mod field_tests {
         }
 
         #[test]
+        fn montgomery_reduce_test_alt(x in -(Q as i32) * (1 << 15)..(Q as i32) * (1 << 15)) {
+            let y = montgomery_reduce(x);
+
+            assert_eq!(modQ(x), modQ((y as i32) * (1 << 16)));
+        }
+
+
+        #[test]
         fn mont_form_test(i: i16) {
             let output = mont_form(i);
+            
+            assert_eq!(modQ(output as i32), modQ(i as i32 * 2285));
         }
 
         #[test]
@@ -40,8 +59,29 @@ mod field_tests {
         }
 
         #[test]
+        fn barrett_reduce_test_alt(i: i16) {
+            let mut output = barrett_reduce(i);
+            let mut y = i % Q as i16;
+
+            if y < 0 {
+                y += Q as i16;
+            }
+            if output < 0 && (-output) % Q as i16 == 0 {
+                output -= Q as i16;
+            }
+
+            assert_eq!(output, y);
+        }
+
+        #[test]
         fn conditional_sub_q_test(i: i16) {
-            conditional_sub_q(i);
+            let output = conditional_sub_q(i);
+
+            let mut y = i as i32;
+            if i >= Q as i16 {
+                y -= Q as i32;
+            }
+            assert_eq!(output, y as i16);
         }
     }
 }

@@ -63,14 +63,14 @@ mod field_tests {
             let mut output = barrett_reduce(i);
             let mut y = i % Q as i16;
 
-            if y < 0 {
+            if y <= 0 {
                 y += Q as i16;
             }
             if output < 0 && (-output) % Q as i16 == 0 {
                 output -= Q as i16;
             }
 
-            assert_eq!(output, y);
+            assert_eq!(output, y, "input: {}", i);
         }
 
         #[test]

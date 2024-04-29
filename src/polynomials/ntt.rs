@@ -94,6 +94,7 @@ impl<S: State + Copy> Poly<S> {
                     coeffs[j + l] = montgomery_reduce(min_zeta * i32::from(temp));
                 }
             });
+
             for &i in reductions {
                 coeffs[i] = barrett_reduce(coeffs[i]);
             }

@@ -44,12 +44,13 @@ pub(in crate::tests) mod ntt_tests {
                 .barrett_reduce()
                 .normalise()
                 .inv_ntt()
-                // .barrett_reduce()
-                // .normalise()
+                .barrett_reduce()
+                .normalise()
                 .coeffs()
                 .iter()
-                .for_each(|&coeff| {
-                    assert_eq!(coeff as i32, ((coeff as i32) * (1 << 16)) % (Q as i32));
+                .zip(comp_poly.coeffs().iter())
+                .for_each(|(&coeff, &comp_coeff)| {
+                    assert_eq!(coeff as i32, ((comp_coeff as i32) * (1 << 16)) % (Q as i32));
                 });
         }
 

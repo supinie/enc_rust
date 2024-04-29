@@ -100,6 +100,16 @@ pub(in crate::tests) mod poly_tests {
             let msg = poly.normalise().write_msg().unwrap();
         }
 
+        // #[test]
+        // fn write_msg_test_alt(poly in new_poly()) {
+        //     let msg = poly.normalise().write_msg().unwrap();
+        //     if poly.coeffs()[0] >= 833 && poly.coeffs()[0] < 2497 {
+        //         assert_eq!(msg[0], 1u8);
+        //     } else {
+        //         assert_eq!(msg[0], 0u8);
+        //     }
+        // }
+
         #[test]
         fn compress_test(
             poly in new_poly(),
@@ -172,12 +182,14 @@ pub(in crate::tests) mod poly_tests {
             }
         }
 
-        // #[test]
-        // fn write_read_msg_test(poly in new_poly()) {
-        //     let msg = poly.normalise().write_msg().unwrap();
-        //     let new_poly = Poly::read_msg(&msg).unwrap();
+        #[test]
+        fn write_read_msg_test(
+            message in prop::array::uniform32(u8::MIN..u8::MAX)
+        ) {
+            let poly = Poly::read_msg(&message).unwrap();
+            let comp_message = poly.normalise().write_msg().unwrap();
 
-        //     assert_eq!(poly, new_poly);
-        // }
+            assert_eq!(message, comp_message);
+        }
     }
 }

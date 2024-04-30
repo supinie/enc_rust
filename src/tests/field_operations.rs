@@ -41,7 +41,7 @@ mod field_tests {
         #[test]
         fn mont_form_test(i: i16) {
             let output = mont_form(i);
-            
+
             assert_eq!(modQ(output as i32), modQ(i as i32 * 2285));
         }
 

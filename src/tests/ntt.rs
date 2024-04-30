@@ -3,8 +3,8 @@
 
 pub(in crate::tests) mod ntt_tests {
     use crate::{params::*, polynomials::*, tests::polynomials::poly_tests::*};
+    use more_asserts::{assert_ge, assert_le, assert_lt};
     use proptest::prelude::*;
-    use more_asserts::{assert_le, assert_ge, assert_lt};
 
     #[rustfmt::skip]
     const INV_NTT_REDUCTIONS: [&[usize]; 7] = [
@@ -16,7 +16,6 @@ pub(in crate::tests) mod ntt_tests {
         &[4, 5, 6, 7, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143],
         &[]
     ];
-
 
     proptest! {
         #[test]
@@ -93,7 +92,7 @@ pub(in crate::tests) mod ntt_tests {
                         i += w;
                     }
                 }
-                
+
                 for &i in reductions {
                     xs[i] = 1;
                 }

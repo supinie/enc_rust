@@ -5,6 +5,7 @@ mod matrix_tests {
     use crate::{
         matrix::*, params::*, polynomials::Montgomery,
         tests::params::params_tests::sec_level_strategy,
+        tests::indcpa::indcpa_tests::*,
     };
     use proptest::prelude::*;
     use tinyvec::ArrayVec;
@@ -15,6 +16,15 @@ mod matrix_tests {
             -> Matrix<Montgomery> {
                 Matrix::derive(&seed, transpose, sec_level.k()).unwrap()
             }
+    }
+
+    #[test]
+    fn derive_seed_test() {
+        let seed: [u8; 32] = [216, 17, 145, 112, 104, 44, 220, 160, 102, 24, 217, 187, 231, 175, 1, 61, 77, 228, 144, 197, 40, 188, 178, 237, 151, 66, 203, 184, 231, 204, 11, 173];
+
+        let matrix = Matrix::derive(&seed, true, K::Three).unwrap();
+
+        // assert_eq!(matrix, Matrix::test_mat());
     }
 
     proptest! {

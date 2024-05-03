@@ -2,7 +2,7 @@
 #[cfg(test)]
 
 pub(in crate::tests) mod poly_tests {
-    use crate::{params::*, polynomials::*, tests::params::params_tests::sec_level_strategy};
+    use crate::{params::*, polynomials::*, field_operations::*, tests::params::params_tests::sec_level_strategy};
     use more_asserts::assert_le;
     use proptest::prelude::*;
 
@@ -223,6 +223,43 @@ pub(in crate::tests) mod poly_tests {
             b in new_poly()
         ) {
             let outout = a.normalise().pointwise_mul(&b.normalise());
+        }
+
+        #[test]
+        fn pointwise_mul_test_alt(
+            a in new_poly(),
+            b in new_poly()
+        ) {
+            let ah = a.normalise().ntt();
+            let bh = b.normalise().ntt();
+            let ph = ah.pointwise_mul(&bh)
+                .barrett_reduce()
+                .inv_ntt()
+                .normalise();
+
+            let a_coeffs = a.coeffs();
+            let b_coeffs = b.coeffs();
+            let mut p_coeffs = [0i16; N];
+
+            for i in 0..N {
+                for j in 0..N {
+                    let mut v = montgomery_reduce((a_coeffs[i] as i32) * (b_coeffs[j] as i32));
+                    let mut k = i + j;
+                    if k >= N {
+                        k -= N;
+                        v = -v;
+                    }
+                    p_coeffs[k] = barrett_reduce(v + p_coeffs[k]);
+                }
+            }
+
+            for i in 0..N {
+                p_coeffs[i] = ((p_coeffs[i] as i32) * ((1 << 16) % (Q as i32)) % (Q as i32)) as i16;
+            }
+
+            let p = Poly::from_arr(&p_coeffs).normalise();
+            
+            assert_eq!(p, ph);
         }
 
         #[test]

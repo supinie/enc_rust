@@ -1,6 +1,6 @@
 use crate::params::Q;
 
-// given -2^15 q <= x < 2^15 q, returns -q < y < q with y = x 2^-16 mod q
+// given -2^15 q <= x < 2^15 q, returns -q < y < q with y congruent to x * 2^-16 mod q
 // Example:
 // ```
 // let x = montgomery_reduce(5);

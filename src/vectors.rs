@@ -232,8 +232,8 @@ impl PolyVec<Montgomery> {
     pub(crate) fn derive_noise(sec_level: SecurityLevel, seed: &[u8], nonce: u8, eta: Eta) -> Self {
         let mut polynomials = ArrayVec::<[Poly<Montgomery>; 4]>::new();
 
-        for _ in 0..sec_level.k().into() {
-            polynomials.push(Poly::derive_noise(seed, nonce, eta));
+        for i in 0..sec_level.k().into() {
+            polynomials.push(Poly::derive_noise(seed, nonce + i as u8, eta));
         }
 
         Self {

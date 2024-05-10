@@ -10,16 +10,14 @@ use tinyvec::ArrayVec;
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct PrivateKey {
-    // REMOVE PUB BEFORE PUBLISH
-    pub secret: PolyVec<Normalised>,
+    secret: PolyVec<Normalised>,
 }
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct PublicKey {
-    // REMOVE PUB BEFORE PUBLISH
-    pub rho: [u8; SYMBYTES],
-    pub noise: PolyVec<Normalised>,
-    pub a_t: Matrix<Montgomery>,
+    rho: [u8; SYMBYTES],
+    noise: PolyVec<Normalised>,
+    a_t: Matrix<Montgomery>,
 }
 
 impl PrivateKey {

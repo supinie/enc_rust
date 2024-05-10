@@ -224,8 +224,9 @@ impl Poly<Normalised> {
         }
     }
 
-    pub(crate) const fn from_arr_normal(array: &[i16; N]) -> Poly<Normalised> {
-        Poly {
+    // USE WITH CAUTION
+    pub(crate) const fn from_arr_normal(array: &[i16; N]) -> Self {
+        Self {
             coeffs: *array,
             state: Normalised,
         }

@@ -8,9 +8,8 @@ use tinyvec::ArrayVec;
 
 #[derive(Default, PartialEq, Debug, Eq)]
 pub struct Matrix<S: State> {
-    // REMOVE PUB BEFORE PUSH
-    pub polyvecs: ArrayVec<[PolyVec<S>; 4]>,
-    pub sec_level: K,
+    polyvecs: ArrayVec<[PolyVec<S>; 4]>,
+    sec_level: K,
 }
 
 impl<S: State + Copy> Matrix<S> {

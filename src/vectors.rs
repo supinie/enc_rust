@@ -173,17 +173,19 @@ impl PolyVec<Normalised> {
                     for (coeff_chunk, inner_buf_chunk) in 
                         poly.coeffs().chunks_exact(4).zip(buf_chunk.chunks_exact_mut(5))
                     {
+                        #[allow(clippy::cast_sign_loss, clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
                         for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                             *t_elem = *coeff as u16;
                             *t_elem = t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q as i16) as u16);
-                            *t_elem = (((((*t_elem as u32) << 10) + Q as u32 / 2) / Q as u32) & 0x3ff) as u16;
+                            *t_elem = (((((u32::from(*t_elem)) << 10) + Q as u32 / 2) / Q as u32) & 0x3ff) as u16;
                         }
 
+                        #[allow(clippy::cast_possible_truncation)]
                         inner_buf_chunk.copy_from_slice(&[
                             &[t[0] as u8],
                             &t.windows(2)
                                 .enumerate()
-                                .map(|(i, t_block)| ((t_block[0] >> 8 - 2 * i) | (t_block[1] << 2 + 2 * i)) as u8)
+                                .map(|(i, t_block)| ((t_block[0] >> (8 - 2 * i)) | (t_block[1] << (2 + 2 * i))) as u8)
                                 .collect::<ArrayVec<[u8; 3]>>()
                                 .into_inner()[..],
                             &[(t[3] >> 2) as u8]
@@ -198,14 +200,16 @@ impl PolyVec<Normalised> {
                     for (coeff_chunk, inner_buf_chunk) in 
                         poly.coeffs().chunks_exact(8).zip(buf_chunk.chunks_exact_mut(11))
                     {
+                        #[allow(clippy::cast_sign_loss, clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
                         for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                             *t_elem = *coeff as u16;
                             *t_elem = t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q as i16) as u16);
-                            *t_elem = (((((*t_elem as u32) << 10) + Q as u32 / 2) / Q as u32) & 0x3ff) as u16;
+                            *t_elem = (((((u32::from(*t_elem)) << 10) + Q as u32 / 2) / Q as u32) & 0x3ff) as u16;
                         }
 
+                        #[allow(clippy::cast_possible_truncation)]
                         inner_buf_chunk.copy_from_slice(&[
-                            (t[0] >> 0) as u8,
+                            (t[0]) as u8,
                             ((t[0] >> 8) | (t[1] << 3)) as u8,
                             ((t[1] >> 5) | (t[2] << 6)) as u8,
                             (t[2] >> 2) as u8,
@@ -266,12 +270,13 @@ impl PolyVec<Normalised> {
                 let mut polys = ArrayVec::<[Poly<Normalised>; 4]>::new();
 
                 for buf_chunk in buf.chunks_exact(320) {
+                    #[allow(clippy::cast_possible_truncation)]
                     let coeffs: [i16; N] = buf_chunk.windows(2)
                         .enumerate()
                         .filter(|(j, _)| j % 5 != 4)
                         .enumerate()
-                        .map(|(i, (_, buf_tuple))| (buf_tuple[0] >> 2 * (i % 4)) as u16 | (buf_tuple[1] as u16) << 8 - 2 * (i % 4))
-                        .map(|coeff| ((((coeff as u32) & 0x3ff) * Q as u32 + 512) >> 10) as i16)
+                        .map(|(i, (_, buf_tuple))| u16::from(buf_tuple[0] >> (2 * (i % 4))) | u16::from(buf_tuple[1]) << (8 - 2 * (i % 4)))
+                        .map(|coeff| (((u32::from(coeff) & 0x3ff) * Q as u32 + 512) >> 10) as i16)
                         .collect::<ArrayVec<[i16; N]>>()
                         .into_inner();
                     
@@ -283,7 +288,7 @@ impl PolyVec<Normalised> {
                 polys
             }
             SecurityLevel::TenTwoFour { .. } => {
-                ArrayVec::<[Poly<Normalised>; 4]>::new()
+                todo!();
             }
         };
 

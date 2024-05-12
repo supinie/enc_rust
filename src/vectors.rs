@@ -204,7 +204,7 @@ impl PolyVec<Normalised> {
                         for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                             *t_elem = *coeff as u16;
                             *t_elem = t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q as i16) as u16);
-                            *t_elem = (((((u32::from(*t_elem)) << 10) + Q as u32 / 2) / Q as u32) & 0x3ff) as u16;
+                            *t_elem = (((((u32::from(*t_elem)) << 11) + Q as u32 / 2) / Q as u32) & 0x7ff) as u16;
                         }
 
                         #[allow(clippy::cast_possible_truncation)]
@@ -292,7 +292,7 @@ impl PolyVec<Normalised> {
 
                 for buf_chunk in buf.chunks_exact(352) {
                     #[allow(clippy::cast_possible_truncation)]
-                    let coeffs: [i16; N] = buf_chunk.chunks(11)
+                    let coeffs: [i16; N] = buf_chunk.chunks_exact(11)
                         .flat_map(|chunk| {
                             [
                                 u16::from(chunk[0]) | u16::from(chunk[1]) << 8,

@@ -7,32 +7,6 @@ pub(in crate::tests) mod indcpa_tests {
     use rand::{Rng, SeedableRng};
     use tinyvec::{array_vec, ArrayVec};
 
-    // impl Matrix<Montgomery> {
-    //     pub(in crate::tests) fn test_mat() -> Self {
-    //         let polyvecs = array_vec!([PolyVec<Montgomery>; 4] => 
-    //             PolyVec::from(array_vec!([Poly<Montgomery>; 4] =>
-    //                 Poly::from_arr(&[]).mont_form(),
-    //                 Poly::from_arr(&[]).mont_form(),
-    //                 Poly::from_arr(&[]).mont_form(),
-    //             )).unwrap(),
-    //             PolyVec::from(array_vec!([Poly<Montgomery>; 4] =>
-    //                 Poly::from_arr(&[]).mont_form(),
-    //                 Poly::from_arr(&[]).mont_form(),
-    //                 Poly::from_arr(&[]).mont_form(),
-    //             )).unwrap(),
-    //             PolyVec::from(array_vec!([Poly<Montgomery>; 4] =>
-    //                 Poly::from_arr(&[]).mont_form(),
-    //                 Poly::from_arr(&[]).mont_form(),
-    //                 Poly::from_arr(&[]).mont_form(),
-    //             )).unwrap(),
-    //         );
-
-    //         Self {
-    //             polyvecs,
-    //             sec_level: K::Three,
-    //         }
-    //     }
-    // }
 
     pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
         let mut rng = StdRng::from_entropy();
@@ -93,13 +67,11 @@ pub(in crate::tests) mod indcpa_tests {
             cipher_seed in prop::array::uniform32(u8::MIN..u8::MAX),
             plaintext in prop::array::uniform32(u8::MIN..u8::MAX)
         ) {
-            // let plaintext: [u8; 32] = core::array::from_fn(|i| (i + 1) as u8);
-
             let ciphertext = pub_key.encrypt(&plaintext, &cipher_seed).unwrap();
 
             let message = priv_key.decrypt(&ciphertext).unwrap();
 
-            assert_eq!(message, plaintext);
+            assert_eq!(message, plaintext, "security level: {:?}", priv_key.sec_level());
         }
 
         #[test]

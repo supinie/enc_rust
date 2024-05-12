@@ -116,11 +116,12 @@ impl Poly<Montgomery> {
         let mut coeffs = [0i16; N];
 
         let mut i = 0;
+        let mut hash = Shake128::default();
+        hash.update(seed);
+        hash.update(&seed_suffix);
+        let mut reader = hash.finalize_xof();
+
         'outer: loop {
-            let mut hash = Shake128::default();
-            hash.update(seed);
-            hash.update(&seed_suffix);
-            let mut reader = hash.finalize_xof();
             reader.read(&mut buf);
 
             let chunk_iter = buf.chunks_exact_mut(3);

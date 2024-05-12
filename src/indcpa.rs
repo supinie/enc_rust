@@ -45,17 +45,13 @@ impl PrivateKey {
             let (u_bytes, v_bytes) = ciphertext.split_at(sec_level.poly_vec_compressed_bytes());
             let u = PolyVec::decompress(u_bytes)?.ntt();
             let v = Poly::decompress(v_bytes, &sec_level)?;
-
-            //  m = v - <s, u>
-            let m = v
-                .sub(
-                    &self
-                        .secret
-                        .inner_product_pointwise(&u)
-                        .barrett_reduce()
-                        .inv_ntt(),
-                )
-                .normalise();
+            let inner_product = &self
+                .secret
+                .inner_product_pointwise(&u)
+                .barrett_reduce()
+                .inv_ntt();
+            let dif = v.sub(inner_product);
+            let m = dif.normalise();
 
             Ok(m.write_msg()?)
         } else {

@@ -97,8 +97,8 @@ impl SecurityLevel {
 
     pub const fn poly_vec_compressed_bytes(self) -> usize {
         match self {
-            Self::FiveOneTwo { k, .. } | Self::SevenSixEight { k, .. } => (k as usize) * 128,
-            Self::TenTwoFour { k, .. } => (k as usize) * 160,
+            Self::FiveOneTwo { k, .. } | Self::SevenSixEight { k, .. } => (k as usize) * 320,
+            Self::TenTwoFour { k, .. } => (k as usize) * 352,
         }
     }
 

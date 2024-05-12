@@ -224,6 +224,14 @@ impl Poly<Normalised> {
         }
     }
 
+    // USE WITH CAUTION
+    pub(crate) const fn from_arr_normal(array: &[i16; N]) -> Self {
+        Self {
+            coeffs: *array,
+            state: Normalised,
+        }
+    }
+
     // Packs given poly into a 384-byte (POLYBYTES size) buffer
     // Poly must be normalised
     // Example:

@@ -288,7 +288,33 @@ impl PolyVec<Normalised> {
                 polys
             }
             SecurityLevel::TenTwoFour { .. } => {
-                todo!();
+                let mut polys = ArrayVec::<[Poly<Normalised>; 4]>::new();
+
+                for buf_chunk in buf.chunks_exact(352) {
+                    #[allow(clippy::cast_possible_truncation)]
+                    let coeffs: [i16; N] = buf_chunk.chunks(11)
+                        .flat_map(|chunk| {
+                            [
+                                u16::from(chunk[0]) | u16::from(chunk[1]) << 8,
+                                u16::from(chunk[1] >> 3) | u16::from(chunk[2]) << 5,
+                                u16::from(chunk[2] >> 6) | u16::from(chunk[3]) << 2 | u16::from(chunk[4]) << 10,
+                                u16::from(chunk[4] >> 1) | u16::from(chunk[5]) << 7,
+                                u16::from(chunk[5] >> 4) | u16::from(chunk[6]) << 4,
+                                u16::from(chunk[6] >> 7) | u16::from(chunk[7]) << 1 | u16::from(chunk[8]) << 9,
+                                u16::from(chunk[8] >> 2) | u16::from(chunk[9]) << 6,
+                                u16::from(chunk[9] >> 5) | u16::from(chunk[10]) << 3,
+                            ]
+                        })
+                        .map(|coeff| ((u32::from(coeff & 0x7ff) * Q as u32 + 1024) >> 11) as i16)
+                        .collect::<ArrayVec<[i16; N]>>()
+                        .into_inner();
+
+                    polys.push(
+                        Poly::from_arr_normal(&coeffs)
+                    );
+                }
+
+                polys
             }
         };
 

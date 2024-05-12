@@ -61,7 +61,10 @@ pub(in crate::tests) mod params_tests {
             SecurityLevel::new(K::Three).poly_vec_compressed_bytes(),
             960
         );
-        assert_eq!(SecurityLevel::new(K::Four).poly_vec_compressed_bytes(), 1408);
+        assert_eq!(
+            SecurityLevel::new(K::Four).poly_vec_compressed_bytes(),
+            1408
+        );
     }
 
     #[test]

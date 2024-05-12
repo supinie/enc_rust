@@ -46,10 +46,10 @@ impl PrivateKey {
             let u = PolyVec::decompress(u_bytes)?.ntt();
             let v = Poly::decompress(v_bytes, &sec_level)?;
             let inner_product = &self
-                                    .secret
-                                    .inner_product_pointwise(&u)
-                                    .barrett_reduce()
-                                    .inv_ntt();
+                .secret
+                .inner_product_pointwise(&u)
+                .barrett_reduce()
+                .inv_ntt();
             let dif = v.sub(inner_product);
             let m = dif.normalise();
 

@@ -1,12 +1,14 @@
 #![allow(warnings)]
 #[cfg(test)]
 pub(in crate::tests) mod indcpa_tests {
-    use crate::{indcpa::*, params::*, polynomials::*, vectors::*, matrix::*, tests::params::params_tests::sec_level_strategy};
+    use crate::{
+        indcpa::*, matrix::*, params::*, polynomials::*,
+        tests::params::params_tests::sec_level_strategy, vectors::*,
+    };
     use proptest::prelude::*;
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
     use tinyvec::{array_vec, ArrayVec};
-
 
     pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
         let mut rng = StdRng::from_entropy();
@@ -58,7 +60,6 @@ pub(in crate::tests) mod indcpa_tests {
 
     //     assert_eq!(message, msg);
     // }
-
 
     proptest! {
         #[test]

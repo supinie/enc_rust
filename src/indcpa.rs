@@ -8,12 +8,12 @@ use crate::{
 use sha3::{Digest, Sha3_512};
 use tinyvec::ArrayVec;
 
-#[derive(Default, PartialEq, Debug, Eq)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq)]
 pub struct PrivateKey {
     secret: PolyVec<Normalised>,
 }
 
-#[derive(Default, PartialEq, Debug, Eq)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq)]
 pub struct PublicKey {
     rho: [u8; SYMBYTES],
     noise: PolyVec<Normalised>,
@@ -25,12 +25,12 @@ impl PrivateKey {
         self.secret.sec_level()
     }
 
-    // buf should be of length k * POLYBYTES
+    // buf should be of length indcpa_private_key_bytes
     pub(crate) fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         self.secret.pack(buf)
     }
 
-    // buf should be of length k * POLYBYTES
+    // buf should be of length indcpa_private_key_bytes
     pub(crate) fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let secret = PolyVec::unpack(buf)?.normalise();
         Ok(Self { secret })
@@ -77,7 +77,7 @@ impl PublicKey {
         // }
     }
 
-    // buf should be of length k * POLYBYTES + SYMBYTES
+    // buf should be of length indcpa_public_key_bytes
     pub(crate) fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         let k: usize = self.sec_level().k().into();
 
@@ -91,7 +91,7 @@ impl PublicKey {
         }
     }
 
-    // buf should be of length k * POLYBYTES + SYMBYTES
+    // buf should be of length indcpa_public_key_bytes
     pub(crate) fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let k = K::try_from((buf.len() - SYMBYTES) / POLYBYTES)?;
         let k_value: usize = k.into();

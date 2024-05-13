@@ -61,6 +61,7 @@ impl From<TryFromSliceError> for PackingError {
 pub enum KeyGenerationError {
     Crystals(CrystalsError),
     TryFromSlice(TryFromSliceError),
+    Packing(PackingError),
 }
 
 impl From<CrystalsError> for KeyGenerationError {
@@ -72,6 +73,12 @@ impl From<CrystalsError> for KeyGenerationError {
 impl From<TryFromSliceError> for KeyGenerationError {
     fn from(error: TryFromSliceError) -> Self {
         Self::TryFromSlice(error)
+    }
+}
+
+impl From<PackingError> for KeyGenerationError {
+    fn from(error: PackingError) -> Self {
+        Self::Packing(error)
     }
 }
 

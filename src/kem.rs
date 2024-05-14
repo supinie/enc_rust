@@ -1,11 +1,14 @@
 use crate::{
-    errors::{CrystalsError, KeyGenerationError},
-    indcpa::{generate_indcpa_key_pair, PrivateKey as IndcpaPrivateKey, PublicKey as IndcpaPublicKey},
-    params::{SecurityLevel, SYMBYTES, K}
+    errors::{CrystalsError, EncryptionDecryptionError, KeyGenerationError},
+    indcpa::{
+        generate_indcpa_key_pair, PrivateKey as IndcpaPrivateKey, PublicKey as IndcpaPublicKey,
+    },
+    params::{SecurityLevel, K, SHAREDSECRETBYTES, SYMBYTES},
 };
-use sha3::{Digest, Sha3_256};
-use rand_core::{CryptoRng, RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
+use rand_core::{CryptoRng, RngCore, SeedableRng};
+use sha3::{Digest, Sha3_256};
+use tinyvec::ArrayVec;
 
 pub struct PrivateKey {
     sk: IndcpaPrivateKey,
@@ -20,7 +23,10 @@ pub struct PublicKey {
 }
 
 // derived new keypair deterministically from a given 64 (2 * 32) byte seed.
-fn new_key_from_seed(seed: &[u8], sec_level: SecurityLevel) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+fn new_key_from_seed(
+    seed: &[u8],
+    sec_level: SecurityLevel,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
     if seed.len() != 2 * SYMBYTES {
         return Err(CrystalsError::InvalidSeedLength(seed.len(), 2 * SYMBYTES).into());
     }
@@ -37,10 +43,7 @@ fn new_key_from_seed(seed: &[u8], sec_level: SecurityLevel) -> Result<(PublicKey
 
     let h_pk: [u8; SYMBYTES] = hash.finalize().into();
 
-    Ok((
-        PublicKey { pk, h_pk },
-        PrivateKey { sk, pk, h_pk, z }
-    ))
+    Ok((PublicKey { pk, h_pk }, PrivateKey { sk, pk, h_pk, z }))
 }
 
 /// Generates a new keypair for a given security level.
@@ -48,12 +51,18 @@ fn new_key_from_seed(seed: &[u8], sec_level: SecurityLevel) -> Result<(PublicKey
 /// # Errors
 /// Will return a `KeyGenerationError` if:
 /// - Given invalid K value
-/// - RNG fails 
+/// - RNG fails
 /// Example:
 /// ```
+/// use enc_rust::kem::generate_key_pair;
+///
 /// let (pk, sk) = generate_key_pair(None, 3)?;
+/// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
 /// ```
-pub fn generate_key_pair<R: RngCore + CryptoRng>(rng: Option<&mut R>, k: usize) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+pub fn generate_key_pair<R: RngCore + CryptoRng>(
+    rng: Option<&mut R>,
+    k: usize,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
     let k_result = K::try_from(k);
 
     if let Ok(k_value) = k_result {
@@ -74,5 +83,40 @@ pub fn generate_key_pair<R: RngCore + CryptoRng>(rng: Option<&mut R>, k: usize) 
     Err(CrystalsError::InvalidK(k).into())
 }
 
+impl PrivateKey {
+    fn sec_level(&self) -> SecurityLevel {
+        self.sk.sec_level()
+    }
 
+    pub fn get_public_key(&self) -> PublicKey {
+        PublicKey {
+            pk: self.pk,
+            h_pk: self.h_pk,
+        }
+    }
 
+    // pub fn decapsulate(&self, ciphertext: &[u8]) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
+    //     let sec_level = self.sec_level();
+
+    //     if ciphertext.len() != sec_level.ciphertext_bytes() {
+    //         Err(CrystalsError::InvalidCiphertextLength(ciphertext.len(), sec_levl.ciphertext_bytes(), sec_level.k()).into())
+    //     }
+        
+    //     let m = self.sk.decrypt(&
+
+}
+// impl PublicKey {
+//     pub fn encapsulate<R: RngCore + CryptoRng>(
+//         &self,
+//         seed: Option<&[u8]>,
+//         shared_secret: Option<[u8; SHAREDSECRETBYTES]>,
+//         rng: Option<&mut R>,
+//     ) -> Result<(CIPHERTEXT, SHAREDSECRET) EncryptionDecryptionError> {
+//         if let Some(seed) = seed {
+//             if seed.len() != SYMBYTES {
+//                 Err(CrystalsError::InvalidSeedLength(seed.len(), SYMBYTES).into())
+//             }
+            
+//         Ok(())
+//     }
+// }

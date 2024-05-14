@@ -1,4 +1,5 @@
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+use core::fmt::{Display, Formatter};
 
 pub const N: usize = 256;
 pub const Q: usize = 3329;
@@ -18,6 +19,16 @@ pub enum K {
     #[default]
     Three = 3,
     Four = 4,
+}
+
+impl Display for K {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match *self {
+            Self::Two => write!(f, "512"),
+            Self::Three => write!(f, "768"),
+            Self::Four => write!(f, "1024"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoPrimitive)]

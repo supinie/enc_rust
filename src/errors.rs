@@ -12,6 +12,7 @@ pub enum CrystalsError {
     IncorrectBufferLength(usize, usize),
     InvalidSeedLength(usize, usize),
     InternalError(),
+    InvalidK(usize),
 }
 
 impl Display for CrystalsError {
@@ -21,6 +22,7 @@ impl Display for CrystalsError {
             Self::IncorrectBufferLength(buf_len, expected_buf_len) => write!(f, "Incorrect buffer length for (un)packing. Expected buffer length {expected_buf_len}, got length {buf_len}"),
             Self::InvalidSeedLength(seed_len, expected_seed_len) => write!(f, "Invalid seed length, expected {expected_seed_len}, got {seed_len}"),
             Self::InternalError() => write!(f, "Unexpected internal error"),
+            Self::InvalidK(k) => write!(f, "Recieved invalid k value, {k}, expected 2, 3, or 4"),
         }
     }
 }
@@ -62,6 +64,7 @@ pub enum KeyGenerationError {
     Crystals(CrystalsError),
     TryFromSlice(TryFromSliceError),
     Packing(PackingError),
+    Rand(rand_core::Error),
 }
 
 impl From<CrystalsError> for KeyGenerationError {
@@ -79,6 +82,12 @@ impl From<TryFromSliceError> for KeyGenerationError {
 impl From<PackingError> for KeyGenerationError {
     fn from(error: PackingError) -> Self {
         Self::Packing(error)
+    }
+}
+
+impl From<rand_core::Error> for KeyGenerationError {
+    fn from(error: rand_core::Error) -> Self {
+        Self::Rand(error)
     }
 }
 

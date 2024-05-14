@@ -1,9 +1,11 @@
 use crate::{
     errors::{CrystalsError, KeyGenerationError},
     indcpa::{generate_indcpa_key_pair, PrivateKey as IndcpaPrivateKey, PublicKey as IndcpaPublicKey},
-    params::{SecurityLevel, SYMBYTES}
+    params::{SecurityLevel, SYMBYTES, K}
 };
 use sha3::{Digest, Sha3_256};
+use rand_core::{CryptoRng, RngCore, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 
 pub struct PrivateKey {
     sk: IndcpaPrivateKey,
@@ -36,7 +38,41 @@ fn new_key_from_seed(seed: &[u8], sec_level: SecurityLevel) -> Result<(PublicKey
     let h_pk: [u8; SYMBYTES] = hash.finalize().into();
 
     Ok((
-        PublicKey { pk: pk.clone(), h_pk },
-        PrivateKey { sk, pk: pk.clone(), h_pk, z }
+        PublicKey { pk, h_pk },
+        PrivateKey { sk, pk, h_pk, z }
     ))
 }
+
+/// Generates a new keypair for a given security level.
+/// Takes either a given RNG, or will generate one using `ChaCha20`
+/// # Errors
+/// Will return a `KeyGenerationError` if:
+/// - Given invalid K value
+/// - RNG fails 
+/// Example:
+/// ```
+/// let (pk, sk) = generate_key_pair(None, 3)?;
+/// ```
+pub fn generate_key_pair<R: RngCore + CryptoRng>(rng: Option<&mut R>, k: usize) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+    let k_result = K::try_from(k);
+
+    if let Ok(k_value) = k_result {
+        let mut seed = [0u8; 2 * SYMBYTES];
+
+        if let Some(rng) = rng {
+            rng.try_fill_bytes(&mut seed)?;
+        } else {
+            let mut chacha = ChaCha20Rng::from_entropy();
+            chacha.try_fill_bytes(&mut seed)?;
+        };
+
+        let sec_level = SecurityLevel::new(k_value);
+
+        return new_key_from_seed(&seed, sec_level);
+    }
+
+    Err(CrystalsError::InvalidK(k).into())
+}
+
+
+

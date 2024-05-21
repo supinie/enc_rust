@@ -8,7 +8,6 @@ use crate::{
 use rand_chacha::ChaCha20Rng;
 use rand_core::{CryptoRng, RngCore, SeedableRng};
 use sha3::{Digest, Sha3_256};
-use tinyvec::ArrayVec;
 
 pub struct PrivateKey {
     sk: IndcpaPrivateKey,
@@ -46,6 +45,8 @@ fn new_key_from_seed(
     Ok((PublicKey { pk, h_pk }, PrivateKey { sk, pk, h_pk, z }))
 }
 
+pub trait AcceptableRng: RngCore + CryptoRng {}
+
 /// Generates a new keypair for a given security level.
 /// Takes either a given RNG, or will generate one using `ChaCha20`
 /// # Errors
@@ -57,10 +58,11 @@ fn new_key_from_seed(
 /// use enc_rust::kem::generate_key_pair;
 ///
 /// let (pk, sk) = generate_key_pair(None, 3)?;
+///
 /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
 /// ```
-pub fn generate_key_pair<R: RngCore + CryptoRng>(
-    rng: Option<&mut R>,
+pub fn generate_key_pair(
+    rng: Option<&mut dyn AcceptableRng>,
     k: usize,
 ) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
     let k_result = K::try_from(k);
@@ -88,7 +90,7 @@ impl PrivateKey {
         self.sk.sec_level()
     }
 
-    pub fn get_public_key(&self) -> PublicKey {
+    pub fn get_public_key(&self) -> PublicKey {    
         PublicKey {
             pk: self.pk,
             h_pk: self.h_pk,
@@ -105,18 +107,20 @@ impl PrivateKey {
     //     let m = self.sk.decrypt(&
 
 }
-// impl PublicKey {
-//     pub fn encapsulate<R: RngCore + CryptoRng>(
-//         &self,
-//         seed: Option<&[u8]>,
-//         shared_secret: Option<[u8; SHAREDSECRETBYTES]>,
-//         rng: Option<&mut R>,
-//     ) -> Result<(CIPHERTEXT, SHAREDSECRET) EncryptionDecryptionError> {
-//         if let Some(seed) = seed {
-//             if seed.len() != SYMBYTES {
-//                 Err(CrystalsError::InvalidSeedLength(seed.len(), SYMBYTES).into())
-//             }
-            
-//         Ok(())
-//     }
-// }
+
+#[cfg(target_os = "none")]
+impl PublicKey {
+    pub fn encapsulate<R: RngCore + CryptoRng>(
+        &self,
+        seed: Option<&[u8]>,
+        shared_secret: Option<[u8; SHAREDSECRETBYTES]>,
+        rng: Option<&mut R>,
+    ) -> Result<(CIPHERTEXT, SHAREDSECRET), EncryptionDecryptionError> {
+        if let Some(seed) = seed {
+            if seed.len() != SYMBYTES {
+                Err(CrystalsError::InvalidSeedLength(seed.len(), SYMBYTES).into())
+            }
+            Ok(())
+        }
+    }
+}

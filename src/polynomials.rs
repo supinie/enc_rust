@@ -283,7 +283,7 @@ impl Poly<Normalised> {
                     })
             })
             .collect::<Result<ArrayVec<[u8; SYMBYTES]>, TryFromIntError>>()
-            .map(tinyvec::ArrayVec::into_inner);
+            .map(ArrayVec::into_inner);
 
         buf
     }

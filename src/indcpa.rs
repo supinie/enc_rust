@@ -38,7 +38,7 @@ impl PrivateKey {
 
     pub fn decrypt(
         &self,
-        ciphertext: &ArrayVec<[u8; 2048]>,
+        ciphertext: &[u8],
     ) -> Result<[u8; SYMBYTES], EncryptionDecryptionError> {
         let sec_level = self.sec_level();
         if ciphertext.len() == sec_level.indcpa_bytes() {

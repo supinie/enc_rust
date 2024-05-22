@@ -73,7 +73,7 @@ pub(in crate::tests) mod indcpa_tests {
 
             let _ = pub_key.encrypt(&plaintext, &cipher_seed, &mut ciphertext[..sec_level.indcpa_bytes()]).unwrap();
 
-            let message = priv_key.decrypt(&ciphertext).unwrap();
+            let message = priv_key.decrypt(&ciphertext[..sec_level.indcpa_bytes()]).unwrap();
 
             assert_eq!(message, plaintext, "security level: {:?}", sec_level);
         }

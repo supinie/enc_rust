@@ -5,8 +5,8 @@ use crate::{
     polynomials::{Montgomery, Normalised, Poly, Unreduced},
     vectors::PolyVec,
 };
-use sha3::{Digest, Sha3_512};
 use tinyvec::ArrayVec;
+use sha3::{Digest, Sha3_512};
 
 #[derive(Clone, Copy, PartialEq, Debug, Eq)]
 pub struct PrivateKey {
@@ -109,11 +109,8 @@ impl PublicKey {
         &self,
         message: &[u8], // length SYMBYTES
         seed: &[u8],    // length SYMBYTES
-    ) -> Result<ArrayVec<[u8; 2048]>, EncryptionDecryptionError> {
-        // must be able to contain max
-        // indcpa bytes, but trait bounds
-        // only satisfied for powers of 2
-        // when > 32.
+        ciphertext_bytes: &mut [u8] // length indcpa_bytes()
+    ) -> Result<(), EncryptionDecryptionError> {
         let sec_level = self.sec_level();
         let k_value: usize = sec_level.k().into();
         let msg_poly = Poly::read_msg(message)?;
@@ -150,14 +147,12 @@ impl PublicKey {
             .add(&error_2)
             .normalise();
 
-        let mut ciphertext_bytes = ArrayVec::from_array_len([0u8; 2048], sec_level.indcpa_bytes());
-
         let (u_bytes, v_bytes) =
             ciphertext_bytes.split_at_mut(sec_level.poly_vec_compressed_bytes());
         u.compress(u_bytes)?;
         v.compress(v_bytes, &sec_level)?;
 
-        Ok(ciphertext_bytes)
+        Ok(())
     }
 }
 

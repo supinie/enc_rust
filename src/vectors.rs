@@ -63,7 +63,7 @@ impl<S: State> PolyVec<S> {
     // Barrett reduce each polynomial in the polyvec
     pub(crate) fn barrett_reduce(&self) -> PolyVec<Barrett> {
         let mut polynomials = ArrayVec::<[Poly<Barrett>; 4]>::new();
-        for poly in self.polynomials.iter() {
+        for poly in &self.polynomials {
             polynomials.push(poly.barrett_reduce());
         }
 
@@ -78,7 +78,7 @@ impl<S: State + Unnormalised> PolyVec<S> {
     // Normalise each polynomial in the polyvec
     pub(crate) fn normalise(&self) -> PolyVec<Normalised> {
         let mut polynomials = ArrayVec::<[Poly<Normalised>; 4]>::new();
-        for poly in self.polynomials.iter() {
+        for poly in &self.polynomials {
             polynomials.push(poly.normalise());
         }
 
@@ -93,7 +93,7 @@ impl<S: State + Copy> PolyVec<S> {
     // apply inv_ntt to each polynomial in the polyvec
     pub(crate) fn inv_ntt(&self) -> Self {
         let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
-        for poly in self.polynomials.iter() {
+        for poly in &self.polynomials {
             polynomials.push(poly.inv_ntt());
         }
 
@@ -108,7 +108,7 @@ impl<S: State + Reduced + Copy> PolyVec<S> {
     // apply ntt to each polynomial in the polyvec
     pub(crate) fn ntt(&self) -> Self {
         let mut polynomials = ArrayVec::<[Poly<S>; 4]>::new();
-        for poly in self.polynomials.iter() {
+        for poly in &self.polynomials {
             polynomials.push(poly.ntt());
         }
 

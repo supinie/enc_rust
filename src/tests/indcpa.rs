@@ -68,11 +68,14 @@ pub(in crate::tests) mod indcpa_tests {
             cipher_seed in prop::array::uniform32(u8::MIN..u8::MAX),
             plaintext in prop::array::uniform32(u8::MIN..u8::MAX)
         ) {
-            let ciphertext = pub_key.encrypt(&plaintext, &cipher_seed).unwrap();
+            let mut ciphertext = [0u8; 1568]; // max length
+            let sec_level = priv_key.sec_level();
+
+            let _ = pub_key.encrypt(&plaintext, &cipher_seed, &mut ciphertext[..sec_level.indcpa_bytes()]).unwrap();
 
             let message = priv_key.decrypt(&ciphertext).unwrap();
 
-            assert_eq!(message, plaintext, "security level: {:?}", priv_key.sec_level());
+            assert_eq!(message, plaintext, "security level: {:?}", sec_level);
         }
 
         #[test]

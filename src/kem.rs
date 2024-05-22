@@ -86,11 +86,12 @@ pub fn generate_key_pair(
 }
 
 impl PrivateKey {
-    fn sec_level(&self) -> SecurityLevel {
+    const fn sec_level(&self) -> SecurityLevel {
         self.sk.sec_level()
     }
 
-    pub fn get_public_key(&self) -> PublicKey {    
+    #[must_use]
+    pub const fn get_public_key(&self) -> PublicKey {    
         PublicKey {
             pk: self.pk,
             h_pk: self.h_pk,

@@ -133,7 +133,7 @@ impl SecurityLevel {
         self.indcpa_private_key_bytes() + self.indcpa_public_key_bytes() + 2 * SYMBYTES
     }
 
-    pub const fn cipher_text_bytes(self) -> usize {
+    pub const fn ciphertext_bytes(self) -> usize {
         self.indcpa_bytes()
     }
 }

@@ -107,8 +107,8 @@ pub(in crate::tests) mod params_tests {
 
     #[test]
     fn cipher_text_bytes_test() {
-        assert_eq!(SecurityLevel::new(K::Two).cipher_text_bytes(), 768);
-        assert_eq!(SecurityLevel::new(K::Three).cipher_text_bytes(), 1088);
-        assert_eq!(SecurityLevel::new(K::Four).cipher_text_bytes(), 1568);
+        assert_eq!(SecurityLevel::new(K::Two).ciphertext_bytes(), 768);
+        assert_eq!(SecurityLevel::new(K::Three).ciphertext_bytes(), 1088);
+        assert_eq!(SecurityLevel::new(K::Four).ciphertext_bytes(), 1568);
     }
 }

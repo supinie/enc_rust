@@ -98,6 +98,7 @@ pub enum EncryptionDecryptionError {
     Crystals(CrystalsError),
     TryFromInt(TryFromIntError),
     Packing(PackingError),
+    Rand(rand_core::Error),
 }
 
 impl From<CrystalsError> for EncryptionDecryptionError {
@@ -115,5 +116,11 @@ impl From<TryFromIntError> for EncryptionDecryptionError {
 impl From<PackingError> for EncryptionDecryptionError {
     fn from(error: PackingError) -> Self {
         Self::Packing(error)
+    }
+}
+
+impl From<rand_core::Error> for EncryptionDecryptionError {
+    fn from(error: rand_core::Error) -> Self {
+        Self::Rand(error)
     }
 }

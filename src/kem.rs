@@ -7,7 +7,9 @@ use crate::{
 };
 use rand_chacha::ChaCha20Rng;
 use rand_core::{CryptoRng, RngCore, SeedableRng};
-use sha3::{Digest, Sha3_256};
+use sha3::{Digest, Sha3_256, Sha3_512, Shake256, digest::{ExtendableOutput, Update, XofReader}};
+use subtle::{ConstantTimeEq, ConditionallySelectable};
+use tinyvec::ArrayVec;
 
 pub struct PrivateKey {
     sk: IndcpaPrivateKey,
@@ -19,6 +21,18 @@ pub struct PrivateKey {
 pub struct PublicKey {
     pk: IndcpaPublicKey,
     h_pk: [u8; SYMBYTES],
+}
+
+pub struct Ciphertext {
+    bytes: [u8; 1568], // max ciphertext_bytes()
+    len: usize,
+}
+
+impl Ciphertext {
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
 }
 
 // derived new keypair deterministically from a given 64 (2 * 32) byte seed.
@@ -38,7 +52,7 @@ fn new_key_from_seed(
     pk.pack(&mut packed_pk[..sec_level.indcpa_public_key_bytes()])?;
 
     let mut hash = Sha3_256::new();
-    hash.update(&packed_pk[..sec_level.indcpa_public_key_bytes()]);
+    Digest::update(&mut hash, &packed_pk[..sec_level.indcpa_public_key_bytes()]);
 
     let h_pk: [u8; SYMBYTES] = hash.finalize().into();
 
@@ -98,30 +112,79 @@ impl PrivateKey {
         }
     }
 
-    // pub fn decapsulate(&self, ciphertext: &[u8]) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
-    //     let sec_level = self.sec_level();
+    pub fn decapsulate(&self, ciphertext: Ciphertext) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
+        let sec_level = self.sec_level();
 
-    //     if ciphertext.len() != sec_level.ciphertext_bytes() {
-    //         Err(CrystalsError::InvalidCiphertextLength(ciphertext.len(), sec_levl.ciphertext_bytes(), sec_level.k()).into())
-    //     }
+        if ciphertext.len != sec_level.ciphertext_bytes() {
+            return Err(CrystalsError::InvalidCiphertextLength(ciphertext.len, sec_level.ciphertext_bytes(), sec_level.k()).into());
+        }
         
-    //     let m = self.sk.decrypt(&
+        let m = self.sk.decrypt(&ciphertext.as_bytes())?;
 
+        let mut h = Sha3_512::new();
+        Digest::update(&mut h, &m);
+        Digest::update(&mut h, &self.h_pk);
+        let k_r: [u8; SHAREDSECRETBYTES + SYMBYTES] = h.finalize().into();
+
+        let mut g = Shake256::default();
+        g.update(ciphertext.as_bytes());
+        let mut k_bar = [0u8; SHAREDSECRETBYTES];
+        g.finalize_xof().read(&mut k_bar);
+
+        let mut ct = [0u8; 1568]; // max indcpa_bytes()
+        self.pk.encrypt(&m, &k_r[SYMBYTES..], &mut ct[..sec_level.indcpa_bytes()])?;
+
+        let equal = ct.ct_eq(ciphertext.as_bytes());
+
+        Ok(k_r[..SHAREDSECRETBYTES]
+           .iter()
+           .zip(k_bar.iter())
+           .map(|(x, y)| u8::conditional_select(&x, &y, equal))
+           .collect::<ArrayVec<[u8; SHAREDSECRETBYTES]>>()
+           .into_inner()
+        )
+
+    }
 }
 
-#[cfg(target_os = "none")]
 impl PublicKey {
-    pub fn encapsulate<R: RngCore + CryptoRng>(
+    pub fn encapsulate(
         &self,
         seed: Option<&[u8]>,
-        shared_secret: Option<[u8; SHAREDSECRETBYTES]>,
-        rng: Option<&mut R>,
-    ) -> Result<(CIPHERTEXT, SHAREDSECRET), EncryptionDecryptionError> {
+        rng: Option<&mut dyn AcceptableRng>,
+    ) -> Result<(Ciphertext, [u8; SHAREDSECRETBYTES]), EncryptionDecryptionError> {
+        let sec_level = self.pk.sec_level();
+
+        let mut m = [0u8; SYMBYTES];
         if let Some(seed) = seed {
             if seed.len() != SYMBYTES {
-                Err(CrystalsError::InvalidSeedLength(seed.len(), SYMBYTES).into())
+                return Err(CrystalsError::InvalidSeedLength(seed.len(), SYMBYTES).into());
             }
-            Ok(())
+            m.copy_from_slice(seed);
+        } else {
+            if let Some(rng) = rng {
+                rng.try_fill_bytes(&mut m)?;
+            } else {
+                let mut chacha = ChaCha20Rng::from_entropy();
+                chacha.try_fill_bytes(&mut m)?;
+            };
         }
+
+        let mut h = Sha3_512::new();
+        Digest::update(&mut h, m);
+        Digest::update(&mut h, &self.h_pk);
+        let k_r: [u8; SHAREDSECRETBYTES + SYMBYTES] = h.finalize().into();
+        let mut bytes = [0u8; 1568]; // max ciphertext_bytes
+        self.pk.encrypt(&m, &k_r[SYMBYTES..], &mut bytes[..sec_level.ciphertext_bytes()])?;
+        
+        let mut shared_secret = [0u8; SHAREDSECRETBYTES];
+        shared_secret.copy_from_slice(&k_r[..SHAREDSECRETBYTES]);
+        Ok((
+            Ciphertext {
+                bytes,
+                len: sec_level.ciphertext_bytes(),
+            },
+            shared_secret
+        ))
     }
 }

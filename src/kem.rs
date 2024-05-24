@@ -31,6 +31,18 @@ pub struct Ciphertext {
 }
 
 impl Ciphertext {
+    /// Returns a byte slice of the ciphertext
+    ///
+    /// # Example
+    /// ```
+    /// # use enc_rust::kem::*;
+    ///
+    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// let (ciphertext_obj, shared_secret) = pk.encapsulate(None, None)?;
+    /// let ciphertext = ciphertext_obj.as_bytes();
+    ///
+    /// # Ok::<(), enc_rust::errors::EncryptionDecryptionError>(())
+    /// ```
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         &self.bytes[..self.len]
@@ -90,14 +102,27 @@ fn new_key_from_seed(
 pub trait AcceptableRng: RngCore + CryptoRng {}
 
 /// Generates a new keypair for a given security level.
-/// Takes either a given RNG, or will generate one using `ChaCha20`
+///
+/// # Inputs:
+/// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the `RngCore` and
+/// `CryptoRng` traits. If RNG is not present, then `ChaCha20` will be used.
+/// - `k`: The k value corresponding to the security value to be used:
+///     - 2: 512
+///     - 3: 768
+///     - 4: 1024
+///
+/// # Outputs:
+/// - `PublicKey` object
+/// - `PrivateKey` object
+///
 /// # Errors
 /// Will return a `KeyGenerationError` if:
 /// - Given invalid K value
 /// - RNG fails
-/// Example:
+///
+/// # Example:
 /// ```
-/// use enc_rust::kem::generate_key_pair;
+/// # use enc_rust::kem::*;
 ///
 /// let (pk, sk) = generate_key_pair(None, 3)?;
 ///
@@ -132,6 +157,17 @@ impl PrivateKey {
         self.sk.sec_level()
     }
 
+    /// Returns the corresponding public key for a given private key
+    ///
+    /// # Example:
+    /// ```
+    /// use enc_rust::kem::*;
+    ///
+    /// let (_, sk) = generate_key_pair(None, 3)?;
+    /// let pk = sk.get_public_key();
+    ///
+    /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
+    /// ```
     #[must_use]
     pub const fn get_public_key(&self) -> PublicKey {    
         PublicKey {
@@ -140,23 +176,46 @@ impl PrivateKey {
         }
     }
 
-    pub fn decapsulate(&self, ciphertext: &Ciphertext) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
+    /// Decapsulates a ciphertext (given as a byte slice) into the shared secret
+    ///
+    /// # Inputs:
+    /// - `ciphertext`: Byte slice containing the ciphertext to be decasulated
+    ///
+    /// # Outputs:
+    /// - `[u8; 32]`: The shared secret, a 32 byte array
+    ///
+    /// # Errors
+    /// Will return an `EncryptionDecryptionError` if:
+    /// - Given invalid ciphertext length
+    ///
+    /// # Example:
+    /// ```
+    /// use enc_rust::kem::*;
+    ///
+    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (ciphertext_obj, secret) = pk.encapsulate(None, None).unwrap();
+    /// # let ciphertext = ciphertext_obj.as_bytes();
+    /// let shared_secret = sk.decapsulate(ciphertext)?;
+    ///
+    /// # Ok::<(), enc_rust::errors::EncryptionDecryptionError>(())
+    /// ```
+    pub fn decapsulate(&self, ciphertext: &[u8]) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
         let sec_level = self.sec_level();
 
-        if ciphertext.len != sec_level.ciphertext_bytes() {
-            return Err(CrystalsError::InvalidCiphertextLength(ciphertext.len, sec_level.ciphertext_bytes(), sec_level.k()).into());
+        if ciphertext.len() != sec_level.ciphertext_bytes() {
+            return Err(CrystalsError::InvalidCiphertextLength(ciphertext.len(), sec_level.ciphertext_bytes(), sec_level.k()).into());
         }
         
-        let m = self.sk.decrypt(ciphertext.as_bytes())?;
+        let m = self.sk.decrypt(ciphertext)?;
 
         let (k, r) = sha3_512_from(&[m, self.h_pk].concat());
 
-        let k_bar = shake256_from(&[&self.z, ciphertext.as_bytes()].concat());
+        let k_bar = shake256_from(&[&self.z, ciphertext].concat());
 
         let mut ct = [0u8; MAX_CIPHERTEXT]; // max indcpa_bytes()
         self.pk.encrypt(&m, &r, &mut ct[..sec_level.indcpa_bytes()])?;
 
-        let equal = ct.ct_eq(ciphertext.as_bytes());
+        let equal = ct.ct_eq(ciphertext);
 
         Ok(k.iter()
            .zip(k_bar.iter())
@@ -169,6 +228,31 @@ impl PrivateKey {
 }
 
 impl PublicKey {
+    /// Encapsulates a generated shared secret into a ciphertext to be shared
+    ///
+    /// # Inputs:
+    /// - `seed`: (Optional) a 64 byte slice used as a seed for randomness
+    /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the `RngCore` and
+    /// `CryptoRng` traits. If RNG is not present, then `ChaCha20` will be used.
+    ///
+    /// # Outputs:
+    /// - `Ciphertext` object
+    /// - `[u8; 32]`: The shared secret, a 32 byte array
+    ///
+    /// # Errors
+    /// Will return an `EncryptionDecryptionError` if:
+    /// - Given invalid seed length
+    /// - RNG fails
+    ///
+    /// # Example:
+    /// ```
+    /// use enc_rust::kem::*;
+    ///
+    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// let (ciphertext_obj, shared_secret) = pk.encapsulate(None, None)?;
+    ///
+    /// # Ok::<(), enc_rust::errors::EncryptionDecryptionError>(())
+    /// ```
     pub fn encapsulate(
         &self,
         seed: Option<&[u8]>,

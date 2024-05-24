@@ -5,8 +5,8 @@ use crate::{
     polynomials::{Montgomery, Normalised, Poly, Unreduced},
     vectors::PolyVec,
 };
-use tinyvec::ArrayVec;
 use sha3::{Digest, Sha3_512};
+use tinyvec::ArrayVec;
 
 #[derive(Clone, Copy, PartialEq, Debug, Eq)]
 pub struct PrivateKey {
@@ -36,10 +36,7 @@ impl PrivateKey {
         Ok(Self { secret })
     }
 
-    pub fn decrypt(
-        &self,
-        ciphertext: &[u8],
-    ) -> Result<[u8; SYMBYTES], EncryptionDecryptionError> {
+    pub fn decrypt(&self, ciphertext: &[u8]) -> Result<[u8; SYMBYTES], EncryptionDecryptionError> {
         let sec_level = self.sec_level();
         if ciphertext.len() == sec_level.indcpa_bytes() {
             let (u_bytes, v_bytes) = ciphertext.split_at(sec_level.poly_vec_compressed_bytes());
@@ -107,9 +104,9 @@ impl PublicKey {
 
     pub fn encrypt(
         &self,
-        message: &[u8], // length SYMBYTES
-        seed: &[u8],    // length SYMBYTES
-        ciphertext_bytes: &mut [u8] // length indcpa_bytes()
+        message: &[u8],              // length SYMBYTES
+        seed: &[u8],                 // length SYMBYTES
+        ciphertext_bytes: &mut [u8], // length indcpa_bytes()
     ) -> Result<(), EncryptionDecryptionError> {
         let sec_level = self.sec_level();
         let k_value: usize = sec_level.k().into();

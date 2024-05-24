@@ -16,7 +16,7 @@ mod kem_tests {
         #[test]
         fn encapsulate_decapsulate((pk, sk) in new_keypair()) {
             let (ciphertext, shared_secret) = pk.encapsulate(None, None).unwrap();
-            
+
             let decap_secret = sk.decapsulate(ciphertext.as_bytes()).unwrap();
 
             assert_eq!(shared_secret, decap_secret);

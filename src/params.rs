@@ -1,5 +1,5 @@
-use num_enum::{IntoPrimitive, TryFromPrimitive};
 use core::fmt::{Display, Formatter};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 pub const N: usize = 256;
 pub const Q: usize = 3329;

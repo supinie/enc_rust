@@ -11,7 +11,7 @@ use sha3::{Digest, Sha3_256, Sha3_512, Shake256, digest::{ExtendableOutput, Upda
 use subtle::{ConstantTimeEq, ConditionallySelectable};
 use tinyvec::ArrayVec;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct PrivateKey {
     sk: IndcpaPrivateKey,
     pk: IndcpaPublicKey,
@@ -19,7 +19,7 @@ pub struct PrivateKey {
     z: [u8; SYMBYTES],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey {
     pk: IndcpaPublicKey,
     h_pk: [u8; SYMBYTES],
@@ -103,7 +103,7 @@ pub trait AcceptableRng: RngCore + CryptoRng {}
 
 /// Generates a new keypair for a given security level.
 ///
-/// # Inputs:
+/// # Inputs
 /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the `RngCore` and
 /// `CryptoRng` traits. If RNG is not present, then `ChaCha20` will be used.
 /// - `k`: The k value corresponding to the security value to be used:
@@ -111,7 +111,7 @@ pub trait AcceptableRng: RngCore + CryptoRng {}
 ///     - 3: 768
 ///     - 4: 1024
 ///
-/// # Outputs:
+/// # Outputs
 /// - `PublicKey` object
 /// - `PrivateKey` object
 ///
@@ -120,7 +120,7 @@ pub trait AcceptableRng: RngCore + CryptoRng {}
 /// - Given invalid K value
 /// - RNG fails
 ///
-/// # Example:
+/// # Example
 /// ```
 /// # use enc_rust::kem::*;
 ///
@@ -153,13 +153,13 @@ pub fn generate_key_pair(
 }
 
 impl PrivateKey {
-    const fn sec_level(&self) -> SecurityLevel {
+    pub(crate) const fn sec_level(&self) -> SecurityLevel {
         self.sk.sec_level()
     }
 
     /// Returns the corresponding public key for a given private key
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// use enc_rust::kem::*;
     ///
@@ -176,6 +176,28 @@ impl PrivateKey {
         }
     }
 
+    /// Packs private key into a given buffer
+    ///
+    /// # Inputs
+    /// - `bytes`: Buffer for the private key to be packed into
+    ///     For corresponding security levels, `bytes` should be of length:
+    ///     - 512: 1632
+    ///     - 768: 2400
+    ///     - 1024: 3168
+    ///
+    /// # Errors
+    /// Will return a `PackingError` if the buffer is of the wrong length
+    ///
+    /// # Example
+    /// ```
+    /// use enc_rust::kem::*;
+    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    ///
+    /// let mut sk_bytes = [0u8; 2400];
+    /// sk.pack(&mut sk_bytes)?;
+    ///
+    /// # Ok::<(), enc_rust::errors::PackingError>(())
+    /// ```
     pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
         let sec_level = self.sec_level();
 
@@ -183,27 +205,76 @@ impl PrivateKey {
             return Err(CrystalsError::IncorrectBufferLength(bytes.len(), sec_level.private_key_bytes()).into());
         }
         
-        self.sk.pack(&mut bytes[..sec_level.indcpa_private_key_bytes()])?;
-        self.pk.pack(&mut bytes[sec_level.indcpa_private_key_bytes()..sec_level.indcpa_public_key_bytes()])?;
-        bytes[sec_level.indcpa_public_key_bytes()..sec_level.indcpa_public_key_bytes() + SYMBYTES].copy_from_slice(&self.h_pk);
-        bytes[sec_level.indcpa_public_key_bytes() + SYMBYTES..].copy_from_slice(&self.z);
+        let (sk_bytes, rest) = bytes.split_at_mut(sec_level.indcpa_private_key_bytes());
+        let (pk_bytes, rest) = rest.split_at_mut(sec_level.indcpa_public_key_bytes());
+        let (h_pk_bytes, z_bytes) = rest.split_at_mut(SYMBYTES);
+        self.sk.pack(sk_bytes)?;
+        self.pk.pack(pk_bytes)?;
+        h_pk_bytes.copy_from_slice(&self.h_pk);
+        z_bytes.copy_from_slice(&self.z);
 
         Ok(())
     }
 
+    /// Unpacks a buffer of bytes into a private key
+    ///
+    /// # Inputs
+    /// - `bytes`: Buffer for the private key to be extracted from
+    ///
+    /// # Outputs
+    /// - `PrivateKey` object
+    ///
+    /// # Errors
+    /// Will return a `PackingError` if the buffer is of the wrong length
+    ///
+    /// # Example
+    /// ```
+    /// use enc_rust::kem::*;
+    /// # let (pk, new_sk) = generate_key_pair(None, 3).unwrap();
+    ///
+    /// # let mut sk_bytes = [0u8; 2400];
+    /// # new_sk.pack(&mut sk_bytes)?;
+    ///
+    /// let sk = PrivateKey::unpack(&sk_bytes)?;
+    ///
+    /// # Ok::<(), enc_rust::errors::PackingError>(())
+    /// ```
+    pub fn unpack(bytes: &[u8]) -> Result<Self, PackingError> {
+        let sec_level = match bytes.len() {
+            1632 => SecurityLevel::new(K::Two),
+            2400 => SecurityLevel::new(K::Three),
+            3168 => SecurityLevel::new(K::Four),
+            _ => return Err(CrystalsError::IncorrectBufferLength(bytes.len(), 3168).into()),
+        };
+        let (sk_bytes, rest) = bytes.split_at(sec_level.indcpa_private_key_bytes());
+        let (pk_bytes, rest) = rest.split_at(sec_level.indcpa_public_key_bytes());
+        let (h_pk_bytes, z_bytes) = rest.split_at(SYMBYTES);
+
+        let sk = IndcpaPrivateKey::unpack(sk_bytes)?;
+        let pk = IndcpaPublicKey::unpack(pk_bytes)?;
+        let mut h_pk = [0u8; SYMBYTES];
+        h_pk.copy_from_slice(h_pk_bytes);
+        let mut z = [0u8; SYMBYTES];
+        z.copy_from_slice(z_bytes);
+
+        Ok(
+            Self{ sk, pk, h_pk, z }
+        )
+    }
+
     /// Decapsulates a ciphertext (given as a byte slice) into the shared secret
     ///
-    /// # Inputs:
+    /// # Inputs
     /// - `ciphertext`: Byte slice containing the ciphertext to be decasulated
     ///
-    /// # Outputs:
+    /// # Outputs
     /// - `[u8; 32]`: The shared secret, a 32 byte array
     ///
     /// # Errors
     /// Will return an `EncryptionDecryptionError` if:
     /// - Given invalid ciphertext length
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// use enc_rust::kem::*;
     ///
@@ -242,17 +313,82 @@ impl PrivateKey {
 }
 
 impl PublicKey {
-    const fn sec_level(&self) -> SecurityLevel {
+    pub(crate) const fn sec_level(&self) -> SecurityLevel {
         self.pk.sec_level()
     }
+
+    /// Packs public key into a given buffer
+    ///
+    /// # Inputs
+    /// - `bytes`: Buffer for the public key to be packed into
+    ///     For corresponding security levels, `bytes` should be of length:
+    ///     - 512: 800
+    ///     - 768: 1184
+    ///     - 1024: 1568
+    ///
+    /// # Errors
+    /// Will return a `PackingError` if the buffer is of the wrong length
+    ///
+    /// # Example
+    /// ```
+    /// use enc_rust::kem::*;
+    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    ///
+    /// let mut pk_bytes = [0u8; 1184];
+    /// pk.pack(&mut pk_bytes)?;
+    ///
+    /// # Ok::<(), enc_rust::errors::PackingError>(())
+    /// ```
+    pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
+        if bytes.len() != self.sec_level().public_key_bytes() {
+            return Err(CrystalsError::IncorrectBufferLength(bytes.len(), self.sec_level().public_key_bytes()).into());
+        }
+
+        self.pk.pack(bytes)?;
+
+        Ok(())
+    }
+
+    /// Unpacks a buffer of bytes into a public key
+    ///
+    /// # Inputs
+    /// - `bytes`: Buffer for the public key to be extracted from
+    ///
+    /// # Outputs
+    /// - `PublicKey` object
+    ///
+    /// # Errors
+    /// Will return a `PackingError` if the buffer is of the wrong length
+    ///
+    /// # Example
+    /// ```
+    /// use enc_rust::kem::*;
+    /// # let (new_pk, sk) = generate_key_pair(None, 3).unwrap();
+    ///
+    /// # let mut pk_bytes = [0u8; 1184];
+    /// # new_pk.pack(&mut pk_bytes)?;
+    ///
+    /// let pk = PublicKey::unpack(&pk_bytes)?;
+    ///
+    /// # Ok::<(), enc_rust::errors::PackingError>(())
+    /// ```
+    pub fn unpack(bytes: &[u8]) -> Result<Self, PackingError> {
+        let pk = IndcpaPublicKey::unpack(bytes)?;
+        let h_pk = sha3_256_from(bytes);
+
+        Ok(
+            Self { pk, h_pk }
+        )
+    }
+
     /// Encapsulates a generated shared secret into a ciphertext to be shared
     ///
-    /// # Inputs:
+    /// # Inputs
     /// - `seed`: (Optional) a 64 byte slice used as a seed for randomness
     /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the `RngCore` and
     /// `CryptoRng` traits. If RNG is not present, then `ChaCha20` will be used.
     ///
-    /// # Outputs:
+    /// # Outputs
     /// - `Ciphertext` object
     /// - `[u8; 32]`: The shared secret, a 32 byte array
     ///
@@ -261,7 +397,7 @@ impl PublicKey {
     /// - Given invalid seed length
     /// - RNG fails
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// use enc_rust::kem::*;
     ///
@@ -301,15 +437,5 @@ impl PublicKey {
             },
             k
         ))
-    }
-
-    pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
-        if bytes.len() != self.sec_level().public_key_bytes() {
-            return Err(CrystalsError::IncorrectBufferLength(bytes.len(), self.sec_level().public_key_bytes()).into());
-        }
-
-        self.pk.pack(bytes)?;
-
-        Ok(())
     }
 }

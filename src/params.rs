@@ -10,6 +10,8 @@ pub const SHAREDSECRETBYTES: usize = 32;
 
 pub const POLYBYTES: usize = 384;
 
+pub const MAX_CIPHERTEXT: usize = 1569;
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(usize)]
 // Get the usize repr using .into()

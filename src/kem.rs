@@ -3,7 +3,7 @@ use crate::{
     indcpa::{
         generate_indcpa_key_pair, PrivateKey as IndcpaPrivateKey, PublicKey as IndcpaPublicKey,
     },
-    params::{SecurityLevel, K, SHAREDSECRETBYTES, SYMBYTES},
+    params::{SecurityLevel, K, SHAREDSECRETBYTES, SYMBYTES, MAX_CIPHERTEXT},
 };
 use rand_chacha::ChaCha20Rng;
 use rand_core::{CryptoRng, RngCore, SeedableRng};
@@ -11,6 +11,7 @@ use sha3::{Digest, Sha3_256, Sha3_512, Shake256, digest::{ExtendableOutput, Upda
 use subtle::{ConstantTimeEq, ConditionallySelectable};
 use tinyvec::ArrayVec;
 
+#[derive(Debug)]
 pub struct PrivateKey {
     sk: IndcpaPrivateKey,
     pk: IndcpaPublicKey,
@@ -18,13 +19,14 @@ pub struct PrivateKey {
     z: [u8; SYMBYTES],
 }
 
+#[derive(Debug)]
 pub struct PublicKey {
     pk: IndcpaPublicKey,
     h_pk: [u8; SYMBYTES],
 }
 
 pub struct Ciphertext {
-    bytes: [u8; 1568], // max ciphertext_bytes()
+    bytes: [u8; MAX_CIPHERTEXT], // max ciphertext_bytes()
     len: usize,
 }
 
@@ -33,6 +35,35 @@ impl Ciphertext {
     pub fn as_bytes(&self) -> &[u8] {
         &self.bytes[..self.len]
     }
+}
+
+fn sha3_256_from(input: &[u8]) -> [u8; SYMBYTES] {
+    let mut hash = Sha3_256::new();
+    Digest::update(&mut hash, input);
+
+    let output: [u8; SYMBYTES] = hash.finalize().into();
+    output
+}
+
+fn sha3_512_from(input: &[u8]) -> ([u8; SHAREDSECRETBYTES], [u8; SYMBYTES]) {
+    let mut hash = Sha3_512::new();
+    Digest::update(&mut hash, input);
+    let output = hash.finalize();
+
+    let mut o1 = [0u8; SHAREDSECRETBYTES];
+    let mut o2 = [0u8; SYMBYTES];
+
+    o1.copy_from_slice(&output[..SHAREDSECRETBYTES]);
+    o2.copy_from_slice(&output[SHAREDSECRETBYTES..]);
+    (o1, o2)
+}
+
+fn shake256_from(input: &[u8]) -> [u8; SHAREDSECRETBYTES] {
+    let mut hash = Shake256::default();
+    hash.update(input);
+    let mut output = [0u8; SHAREDSECRETBYTES];
+    hash.finalize_xof().read(&mut output);
+    output
 }
 
 // derived new keypair deterministically from a given 64 (2 * 32) byte seed.
@@ -44,17 +75,14 @@ fn new_key_from_seed(
         return Err(CrystalsError::InvalidSeedLength(seed.len(), 2 * SYMBYTES).into());
     }
 
-    let (sk, pk) = generate_indcpa_key_pair(&seed[..32], sec_level)?;
+    let (sk, pk) = generate_indcpa_key_pair(&seed[..SYMBYTES], sec_level)?;
 
-    let z: [u8; SYMBYTES] = seed[32..].try_into()?;
+    let z: [u8; SYMBYTES] = seed[SYMBYTES..].try_into()?;
 
-    let mut packed_pk = [0u8; 1440]; // max packed public key size
+    let mut packed_pk = [0u8; MAX_CIPHERTEXT]; // max packed public key size
     pk.pack(&mut packed_pk[..sec_level.indcpa_public_key_bytes()])?;
 
-    let mut hash = Sha3_256::new();
-    Digest::update(&mut hash, &packed_pk[..sec_level.indcpa_public_key_bytes()]);
-
-    let h_pk: [u8; SYMBYTES] = hash.finalize().into();
+    let h_pk: [u8; SYMBYTES] = sha3_256_from(&packed_pk[..sec_level.indcpa_public_key_bytes()]);
 
     Ok((PublicKey { pk, h_pk }, PrivateKey { sk, pk, h_pk, z }))
 }
@@ -112,34 +140,27 @@ impl PrivateKey {
         }
     }
 
-    pub fn decapsulate(&self, ciphertext: Ciphertext) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
+    pub fn decapsulate(&self, ciphertext: &Ciphertext) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
         let sec_level = self.sec_level();
 
         if ciphertext.len != sec_level.ciphertext_bytes() {
             return Err(CrystalsError::InvalidCiphertextLength(ciphertext.len, sec_level.ciphertext_bytes(), sec_level.k()).into());
         }
         
-        let m = self.sk.decrypt(&ciphertext.as_bytes())?;
+        let m = self.sk.decrypt(ciphertext.as_bytes())?;
 
-        let mut h = Sha3_512::new();
-        Digest::update(&mut h, &m);
-        Digest::update(&mut h, &self.h_pk);
-        let k_r: [u8; SHAREDSECRETBYTES + SYMBYTES] = h.finalize().into();
+        let (k, r) = sha3_512_from(&[m, self.h_pk].concat());
 
-        let mut g = Shake256::default();
-        g.update(ciphertext.as_bytes());
-        let mut k_bar = [0u8; SHAREDSECRETBYTES];
-        g.finalize_xof().read(&mut k_bar);
+        let k_bar = shake256_from(&[&self.z, ciphertext.as_bytes()].concat());
 
-        let mut ct = [0u8; 1568]; // max indcpa_bytes()
-        self.pk.encrypt(&m, &k_r[SYMBYTES..], &mut ct[..sec_level.indcpa_bytes()])?;
+        let mut ct = [0u8; MAX_CIPHERTEXT]; // max indcpa_bytes()
+        self.pk.encrypt(&m, &r, &mut ct[..sec_level.indcpa_bytes()])?;
 
         let equal = ct.ct_eq(ciphertext.as_bytes());
 
-        Ok(k_r[..SHAREDSECRETBYTES]
-           .iter()
+        Ok(k.iter()
            .zip(k_bar.iter())
-           .map(|(x, y)| u8::conditional_select(&x, &y, equal))
+           .map(|(x, y)| u8::conditional_select(x, y, equal))
            .collect::<ArrayVec<[u8; SHAREDSECRETBYTES]>>()
            .into_inner()
         )
@@ -161,30 +182,23 @@ impl PublicKey {
                 return Err(CrystalsError::InvalidSeedLength(seed.len(), SYMBYTES).into());
             }
             m.copy_from_slice(seed);
+        } else if let Some(rng) = rng {
+            rng.try_fill_bytes(&mut m)?;
         } else {
-            if let Some(rng) = rng {
-                rng.try_fill_bytes(&mut m)?;
-            } else {
-                let mut chacha = ChaCha20Rng::from_entropy();
-                chacha.try_fill_bytes(&mut m)?;
-            };
+            let mut chacha = ChaCha20Rng::from_entropy();
+            chacha.try_fill_bytes(&mut m)?;
         }
 
-        let mut h = Sha3_512::new();
-        Digest::update(&mut h, m);
-        Digest::update(&mut h, &self.h_pk);
-        let k_r: [u8; SHAREDSECRETBYTES + SYMBYTES] = h.finalize().into();
-        let mut bytes = [0u8; 1568]; // max ciphertext_bytes
-        self.pk.encrypt(&m, &k_r[SYMBYTES..], &mut bytes[..sec_level.ciphertext_bytes()])?;
+        let (k, r) = sha3_512_from(&[m, self.h_pk].concat());
+        let mut bytes = [0u8; MAX_CIPHERTEXT]; // max ciphertext_bytes
+        self.pk.encrypt(&m, &r, &mut bytes[..sec_level.ciphertext_bytes()])?;
         
-        let mut shared_secret = [0u8; SHAREDSECRETBYTES];
-        shared_secret.copy_from_slice(&k_r[..SHAREDSECRETBYTES]);
         Ok((
             Ciphertext {
                 bytes,
                 len: sec_level.ciphertext_bytes(),
             },
-            shared_secret
+            k
         ))
     }
 }

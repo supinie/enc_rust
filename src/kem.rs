@@ -1,9 +1,9 @@
 use crate::{
-    errors::{CrystalsError, EncryptionDecryptionError, KeyGenerationError},
+    errors::{CrystalsError, EncryptionDecryptionError, KeyGenerationError, PackingError},
     indcpa::{
         generate_indcpa_key_pair, PrivateKey as IndcpaPrivateKey, PublicKey as IndcpaPublicKey,
     },
-    params::{SecurityLevel, K, SHAREDSECRETBYTES, SYMBYTES, MAX_CIPHERTEXT},
+    params::{SecurityLevel, K, MAX_CIPHERTEXT, SHAREDSECRETBYTES, SYMBYTES},
 };
 use rand_chacha::ChaCha20Rng;
 use rand_core::{CryptoRng, RngCore, SeedableRng};
@@ -176,6 +176,21 @@ impl PrivateKey {
         }
     }
 
+    pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
+        let sec_level = self.sec_level();
+
+        if bytes.len() != sec_level.private_key_bytes() {
+            return Err(CrystalsError::IncorrectBufferLength(bytes.len(), sec_level.private_key_bytes()).into());
+        }
+        
+        self.sk.pack(&mut bytes[..sec_level.indcpa_private_key_bytes()])?;
+        self.pk.pack(&mut bytes[sec_level.indcpa_private_key_bytes()..sec_level.indcpa_public_key_bytes()])?;
+        bytes[sec_level.indcpa_public_key_bytes()..sec_level.indcpa_public_key_bytes() + SYMBYTES].copy_from_slice(&self.h_pk);
+        bytes[sec_level.indcpa_public_key_bytes() + SYMBYTES..].copy_from_slice(&self.z);
+
+        Ok(())
+    }
+
     /// Decapsulates a ciphertext (given as a byte slice) into the shared secret
     ///
     /// # Inputs:
@@ -223,11 +238,13 @@ impl PrivateKey {
            .collect::<ArrayVec<[u8; SHAREDSECRETBYTES]>>()
            .into_inner()
         )
-
     }
 }
 
 impl PublicKey {
+    const fn sec_level(&self) -> SecurityLevel {
+        self.pk.sec_level()
+    }
     /// Encapsulates a generated shared secret into a ciphertext to be shared
     ///
     /// # Inputs:
@@ -284,5 +301,15 @@ impl PublicKey {
             },
             k
         ))
+    }
+
+    pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
+        if bytes.len() != self.sec_level().public_key_bytes() {
+            return Err(CrystalsError::IncorrectBufferLength(bytes.len(), self.sec_level().public_key_bytes()).into());
+        }
+
+        self.pk.pack(bytes)?;
+
+        Ok(())
     }
 }

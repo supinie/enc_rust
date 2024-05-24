@@ -12,6 +12,8 @@ A pure rust implementation of the Module-Lattice-based standards [ML-KEM](https:
 
 This package consists of a library (`enc_rust`), and (soon :TM:) a binary wrapper. The library currently contains implementations for ML-KEM (Kyber), and will in the future also support ML-DSA (Dilithium).
 
+---
+
 ### Why enc_rust?
 
 enc_rust aims to provide a secure, efficient, and ergonomic solution to any problem that requires quantum secure cryptography.
@@ -26,9 +28,13 @@ enc_rust currently supports ML-KEM as a sole mechanism, but will provide:
 - ML-DSA
 - ML-DSA in hybrid with Ed25519
 
+---
+
 ### Disclaimer
 
 This library and binary wrapper is offered as-is, and without a guarantee. Please exercise caution when using this library in a production application, and we accept no liability for any security issues related to the use of this code.
+
+---
 
 ### Kyber Algorithm Authors:
 

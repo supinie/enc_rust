@@ -2,7 +2,15 @@ use core::fmt::{Display, Formatter};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 pub const N: usize = 256;
+
 pub const Q: usize = 3329;
+pub const Q_I16: i16 = Q as i16;
+pub const Q_U16: u16 = Q as u16;
+pub const Q_I32: i32 = Q as i32;
+pub const Q_U32: u32 = Q as u32;
+
+pub const Q_DIV: u64 = 80635;
+pub const Q_DIV_VEC: u64 = 1290167;
 
 pub const SYMBYTES: usize = 32; // size of hashes
 

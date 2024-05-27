@@ -464,13 +464,13 @@ pub(in crate::tests) mod poly_tests {
 
         #[test]
         fn write_read_msg_test(
-            message in prop::array::uniform32(u8::MIN..u8::MAX)
+            message in prop::array::uniform32(u8::MIN..u8::MAX),
+            poly in new_poly()
         ) {
-            let poly = Poly::read_msg(&message).unwrap();
-            let comp_message = poly.normalise().write_msg().unwrap();
+            let poly_from_msg = Poly::read_msg(&message).unwrap();
+            let comp_message = poly_from_msg.normalise().write_msg().unwrap();
 
             assert_eq!(message, comp_message);
         }
-
     }
 }

@@ -4,7 +4,7 @@ mod sample;
 use crate::{
     errors::{CrystalsError, PackingError},
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
-    params::{SecurityLevel, N, POLYBYTES, Q, SYMBYTES},
+    params::{SecurityLevel, N, POLYBYTES, Q, Q_I16, Q_U16, Q_U32, Q_DIV, SYMBYTES},
     polynomials::ntt::ZETAS,
 };
 use core::num::TryFromIntError;
@@ -247,9 +247,9 @@ impl Poly<Normalised> {
         let mut buf = [0u8; POLYBYTES];
         for i in 0..N / 2 {
             let mut t0 = self.coeffs[2 * i];
-            t0 += (t0 >> 15) & Q as i16;
+            t0 += (t0 >> 15) & Q_I16;
             let mut t1 = self.coeffs[2 * i + 1];
-            t1 += (t1 >> 15) & Q as i16;
+            t1 += (t1 >> 15) & Q_I16;
 
             buf[3 * i] = t0 as u8;
             buf[3 * i + 1] = ((t0 >> 8) | (t1 << 4)) as u8;
@@ -267,15 +267,16 @@ impl Poly<Normalised> {
     // ```
     pub(crate) fn write_msg(&self) -> Result<[u8; SYMBYTES], TryFromIntError> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-        let q_16 = i16::try_from(Q)?;
         let buf = self
             .coeffs
             .chunks_exact(8)
             .map(|chunk| {
                 chunk
                     .iter()
-                    .map(|&coeff| coeff + ((coeff >> 15) & q_16))
-                    .map(|coeff| (((coeff << 1) + q_16 / 2) / q_16) & 1)
+                    .map(|&coeff| coeff + ((coeff >> 15) & Q_I16))
+                    .map(i32::from)
+                    .map(|coeff| (coeff << 1) + Q as i32 / 2)
+                    .map(|t| ((t * 80635) >> 28) & 1)
                     .enumerate()
                     .try_fold(0, |accumulator, (index, coeff)| {
                         let shifted_coeff = u8::try_from(coeff << index)?;
@@ -316,11 +317,9 @@ impl Poly<Normalised> {
                 {
                     for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                         let mut temp = *coeff;
-                        temp += (temp >> 15) & i16::try_from(Q)?;
+                        temp += (temp >> 15) & Q_I16;
                         *t_elem = u8::try_from(
-                            ((((u16::try_from(temp)?) << 4) + u16::try_from(Q)? / 2)
-                                / u16::try_from(Q)?)
-                                & 15,
+                            (((((u64::try_from(temp)?) << 4) + u64::from(Q_U16 / 2)) * Q_DIV) >> 28) & 0xf,
                         )?;
                     }
 
@@ -339,11 +338,9 @@ impl Poly<Normalised> {
                 {
                     for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                         let mut temp = *coeff;
-                        temp += (temp >> 15) & i16::try_from(Q)?;
+                        temp += (temp >> 15) & Q_I16;
                         *t_elem = u8::try_from(
-                            ((((u32::try_from(temp)?) << 5) + u32::try_from(Q)? / 2)
-                                / u32::try_from(Q)?)
-                                & 31,
+                            (((((u64::try_from(temp)?) << 5) + u64::from(Q_U32 / 2)) * (Q_DIV / 2)) >> 27) & 0x1f,
                         )?;
                     }
 
@@ -471,7 +468,7 @@ impl Poly<Normalised> {
                     ];
                     for (coeff, t_elem) in coeffs_chunk.iter_mut().zip(temp.iter()) {
                         *coeff = i16::try_from(
-                            ((u32::from(*t_elem) & 31) * u32::try_from(Q)? + 16) >> 5,
+                            ((u32::from(*t_elem) & 31) * Q_U32 + 16) >> 5,
                         )?;
                     }
                 }

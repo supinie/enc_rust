@@ -1,6 +1,6 @@
 use crate::{
     errors::{CrystalsError, PackingError},
-    params::{Eta, SecurityLevel, K, N, POLYBYTES, Q},
+    params::{Eta, SecurityLevel, K, N, POLYBYTES, Q_I16, Q_U32, Q_DIV_VEC},
     polynomials::{Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced},
 };
 use tinyvec::{array_vec, ArrayVec};
@@ -183,8 +183,8 @@ impl PolyVec<Normalised> {
                         for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                             *t_elem = *coeff as u16;
                             *t_elem =
-                                t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q as i16) as u16);
-                            *t_elem = (((((u32::from(*t_elem)) << 10) + Q as u32 / 2) / Q as u32)
+                                t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q_I16) as u16);
+                            *t_elem = (((((u64::from(*t_elem) << 10) + u64::from(Q_U32 / 2)) * Q_DIV_VEC) >> 32)
                                 & 0x3ff) as u16;
                         }
 
@@ -224,8 +224,8 @@ impl PolyVec<Normalised> {
                         for (coeff, t_elem) in coeff_chunk.iter().zip(t.iter_mut()) {
                             *t_elem = *coeff as u16;
                             *t_elem =
-                                t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q as i16) as u16);
-                            *t_elem = (((((u32::from(*t_elem)) << 11) + Q as u32 / 2) / Q as u32)
+                                t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q_I16) as u16);
+                            *t_elem = (((((u64::from(*t_elem) << 11) + u64::from(Q_U32 / 2)) * (Q_DIV_VEC / 2)) >> 31)
                                 & 0x7ff) as u16;
                         }
 
@@ -302,7 +302,7 @@ impl PolyVec<Normalised> {
                             u16::from(buf_tuple[0] >> (2 * (i % 4)))
                                 | u16::from(buf_tuple[1]) << (8 - 2 * (i % 4))
                         })
-                        .map(|coeff| (((u32::from(coeff) & 0x3ff) * Q as u32 + 512) >> 10) as i16)
+                        .map(|coeff| (((u32::from(coeff) & 0x3ff) * Q_U32 + 512) >> 10) as i16)
                         .collect::<ArrayVec<[i16; N]>>()
                         .into_inner();
 
@@ -334,7 +334,7 @@ impl PolyVec<Normalised> {
                                 u16::from(chunk[9] >> 5) | u16::from(chunk[10]) << 3,
                             ]
                         })
-                        .map(|coeff| ((u32::from(coeff & 0x7ff) * Q as u32 + 1024) >> 11) as i16)
+                        .map(|coeff| ((u32::from(coeff & 0x7ff) * Q_U32 + 1024) >> 11) as i16)
                         .collect::<ArrayVec<[i16; N]>>()
                         .into_inner();
 
@@ -351,16 +351,6 @@ impl PolyVec<Normalised> {
         })
     }
 }
-
-// match polyvec_result {
-//     Ok(polynomials) => Ok(Self {
-//         polynomials,
-//         sec_level: sec_level.k(),
-//     }),
-//     Err(err) => Err(err),
-// }
-// }
-// }
 
 impl PolyVec<Montgomery> {
     // derive a noise polyvec using a given seed and nonce

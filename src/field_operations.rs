@@ -1,4 +1,4 @@
-use crate::params::Q;
+use crate::params::{Q_I16, Q_I32};
 
 // given -2^15 q <= x < 2^15 q, returns -q < y < q with y congruent to x * 2^-16 mod q
 // Example:
@@ -9,7 +9,7 @@ use crate::params::Q;
 pub fn montgomery_reduce(x: i32) -> i16 {
     const QPRIME: i32 = 62209;
     let m = x.wrapping_mul(QPRIME) as i16;
-    let t = (x - i32::from(m).wrapping_mul(Q as i32)) >> 16;
+    let t = (x - i32::from(m).wrapping_mul(Q_I32)) >> 16;
     t as i16
 }
 
@@ -43,7 +43,7 @@ pub fn barrett_reduce(x: i16) -> i16 {
     //  x - ⌊x 20156/2²⁶⌋ q = [
     //                        [ x mod q  otherwise
     let inside_floor = (i32::from(x).wrapping_mul(APPROXIMATION) >> 26) as i16;
-    x.wrapping_sub(inside_floor.wrapping_mul(Q as i16))
+    x.wrapping_sub(inside_floor.wrapping_mul(Q_I16))
 }
 
 // given x, if x < Q return x, otherwise return x - Q
@@ -51,7 +51,7 @@ pub fn barrett_reduce(x: i16) -> i16 {
 // let x = conditional_sub_q(y);
 #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub const fn conditional_sub_q(x: i16) -> i16 {
-    const Q_16: i16 = Q as i16;
+    const Q_16: i16 = Q_I16;
     if x < Q_16 {
         x
     } else {

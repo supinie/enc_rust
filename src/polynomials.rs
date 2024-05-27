@@ -4,7 +4,7 @@ mod sample;
 use crate::{
     errors::{CrystalsError, PackingError},
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
-    params::{SecurityLevel, N, POLYBYTES, Q, Q_I16, Q_U16, Q_U32, Q_DIV, SYMBYTES},
+    params::{SecurityLevel, N, POLYBYTES, Q, Q_DIV, Q_I16, Q_U16, Q_U32, SYMBYTES},
     polynomials::ntt::ZETAS,
 };
 use core::num::TryFromIntError;
@@ -319,7 +319,9 @@ impl Poly<Normalised> {
                         let mut temp = *coeff;
                         temp += (temp >> 15) & Q_I16;
                         *t_elem = u8::try_from(
-                            (((((u64::try_from(temp)?) << 4) + u64::from(Q_U16 / 2)) * Q_DIV) >> 28) & 0xf,
+                            (((((u64::try_from(temp)?) << 4) + u64::from(Q_U16 / 2)) * Q_DIV)
+                                >> 28)
+                                & 0xf,
                         )?;
                     }
 
@@ -340,7 +342,10 @@ impl Poly<Normalised> {
                         let mut temp = *coeff;
                         temp += (temp >> 15) & Q_I16;
                         *t_elem = u8::try_from(
-                            (((((u64::try_from(temp)?) << 5) + u64::from(Q_U32 / 2)) * (Q_DIV / 2)) >> 27) & 0x1f,
+                            (((((u64::try_from(temp)?) << 5) + u64::from(Q_U32 / 2))
+                                * (Q_DIV / 2))
+                                >> 27)
+                                & 0x1f,
                         )?;
                     }
 
@@ -467,9 +472,7 @@ impl Poly<Normalised> {
                         buf_chunk[4] >> 3,
                     ];
                     for (coeff, t_elem) in coeffs_chunk.iter_mut().zip(temp.iter()) {
-                        *coeff = i16::try_from(
-                            ((u32::from(*t_elem) & 31) * Q_U32 + 16) >> 5,
-                        )?;
+                        *coeff = i16::try_from(((u32::from(*t_elem) & 31) * Q_U32 + 16) >> 5)?;
                     }
                 }
                 Ok(Self {

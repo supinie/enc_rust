@@ -4,13 +4,17 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 pub const N: usize = 256;
 
 pub const Q: usize = 3329;
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub const Q_I16: i16 = Q as i16;
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub const Q_U16: u16 = Q as u16;
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub const Q_I32: i32 = Q as i32;
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
 pub const Q_U32: u32 = Q as u32;
 
-pub const Q_DIV: u64 = 80635;
-pub const Q_DIV_VEC: u64 = 1290167;
+pub const Q_DIV: u64 = 80_635; // round(2^28 / Q)
+pub const Q_DIV_VEC: u64 = 1_290_167; // round(2^32 / Q)
 
 pub const SYMBYTES: usize = 32; // size of hashes
 

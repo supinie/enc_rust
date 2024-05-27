@@ -1,6 +1,6 @@
 use crate::{
     errors::{CrystalsError, PackingError},
-    params::{Eta, SecurityLevel, K, N, POLYBYTES, Q_I16, Q_U32, Q_DIV_VEC},
+    params::{Eta, SecurityLevel, K, N, POLYBYTES, Q_DIV_VEC, Q_I16, Q_U32},
     polynomials::{Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced},
 };
 use tinyvec::{array_vec, ArrayVec};
@@ -184,7 +184,9 @@ impl PolyVec<Normalised> {
                             *t_elem = *coeff as u16;
                             *t_elem =
                                 t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q_I16) as u16);
-                            *t_elem = (((((u64::from(*t_elem) << 10) + u64::from(Q_U32 / 2)) * Q_DIV_VEC) >> 32)
+                            *t_elem = (((((u64::from(*t_elem) << 10) + u64::from(Q_U32 / 2))
+                                * Q_DIV_VEC)
+                                >> 32)
                                 & 0x3ff) as u16;
                         }
 
@@ -225,7 +227,9 @@ impl PolyVec<Normalised> {
                             *t_elem = *coeff as u16;
                             *t_elem =
                                 t_elem.wrapping_add((((*t_elem as i16) >> 15) & Q_I16) as u16);
-                            *t_elem = (((((u64::from(*t_elem) << 11) + u64::from(Q_U32 / 2)) * (Q_DIV_VEC / 2)) >> 31)
+                            *t_elem = (((((u64::from(*t_elem) << 11) + u64::from(Q_U32 / 2))
+                                * (Q_DIV_VEC / 2))
+                                >> 31)
                                 & 0x7ff) as u16;
                         }
 

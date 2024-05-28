@@ -30,6 +30,39 @@ enc_rust currently supports ML-KEM as a sole mechanism, but will provide:
 
 ---
 
+### How to use
+
+Currently, enc_rust is not released as a crate, but plans to launch soon. In its current state, it can be used with `cargo add --git https://github.com/supinie/enc_rust`.
+
+#### Example
+
+```rust
+use enc_rust::kem::*;
+
+fn alice(pk: PublicKey) -> (Ciphertext, [u8; 32]) {
+    let (ciphertext, shared_secret) = pk.encapsulate(None, None).unwrap();
+
+    (ciphertext, shared_secret)
+}
+
+fn bob(sk: PrivateKey, ciphertext: &[u8]) -> [u8; 32] {
+    let shared_secret = sk.decapsulate(ciphertext).unwrap();
+
+    shared_secret
+}
+
+
+fn main() {
+    let (pk, sk) = generate_key_pair(None, 3).unwrap();
+
+    let (ciphertext, alice_secret) = alice(pk);
+
+    let bob_secret = bob(sk, ciphertext.as_bytes());
+
+    assert_eq!(alice_secret, bob_secret);
+}
+```
+
 ### Disclaimer
 
 This library and binary wrapper is offered as-is, and without a guarantee. Please exercise caution when using this library in a production application, and we accept no liability for any security issues related to the use of this code.

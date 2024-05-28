@@ -17,9 +17,9 @@ use tinyvec::ArrayVec;
 /// `PrivateKey` struct that can only be generated via the [`generate_key_pair`] function
 /// and is used to [`decapsulate`](PrivateKey::decapsulate) a shared secret from a given ciphertext.
 ///
-/// Can be accessed in byte form by packing into a `u8` array using the [`pack`](PrivateKey::pack) method, 
-/// and made available for use again using the [`unpack`](PrivateKey::unpack) method. The 
-/// array used to pack must be of the correct length for the given security level, see 
+/// Can be accessed in byte form by packing into a `u8` array using the [`pack`](PrivateKey::pack) method,
+/// and made available for use again using the [`unpack`](PrivateKey::unpack) method. The
+/// array used to pack must be of the correct length for the given security level, see
 /// [`pack`](PrivateKey::pack) for more.
 #[derive(Debug, Eq, PartialEq)]
 pub struct PrivateKey {
@@ -33,8 +33,8 @@ pub struct PrivateKey {
 /// corresponding [`PrivateKey`] struct using the [`get_public_key`](PrivateKey::get_public_key)
 /// method and is used to [`encapsulate`](PublicKey::encapsulate) a shared secret.
 ///
-/// Can be packed into a `u8` byte array using the [`pack`](PublicKey::pack) and 
-/// [`unpack`](PublicKey::unpack) methods. The array used to pack must be of the correct length 
+/// Can be packed into a `u8` byte array using the [`pack`](PublicKey::pack) and
+/// [`unpack`](PublicKey::unpack) methods. The array used to pack must be of the correct length
 /// for the given secrity level, see [`pack`](PublicKey::pack) for more.
 #[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey {
@@ -125,11 +125,11 @@ pub trait AcceptableRng: RngCore + CryptoRng {}
 /// Generates a new keypair for a given security level.
 ///
 /// # Inputs
-/// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the 
+/// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
 /// [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-/// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits. 
+/// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
 /// If RNG is not present, then
-/// [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html) 
+/// [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
 /// will be used.
 /// - `k`: The k value corresponding to the security value to be used:
 ///
@@ -422,11 +422,11 @@ impl PublicKey {
     ///
     /// # Inputs
     /// - `seed`: (Optional) a 64 byte slice used as a seed for randomness
-    /// - `rng`: (Optional) RNG to be used during encapsulation. Must satisfy the 
+    /// - `rng`: (Optional) RNG to be used during encapsulation. Must satisfy the
     /// [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-    /// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits. 
+    /// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
     /// If RNG is not present, then
-    /// [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html) 
+    /// [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
     /// will be used.
     ///
     /// # Outputs

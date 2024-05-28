@@ -27,15 +27,18 @@
 //!
 //! ---
 //!
-//! ### Why enc_rust?
+//! ### Why `enc_rust`?
 //!
-//! enc_rust aims to provide a secure, efficient, and ergonomic solution to any problem that requires quantum secure cryptography.
+//! `enc_rust` aims to provide a secure, efficient, and ergonomic solution to any problem that requires quantum secure cryptography.
 //!
 //! - No unsafe code
 //! - `no_std` compatible
 //! - ergonomic
 //!
-//! enc_rust currently supports ML-KEM as a sole mechanism, but will provide:
+//! `enc_rust` currently supports:
+//! - ML-KEM
+//!
+//! but will provide:
 //!
 //! - ML-KEM in hybrid with x25519
 //! - ML-DSA
@@ -45,7 +48,7 @@
 //!
 //! ### How to use
 //!
-//! Currently, enc_rust is not released as a crate, but plans to launch soon. In its current state, it can be used with `cargo add --git https://github.com/supinie/enc_rust`.
+//! Currently, `enc_rust` is not released as a crate, but plans to launch soon. In its current state, it can be used with `cargo add --git https://github.com/supinie/enc_rust`.
 //!
 //! #### Example
 //!

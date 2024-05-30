@@ -4,7 +4,7 @@ mod sample;
 use crate::{
     errors::{CrystalsError, PackingError},
     field_operations::{barrett_reduce, conditional_sub_q, mont_form, montgomery_reduce},
-    params::{SecurityLevel, N, POLYBYTES, Q, Q_DIV, Q_I16, Q_U16, Q_U32, SYMBYTES},
+    params::{SecurityLevel, N, POLYBYTES, Q, Q_DIV, Q_I16, Q_U16, Q_I32, Q_U32, SYMBYTES},
     polynomials::ntt::ZETAS,
 };
 use core::num::TryFromIntError;
@@ -275,7 +275,7 @@ impl Poly<Normalised> {
                     .iter()
                     .map(|&coeff| coeff + ((coeff >> 15) & Q_I16))
                     .map(i32::from)
-                    .map(|coeff| (coeff << 1) + Q as i32 / 2)
+                    .map(|coeff| (coeff << 1) + Q_I32 / 2)
                     .map(|t| ((t * 80635) >> 28) & 1)
                     .enumerate()
                     .try_fold(0, |accumulator, (index, coeff)| {

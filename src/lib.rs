@@ -108,7 +108,6 @@ mod polynomials;
 mod vectors;
 
 mod tests {
-    // mod buffer;
     mod field_operations;
     mod indcpa;
     mod kem;

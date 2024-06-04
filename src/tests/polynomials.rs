@@ -460,6 +460,12 @@ pub(in crate::tests) mod poly_tests {
                         assert_le!(Q as i16 - (original_coeff - new_coeff).abs(), 150, "original: {original_coeff}, new: {new_coeff}");
                     }
             }
+
+            let mut comp_buf = [0u8; 160];
+            let _ = decompressed.compress(&mut comp_buf[..sec_level.poly_compressed_bytes()], &sec_level)
+                .unwrap();
+
+            assert_eq!(comp_buf, buf);
         }
 
         #[test]

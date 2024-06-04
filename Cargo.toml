@@ -34,7 +34,12 @@ zeroize = { version = "1.7.0", default-features = false }
 [dev-dependencies]
 rand = "0.8.5"
 proptest = "1.4.0"
+criterion = "0.3" # 0.5.1 latest
 
 # [workspace]
 # members = ["src/kyber"]
 # default-members = ["src/kyber"]
+
+[[bench]]
+name = "my_benchmark"
+harness = false

@@ -108,7 +108,6 @@ mod polynomials;
 mod vectors;
 
 mod tests {
-    // mod buffer;
     mod field_operations;
     mod indcpa;
     mod kem;
@@ -118,4 +117,13 @@ mod tests {
     mod polynomials;
     mod sample;
     mod vectors;
+}
+
+#[inline]
+pub fn fibonacci(n: u64) -> u64 {
+    match n {
+        0 => 1,
+        1 => 1,
+        n => fibonacci(n-1) + fibonacci(n-2),
+    }
 }

@@ -56,7 +56,7 @@ jobs:
         with:
           components: rustfmt
       - name: Check formatting
-        run: cargo fmt
+        run: cargo fmt --all -- --check
 
   clippy:
     name: Clippy
@@ -70,4 +70,4 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy
+      - run: cargo clippy -- -D warnings

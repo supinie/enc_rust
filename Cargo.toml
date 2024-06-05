@@ -41,5 +41,5 @@ criterion = "0.3" # 0.5.1 latest
 # default-members = ["src/kyber"]
 
 [[bench]]
-name = "my_benchmark"
+name = "api"
 harness = false

@@ -66,7 +66,7 @@ mod field_tests {
             if y < 0 {
                 y += Q as i16;
             }
-            if i < 0 && (-i) % Q as i16 == 0 {
+            if i < 0 && -(i % Q as i16) == 0 {
                 output -= Q as i16;
             }
 

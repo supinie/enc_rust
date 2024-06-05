@@ -55,7 +55,7 @@ impl Ciphertext {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (pk, sk) = generate_keypair_768(None).unwrap();
     /// let (ciphertext_obj, shared_secret) = pk.encapsulate(None, None)?;
     /// let ciphertext = ciphertext_obj.as_bytes();
     ///
@@ -122,22 +122,33 @@ fn new_key_from_seed(
 /// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
 pub trait AcceptableRng: RngCore + CryptoRng {}
 
-/// Generates a new keypair for a given security level.
+pub(crate) fn generate_key_pair(
+    rng: Option<&mut dyn AcceptableRng>,
+    k: K,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+    let mut seed = [0u8; 2 * SYMBYTES];
+
+    if let Some(rng) = rng {
+        rng.try_fill_bytes(&mut seed)?;
+    } else {
+        let mut chacha = ChaCha20Rng::from_entropy();
+        chacha.try_fill_bytes(&mut seed)?;
+    };
+
+    let sec_level = SecurityLevel::new(k);
+
+    new_key_from_seed(&seed, sec_level)
+}
+
+/// Generates a new keypair for the 512 Security Parameters.
 ///
 /// # Inputs
 /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
-/// [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-/// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
-/// If RNG is not present, then
-/// [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
-/// will be used.
-/// - `k`: The k value corresponding to the security value to be used:
-///
-/// | Security Level | K |
-/// |----------------|---|
-/// | 512            | 2 |
-/// | 768            | 3 |
-/// | 1024           | 4 |
+///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
+///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+///   If RNG is not present, then
+///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
+///   will be used.
 ///
 /// # Outputs
 /// - [`PublicKey`] object
@@ -151,32 +162,78 @@ pub trait AcceptableRng: RngCore + CryptoRng {}
 /// # Example
 /// ```
 /// # use enc_rust::kem::*;
-/// let (pk, sk) = generate_key_pair(None, 3)?;
+/// let (pk, sk) = generate_keypair_512(None)?;
 ///
 /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
 /// ```
-pub fn generate_key_pair(
+pub fn generate_keypair_512(
     rng: Option<&mut dyn AcceptableRng>,
-    k: usize,
 ) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
-    let k_result = K::try_from(k);
+    generate_key_pair(rng, K::Two)
+}
 
-    if let Ok(k_value) = k_result {
-        let mut seed = [0u8; 2 * SYMBYTES];
+/// Generates a new keypair for the 768 Security Parameters.
+///
+/// # Inputs
+/// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
+///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
+///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+///   If RNG is not present, then
+///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
+///   will be used.
+///
+/// # Outputs
+/// - [`PublicKey`] object
+/// - [`PrivateKey`] object
+///
+/// # Errors
+/// Will return a [`KeyGenerationError`] if:
+/// - Given invalid K value
+/// - RNG fails
+///
+/// # Example
+/// ```
+/// # use enc_rust::kem::*;
+/// let (pk, sk) = generate_keypair_768(None)?;
+///
+/// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
+/// ```
+pub fn generate_keypair_768(
+    rng: Option<&mut dyn AcceptableRng>,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+    generate_key_pair(rng, K::Three)
+}
 
-        if let Some(rng) = rng {
-            rng.try_fill_bytes(&mut seed)?;
-        } else {
-            let mut chacha = ChaCha20Rng::from_entropy();
-            chacha.try_fill_bytes(&mut seed)?;
-        };
-
-        let sec_level = SecurityLevel::new(k_value);
-
-        return new_key_from_seed(&seed, sec_level);
-    }
-
-    Err(CrystalsError::InvalidK(k).into())
+/// Generates a new keypair for the 1024 Security Parameters.
+///
+/// # Inputs
+/// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
+///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
+///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+///   If RNG is not present, then
+///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
+///   will be used.
+///
+/// # Outputs
+/// - [`PublicKey`] object
+/// - [`PrivateKey`] object
+///
+/// # Errors
+/// Will return a [`KeyGenerationError`] if:
+/// - Given invalid K value
+/// - RNG fails
+///
+/// # Example
+/// ```
+/// # use enc_rust::kem::*;
+/// let (pk, sk) = generate_keypair_1024(None)?;
+///
+/// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
+/// ```
+pub fn generate_keypair_1024(
+    rng: Option<&mut dyn AcceptableRng>,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+    generate_key_pair(rng, K::Four)
 }
 
 impl PrivateKey {
@@ -189,7 +246,7 @@ impl PrivateKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// let (_, sk) = generate_key_pair(None, 3)?;
+    /// let (_, sk) = generate_keypair_768(None)?;
     /// let pk = sk.get_public_key();
     ///
     /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
@@ -206,7 +263,7 @@ impl PrivateKey {
     ///
     /// # Inputs
     /// - `bytes`: Buffer for the private key to be packed into. For corresponding
-    /// security levels, `bytes` should be of length:
+    ///   security levels, `bytes` should be of length:
     ///
     /// | Security Level | Length |
     /// |----------------|--------|
@@ -220,7 +277,7 @@ impl PrivateKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// let (_, sk) = generate_key_pair(None, 3).unwrap();
+    /// let (_, sk) = generate_keypair_768(None).unwrap();
     /// let mut sk_bytes = [0u8; 2400];
     /// sk.pack(&mut sk_bytes)?;
     ///
@@ -262,7 +319,7 @@ impl PrivateKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// # let (pk, new_sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (pk, new_sk) = generate_keypair_768(None).unwrap();
     /// # let mut sk_bytes = [0u8; 2400];
     /// # new_sk.pack(&mut sk_bytes)?;
     /// let sk = PrivateKey::unpack(&sk_bytes)?;
@@ -305,7 +362,7 @@ impl PrivateKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (pk, sk) = generate_keypair_768(None).unwrap();
     /// # let (ciphertext_obj, secret) = pk.encapsulate(None, None).unwrap();
     /// # let ciphertext = ciphertext_obj.as_bytes();
     /// let shared_secret = sk.decapsulate(ciphertext)?;
@@ -356,7 +413,7 @@ impl PublicKey {
     ///
     /// # Inputs
     /// - `bytes`: Buffer for the public key to be packed into. For corresponding
-    /// security levels, `bytes` should be of length:
+    ///   security levels, `bytes` should be of length:
     ///
     /// | Security Level | Length |
     /// |----------------|--------|
@@ -370,7 +427,7 @@ impl PublicKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (pk, sk) = generate_keypair_768(None).unwrap();
     /// let mut pk_bytes = [0u8; 1184];
     /// pk.pack(&mut pk_bytes)?;
     ///
@@ -404,7 +461,7 @@ impl PublicKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// # let (new_pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (new_pk, sk) = generate_keypair_768(None).unwrap();
     /// # let mut pk_bytes = [0u8; 1184];
     /// # new_pk.pack(&mut pk_bytes)?;
     /// let pk = PublicKey::unpack(&pk_bytes)?;
@@ -423,11 +480,11 @@ impl PublicKey {
     /// # Inputs
     /// - `seed`: (Optional) a 64 byte slice used as a seed for randomness
     /// - `rng`: (Optional) RNG to be used during encapsulation. Must satisfy the
-    /// [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-    /// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
-    /// If RNG is not present, then
-    /// [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
-    /// will be used.
+    ///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
+    ///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+    ///   If RNG is not present, then
+    ///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
+    ///   will be used.
     ///
     /// # Outputs
     /// - [`Ciphertext`] object
@@ -441,7 +498,7 @@ impl PublicKey {
     /// # Example
     /// ```
     /// # use enc_rust::kem::*;
-    /// # let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    /// # let (pk, sk) = generate_keypair_768(None).unwrap();
     /// let (ciphertext_obj, shared_secret) = pk.encapsulate(None, None)?;
     ///
     /// # Ok::<(), enc_rust::errors::EncryptionDecryptionError>(())

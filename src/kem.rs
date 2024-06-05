@@ -166,7 +166,9 @@ pub(crate) fn generate_key_pair(
 ///
 /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
 /// ```
-pub fn generate_keypair_512(rng: Option<&mut dyn AcceptableRng>) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+pub fn generate_keypair_512(
+    rng: Option<&mut dyn AcceptableRng>,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
     generate_key_pair(rng, K::Two)
 }
 
@@ -196,7 +198,9 @@ pub fn generate_keypair_512(rng: Option<&mut dyn AcceptableRng>) -> Result<(Publ
 ///
 /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
 /// ```
-pub fn generate_keypair_768(rng: Option<&mut dyn AcceptableRng>) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+pub fn generate_keypair_768(
+    rng: Option<&mut dyn AcceptableRng>,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
     generate_key_pair(rng, K::Three)
 }
 
@@ -226,10 +230,11 @@ pub fn generate_keypair_768(rng: Option<&mut dyn AcceptableRng>) -> Result<(Publ
 ///
 /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
 /// ```
-pub fn generate_keypair_1024(rng: Option<&mut dyn AcceptableRng>) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+pub fn generate_keypair_1024(
+    rng: Option<&mut dyn AcceptableRng>,
+) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
     generate_key_pair(rng, K::Four)
 }
-
 
 impl PrivateKey {
     pub(crate) const fn sec_level(&self) -> SecurityLevel {

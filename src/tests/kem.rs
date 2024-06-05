@@ -1,14 +1,17 @@
 #![allow(warnings)]
 #[cfg(test)]
 mod kem_tests {
-    use crate::kem::*;
+    use crate::{
+        kem::*,
+        tests::params::params_tests::sec_level_strategy,
+    };
     use proptest::prelude::*;
 
     prop_compose! {
         fn new_keypair()
-            (k in 2..=4)
+            (sec_level in sec_level_strategy())
             -> (PublicKey, PrivateKey) {
-                generate_key_pair(None, k as usize).unwrap()
+                generate_key_pair(None, sec_level.k()).unwrap()
             }
     }
 

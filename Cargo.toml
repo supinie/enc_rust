@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["supinie <joshua@supinie.com>"]
 
-description = "A pure rust implementation of the Module-Lattice-based standards [ML-KEM](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.ipd.pdf) and (soon) [ML-DSA](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.ipd.pdf), also known as the PQC scheme [Crystals](https://pq-crystals.org/)."
+description = "A pure rust implementation of the Module-Lattice-based standards ML-KEM and (soon) ML-DSA, also known as the PQC scheme Crystals."
 readme = "README.md"
 keywords = ["cryptography", "post-quantum", "kyber", "no_std", "ml-kem"]
 categories = ["cryptography", "no-std", "no-std::no-alloc"]

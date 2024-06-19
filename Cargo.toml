@@ -4,12 +4,15 @@ version = "0.1.0"
 edition = "2021"
 authors = ["supinie <joshua@supinie.com>"]
 
-description = "A rust implementation of the PQC scheme Crystals (https://pq-crystals.org/)"
+description = "A pure rust implementation of the Module-Lattice-based standards [ML-KEM](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.ipd.pdf) and (soon) [ML-DSA](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.ipd.pdf), also known as the PQC scheme [Crystals](https://pq-crystals.org/)."
 readme = "README.md"
+keywords = ["cryptography", "post-quantum", "kyber", "no_std", "ml-kem"]
+categories = ["cryptography", "no-std", "no-std::no-alloc"]
 
 repository = "https://github.com/supinie/enc_rust"
 
 license = "GPL-3.0-or-later"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

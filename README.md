@@ -8,7 +8,7 @@
 
 ### About
 
-A pure rust implementation of the Module-Lattice-based standards [ML-KEM](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.ipd.pdf) and (soon) [ML-DSA](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.ipd.pdf), also known as the PQC scheme [Crystals](https://pq-crystals.org/).
+A pure rust implementation of the Module-Lattice-based standards [ML-KEM](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.ipd.pdf) and (soon) [ML-DSA](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.ipd.pdf), also known as the PQC scheme [Crystals](https://pq-crystals.org/) Kyber and Dilithium.
 
 This package consists of a library (`enc_rust`), and (soon :TM:) a binary wrapper. The library currently contains implementations for ML-KEM (Kyber), and will in the future also support ML-DSA (Dilithium).
 

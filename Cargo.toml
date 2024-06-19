@@ -1,10 +1,10 @@
 [package]
 name = "enc_rust"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["supinie <joshua@supinie.com>"]
 
-description = "A pure rust implementation of the Module-Lattice-based standards ML-KEM and (soon) ML-DSA, also known as the PQC scheme Crystals."
+description = "A pure rust implementation of the Module-Lattice-based standards ML-KEM and (soon) ML-DSA, also known as the PQC scheme Crystals Kyber and Dilithium."
 readme = "README.md"
 keywords = ["cryptography", "post-quantum", "kyber", "no_std", "ml-kem"]
 categories = ["cryptography", "no-std", "no-std::no-alloc"]

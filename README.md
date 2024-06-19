@@ -53,7 +53,7 @@ fn bob(sk: PrivateKey, ciphertext: &[u8]) -> [u8; 32] {
 
 
 fn main() {
-    let (pk, sk) = generate_key_pair(None, 3).unwrap();
+    let (pk, sk) = generate_keypair_768(None).unwrap();
 
     let (ciphertext, alice_secret) = alice(pk);
 

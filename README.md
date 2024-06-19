@@ -2,7 +2,7 @@
 
 # enc_rust
 
-![Crates.io Version](https://img.shields.io/crates/v/enc_rust?link=https%3A%2F%2Fcrates.io%2Fcrates%2Fenc_rust)
+[![Crates.io Version](https://img.shields.io/crates/v/enc_rust)](https://crates.io/crates/enc_rust)
 [![codecov](https://codecov.io/github/supinie/enc_rust/branch/main/graph/badge.svg?token=S7UTUFQ8M5)](https://codecov.io/github/supinie/enc_rust)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![dependency status](https://deps.rs/repo/github/supinie/enc_rust/status.svg)](https://deps.rs/repo/github/supinie/enc_rust)

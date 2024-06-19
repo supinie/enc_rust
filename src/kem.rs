@@ -14,7 +14,7 @@ use sha3::{
 use subtle::{ConditionallySelectable, ConstantTimeEq};
 use tinyvec::ArrayVec;
 
-/// `PrivateKey` struct that can only be generated via the [`generate_key_pair`] function
+/// `PrivateKey` struct that can only be generated via the [`generate_keypair_512`], [`generate_keypair_768`], or [`generate_keypair_1024`] functions
 /// and is used to [`decapsulate`](PrivateKey::decapsulate) a shared secret from a given ciphertext.
 ///
 /// Can be accessed in byte form by packing into a `u8` array using the [`pack`](PrivateKey::pack) method,
@@ -29,7 +29,7 @@ pub struct PrivateKey {
     z: [u8; SYMBYTES],
 }
 
-/// `PublicKey` struct that can only be generated via the [`generate_key_pair`] or from the
+/// `PublicKey` struct that can only be generated via the [`generate_keypair_512`], [`generate_keypair_768`], or [`generate_keypair_1024`] functions or from the
 /// corresponding [`PrivateKey`] struct using the [`get_public_key`](PrivateKey::get_public_key)
 /// method and is used to [`encapsulate`](PublicKey::encapsulate) a shared secret.
 ///

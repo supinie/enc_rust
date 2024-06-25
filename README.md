@@ -33,7 +33,13 @@ enc_rust currently supports ML-KEM as a sole mechanism, but will provide:
 
 ### How to use
 
-Currently, enc_rust is not released as a crate, but plans to launch soon. In its current state, it can be used with `cargo add --git https://github.com/supinie/enc_rust`.
+#### Install
+
+`cargo add enc_rust`
+
+or
+
+`cargo add --git https://github.com/supinie/enc_rust`.
 
 #### Example
 

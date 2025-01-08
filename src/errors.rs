@@ -13,7 +13,7 @@ pub enum CrystalsError {
     InvalidSeedLength(usize, usize),
     InternalError(),
     InvalidK(usize),
-    InvalidCiphertextLength(usize, usize, K),
+    InvalidCiphertextLength(usize),
 }
 
 impl Display for CrystalsError {
@@ -24,7 +24,7 @@ impl Display for CrystalsError {
             Self::InvalidSeedLength(seed_len, expected_seed_len) => write!(f, "Invalid seed length, expected {expected_seed_len}, got {seed_len}"),
             Self::InternalError() => write!(f, "Unexpected internal error"),
             Self::InvalidK(k) => write!(f, "Recieved invalid k value, {k}, expected 2, 3, or 4"),
-            Self::InvalidCiphertextLength(ciphertext_len, expected_ciphertext_len, sec_level) => write!(f, "Invalid ciphertext length, expected {expected_ciphertext_len}, got {ciphertext_len} (key security level: {sec_level})"),
+            Self::InvalidCiphertextLength(ciphertext_len) => write!(f, "Invalid ciphertext length, expected 768, 1088, or 1568, got {ciphertext_len}"),
         }
     }
 }
@@ -96,6 +96,7 @@ impl From<rand_core::Error> for KeyGenerationError {
 #[derive(Debug)]
 pub enum EncryptionDecryptionError {
     Crystals(CrystalsError),
+    KeyGenerationError(KeyGenerationError),
     TryFromInt(TryFromIntError),
     Packing(PackingError),
     Rand(rand_core::Error),
@@ -104,6 +105,12 @@ pub enum EncryptionDecryptionError {
 impl From<CrystalsError> for EncryptionDecryptionError {
     fn from(error: CrystalsError) -> Self {
         Self::Crystals(error)
+    }
+}
+
+impl From<KeyGenerationError> for EncryptionDecryptionError {
+    fn from(error: KeyGenerationError) -> Self {
+        Self::KeyGenerationError(error)
     }
 }
 

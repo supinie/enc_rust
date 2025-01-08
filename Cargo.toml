@@ -16,6 +16,10 @@ license = "GPL-3.0-or-later"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+decap_key = [] # Use the true key instead of seed for PrivateKey. Default uses seed.
+
 [profile.release]
 opt-level = "s"
 lto = false

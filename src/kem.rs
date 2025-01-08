@@ -18,11 +18,25 @@ use tinyvec::ArrayVec;
 /// and is used to [`decapsulate`](PrivateKey::decapsulate) a shared secret from a given ciphertext.
 ///
 /// Can be accessed in byte form by packing into a `u8` array using the [`pack`](PrivateKey::pack) method,
-/// and made available for use again using the [`unpack`](PrivateKey::unpack) method. The
+/// and made available for use again using the [`unpack`](PrivateKey::unpack) method. If using
+/// "decap_key" feature, the
 /// array used to pack must be of the correct length for the given security level, see
 /// [`pack`](PrivateKey::pack) for more.
 #[derive(Debug, Eq, PartialEq)]
 pub struct PrivateKey {
+    #[cfg(not(feature = "decap_key"))]
+    key: PrivateSeed,
+    #[cfg(feature = "decap_key")]
+    key: PrivateKeyInner,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct PrivateSeed {
+    seed: [u8; 2 * SYMBYTES],
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct PrivateKeyInner {
     sk: IndcpaPrivateKey,
     pk: IndcpaPublicKey,
     h_pk: [u8; SYMBYTES],
@@ -100,7 +114,7 @@ fn shake256_from(input: &[u8]) -> [u8; SHAREDSECRETBYTES] {
 fn new_key_from_seed(
     seed: &[u8],
     sec_level: SecurityLevel,
-) -> Result<(PublicKey, PrivateKey), KeyGenerationError> {
+) -> Result<(PublicKey, PrivateKeyInner), KeyGenerationError> {
     if seed.len() != 2 * SYMBYTES {
         return Err(CrystalsError::InvalidSeedLength(seed.len(), 2 * SYMBYTES).into());
     }
@@ -114,7 +128,7 @@ fn new_key_from_seed(
 
     let h_pk: [u8; SYMBYTES] = sha3_256_from(&packed_pk[..sec_level.indcpa_public_key_bytes()]);
 
-    Ok((PublicKey { pk, h_pk }, PrivateKey { sk, pk, h_pk, z }))
+    Ok((PublicKey { pk, h_pk }, PrivateKeyInner { sk, pk, h_pk, z }))
 }
 
 /// Acceptable RNG to be used in encapsulation and key generation must have the
@@ -137,7 +151,17 @@ pub(crate) fn generate_key_pair(
 
     let sec_level = SecurityLevel::new(k);
 
-    new_key_from_seed(&seed, sec_level)
+    let (pk, sk_inner) = new_key_from_seed(&seed, sec_level)?;
+
+    Ok((
+        pk,
+        PrivateKey {
+            #[cfg(not(feature = "decap_key"))]
+            key: PrivateSeed { seed },
+            #[cfg(feature = "decap_key")]
+            key: sk_inner,
+        },
+    ))
 }
 
 /// Generates a new keypair for the 512 Security Parameters.
@@ -237,27 +261,37 @@ pub fn generate_keypair_1024(
 }
 
 impl PrivateKey {
+    #[cfg(feature = "decap_key")]
     pub(crate) const fn sec_level(&self) -> SecurityLevel {
-        self.sk.sec_level()
+        self.key.sk.sec_level()
     }
 
-    /// Returns the corresponding public key for a given private key
-    ///
-    /// # Example
-    /// ```
-    /// # use enc_rust::kem::*;
-    /// let (_, sk) = generate_keypair_768(None)?;
-    /// let pk = sk.get_public_key();
-    ///
-    /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
-    /// ```
-    #[must_use]
-    pub const fn get_public_key(&self) -> PublicKey {
-        PublicKey {
-            pk: self.pk,
-            h_pk: self.h_pk,
-        }
-    }
+    // /// Returns the corresponding public key for a given private key
+    // ///
+    // /// # Example
+    // /// ```
+    // /// # use enc_rust::kem::*;
+    // /// let (_, sk) = generate_keypair_768(None)?;
+    // /// let pk = sk.get_public_key();
+    // ///
+    // /// # Ok::<(), enc_rust::errors::KeyGenerationError>(())
+    // /// ```
+    // #[must_use]
+    // pub const fn get_public_key(&self) -> PublicKey {
+    //     #[cfg(not(feature = "decap_key"))]
+    //     {
+    //         let (pk, _) = new_key_from_seed(&self.key.seed, self.key.sec_level).unwrap();
+
+    //         pk
+    //     }
+    //     #[cfg(feature = "decap_key")]
+    //     {
+    //         PublicKey {
+    //             pk: self.key.pk,
+    //             h_pk: self.key.h_pk,
+    //         }
+    //     }
+    // }
 
     /// Packs private key into a given buffer
     ///
@@ -278,11 +312,21 @@ impl PrivateKey {
     /// ```
     /// # use enc_rust::kem::*;
     /// let (_, sk) = generate_keypair_768(None).unwrap();
-    /// let mut sk_bytes = [0u8; 2400];
-    /// sk.pack(&mut sk_bytes)?;
+    /// #[cfg(feature = "decap_key")]
+    /// {
+    ///     let mut sk_bytes = [0u8; 2400];
+    ///     sk.pack(&mut sk_bytes)?;
+    /// }
+    /// #[cfg(not(feature = "decap_key"))]
+    /// let sk_bytes = sk.pack();
     ///
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
+    #[cfg(not(feature = "decap_key"))]
+    pub fn pack(&self) -> [u8; 2 * SYMBYTES] {
+        self.key.seed.clone()
+    }
+    #[cfg(feature = "decap_key")]
     pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
         let sec_level = self.sec_level();
 
@@ -297,10 +341,10 @@ impl PrivateKey {
         let (sk_bytes, rest) = bytes.split_at_mut(sec_level.indcpa_private_key_bytes());
         let (pk_bytes, rest) = rest.split_at_mut(sec_level.indcpa_public_key_bytes());
         let (h_pk_bytes, z_bytes) = rest.split_at_mut(SYMBYTES);
-        self.sk.pack(sk_bytes)?;
-        self.pk.pack(pk_bytes)?;
-        h_pk_bytes.copy_from_slice(&self.h_pk);
-        z_bytes.copy_from_slice(&self.z);
+        self.key.sk.pack(sk_bytes)?;
+        self.key.pk.pack(pk_bytes)?;
+        h_pk_bytes.copy_from_slice(&self.key.h_pk);
+        z_bytes.copy_from_slice(&self.key.z);
 
         Ok(())
     }
@@ -320,12 +364,29 @@ impl PrivateKey {
     /// ```
     /// # use enc_rust::kem::*;
     /// # let (pk, new_sk) = generate_keypair_768(None).unwrap();
-    /// # let mut sk_bytes = [0u8; 2400];
-    /// # new_sk.pack(&mut sk_bytes)?;
+    /// # #[cfg(feature = "decap_key")]
+    /// # {
+    /// #     let mut sk_bytes = [0u8; 2400];
+    /// #     new_sk.pack(&mut sk_bytes)?;
+    /// # }
+    /// # #[cfg(not(feature = "decap_key"))]
+    /// # let sk_bytes = new_sk.pack();
+    ///
+    /// #[cfg(feature = "decap_key")]
     /// let sk = PrivateKey::unpack(&sk_bytes)?;
+    ///
+    /// #[cfg(not(feature = "decap_key"))]
+    /// let sk = PrivateKey::unpack(sk_bytes);
     ///
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
+    #[cfg(not(feature = "decap_key"))]
+    pub fn unpack(bytes: [u8; 2 * SYMBYTES]) -> Self {
+        Self {
+            key: PrivateSeed { seed: bytes },
+        }
+    }
+    #[cfg(feature = "decap_key")]
     pub fn unpack(bytes: &[u8]) -> Result<Self, PackingError> {
         let sec_level = match bytes.len() {
             1632 => SecurityLevel::new(K::Two),
@@ -344,7 +405,9 @@ impl PrivateKey {
         let mut z = [0u8; SYMBYTES];
         z.copy_from_slice(z_bytes);
 
-        Ok(Self { sk, pk, h_pk, z })
+        Ok(Self {
+            key: PrivateKeyInner { sk, pk, h_pk, z },
+        })
     }
 
     /// Decapsulates a ciphertext (given as a byte slice) into the shared secret
@@ -373,25 +436,39 @@ impl PrivateKey {
         &self,
         ciphertext: &[u8],
     ) -> Result<[u8; SHAREDSECRETBYTES], EncryptionDecryptionError> {
-        let sec_level = self.sec_level();
+        let valid_bytes = [
+            SecurityLevel::new(K::Two).ciphertext_bytes(),
+            SecurityLevel::new(K::Three).ciphertext_bytes(),
+            SecurityLevel::new(K::Four).ciphertext_bytes(),
+        ];
 
-        if ciphertext.len() != sec_level.ciphertext_bytes() {
-            return Err(CrystalsError::InvalidCiphertextLength(
-                ciphertext.len(),
-                sec_level.ciphertext_bytes(),
-                sec_level.k(),
-            )
-            .into());
-        }
+        let sec_level = match ciphertext.len() {
+            len if len == valid_bytes[0] => {
+                Ok::<SecurityLevel, CrystalsError>(SecurityLevel::new(K::Two))
+            }
+            len if len == valid_bytes[1] => {
+                Ok::<SecurityLevel, CrystalsError>(SecurityLevel::new(K::Three))
+            }
+            len if len == valid_bytes[2] => {
+                Ok::<SecurityLevel, CrystalsError>(SecurityLevel::new(K::Four))
+            }
+            _ => Err(CrystalsError::InvalidCiphertextLength(ciphertext.len()).into()),
+        }?;
 
-        let m = self.sk.decrypt(ciphertext)?;
+        #[cfg(not(feature = "decap_key"))]
+        let (_, inner) = new_key_from_seed(&self.key.seed, sec_level)?;
+        #[cfg(feature = "decap_key")]
+        let inner = &self.key;
 
-        let (k, r) = sha3_512_from(&[m, self.h_pk].concat());
+        let m = inner.sk.decrypt(ciphertext)?;
 
-        let k_bar = shake256_from(&[&self.z, ciphertext].concat());
+        let (k, r) = sha3_512_from(&[m, inner.h_pk].concat());
+
+        let k_bar = shake256_from(&[&inner.z, ciphertext].concat());
 
         let mut ct = [0u8; MAX_CIPHERTEXT]; // max indcpa_bytes()
-        self.pk
+        inner
+            .pk
             .encrypt(&m, &r, &mut ct[..sec_level.indcpa_bytes()])?;
 
         let equal = ct.ct_eq(ciphertext);

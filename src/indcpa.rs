@@ -26,11 +26,13 @@ impl PrivateKey {
     }
 
     // buf should be of length indcpa_private_key_bytes
+    #[cfg(feature = "decap_key")]
     pub(crate) fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {
         self.secret.pack(buf)
     }
 
     // buf should be of length indcpa_private_key_bytes
+    #[cfg(feature = "decap_key")]
     pub(crate) fn unpack(buf: &[u8]) -> Result<Self, PackingError> {
         let secret = PolyVec::unpack(buf)?.normalise();
         Ok(Self { secret })

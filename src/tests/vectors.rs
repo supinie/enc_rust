@@ -341,11 +341,6 @@ mod vec_tests {
         }
 
         #[test]
-        fn new_test(sec_level in sec_level_strategy()) {
-            let output = PolyVec::new(sec_level.k());
-        }
-
-        #[test]
         fn pack_test(poly_vec in new_poly_vec()) {
             let mut buf = [0u8; 4 * POLYBYTES]; // max buf length needed
             let k: usize = poly_vec.sec_level().k().into();

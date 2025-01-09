@@ -65,11 +65,6 @@ mod matrix_tests {
         }
 
         #[test]
-        fn sec_level_test(mat in new_matrix()) {
-            let sec_level = mat.sec_level();
-        }
-
-        #[test]
         fn vectors_test(mat in new_matrix()) {
             let vecs = mat.vectors();
         }

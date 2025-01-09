@@ -1,7 +1,7 @@
 #![allow(warnings)]
 #[cfg(test)]
 mod kem_tests {
-    use crate::{kem::*, tests::params::params_tests::sec_level_strategy};
+    use crate::{kem::*, tests::params::params_tests::sec_level_strategy, params::SecurityLevel};
     use proptest::prelude::*;
 
     prop_compose! {
@@ -39,7 +39,11 @@ mod kem_tests {
             #[cfg(not(feature = "decap_key"))]
             {
                 let sk_bytes = sk.pack();
-                let unpacked_sk = PrivateKey::unpack(sk_bytes);
+                let unpacked_sk = match pk.sec_level() {
+                    SecurityLevel::FiveOneTwo { .. } => PrivateKey::unpack_512(sk_bytes),
+                    SecurityLevel::SevenSixEight { .. } => PrivateKey::unpack_768(sk_bytes),
+                    SecurityLevel::TenTwoFour { .. } => PrivateKey::unpack_1024(sk_bytes),
+                };
 
                 assert_eq!(sk, unpacked_sk);
             }

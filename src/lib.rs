@@ -1,4 +1,3 @@
-#![allow(unused)]
 #![forbid(unsafe_code)]
 #![warn(
     clippy::cast_lossless,
@@ -17,6 +16,7 @@
     unused_lifetimes,
     unused_qualifications
 )]
+#![allow(clippy::too_long_first_doc_paragraph)]
 #![no_std]
 
 //! ### About

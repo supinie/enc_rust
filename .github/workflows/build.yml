@@ -33,6 +33,11 @@ jobs:
         env:
           RUST_BACKTRACE: 1
 
+      - name: cargo test all
+        run: cargo test --all-features || cargo test --all-features || cargo test --all-features
+        env:
+          RUST_BACKTRACE: 1
+
       - name: Get coverage
         run: ./.github/coverage --lcov --output-path cov_report || ./.github/coverage --lcov --output-path cov_report || ./.github/coverage --lcov --output-path cov_report
 

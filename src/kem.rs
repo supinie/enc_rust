@@ -19,7 +19,7 @@ use tinyvec::ArrayVec;
 ///
 /// Can be accessed in byte form by packing into a `u8` array using the [`pack`](PrivateKey::pack) method,
 /// and made available for use again using the [`unpack`](PrivateKey::unpack) method. If using
-/// "decap_key" feature, the
+/// `decap_key` feature, the
 /// array used to pack must be of the correct length for the given security level, see
 /// [`pack`](PrivateKey::pack) for more.
 #[derive(Debug, Eq, PartialEq)]
@@ -322,9 +322,10 @@ impl PrivateKey {
     ///
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
+    #[must_use]
     #[cfg(not(feature = "decap_key"))]
-    pub fn pack(&self) -> [u8; 2 * SYMBYTES] {
-        self.key.seed.clone()
+    pub const fn pack(&self) -> [u8; 2 * SYMBYTES] {
+        self.key.seed
     }
     #[cfg(feature = "decap_key")]
     pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
@@ -380,8 +381,9 @@ impl PrivateKey {
     ///
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
+    #[must_use]
     #[cfg(not(feature = "decap_key"))]
-    pub fn unpack(bytes: [u8; 2 * SYMBYTES]) -> Self {
+    pub const fn unpack(bytes: [u8; 2 * SYMBYTES]) -> Self {
         Self {
             key: PrivateSeed { seed: bytes },
         }
@@ -452,7 +454,7 @@ impl PrivateKey {
             len if len == valid_bytes[2] => {
                 Ok::<SecurityLevel, CrystalsError>(SecurityLevel::new(K::Four))
             }
-            _ => Err(CrystalsError::InvalidCiphertextLength(ciphertext.len()).into()),
+            _ => Err(CrystalsError::InvalidCiphertextLength(ciphertext.len())),
         }?;
 
         #[cfg(not(feature = "decap_key"))]

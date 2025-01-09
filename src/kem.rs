@@ -14,11 +14,12 @@ use sha3::{
 use subtle::{ConditionallySelectable, ConstantTimeEq};
 use tinyvec::ArrayVec;
 
-/// `PrivateKey` struct that can only be generated via the [`generate_keypair_512`], [`generate_keypair_768`], or 
+/// `PrivateKey` struct that can only be generated via the [`generate_keypair_512`], [`generate_keypair_768`], or
 /// [`generate_keypair_1024`] functions and is used to [`decapsulate`](PrivateKey::decapsulate) a shared secret from a given ciphertext.
 ///
 /// Can be accessed in byte form by packing into a `u8` array using the [`pack`](PrivateKey::pack) method,
-/// and made available for use again using the [`unpack`](PrivateKey::unpack) method. 
+/// and made available for use again using the [`unpack`](PrivateKey::unpack) method if `decap_key`
+/// feature flag is set, or [`unpack_512`](PrivateKey::unpack_512), [`unpack_768`](PrivateKey::unpack_768), or [`unpack_1024`](PrivateKey::unpack_1024).
 ///
 /// If using `decap_key` feature, the array used to pack must be of the correct length for the given security level, see
 /// [`pack`](PrivateKey::pack) for more.

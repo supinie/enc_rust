@@ -1,7 +1,7 @@
 #![allow(warnings)]
 #[cfg(test)]
 mod kem_tests {
-    use crate::{kem::*, tests::params::params_tests::sec_level_strategy, params::SecurityLevel};
+    use crate::{kem::*, params::SecurityLevel, tests::params::params_tests::sec_level_strategy};
     use proptest::prelude::*;
 
     prop_compose! {

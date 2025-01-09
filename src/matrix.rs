@@ -1,6 +1,6 @@
 use crate::{
     errors::CrystalsError,
-    params::{SecurityLevel, K},
+    params::K,
     polynomials::{Montgomery, Poly, State},
     vectors::PolyVec,
 };
@@ -13,10 +13,6 @@ pub struct Matrix<S: State> {
 }
 
 impl<S: State + Copy> Matrix<S> {
-    pub(crate) const fn sec_level(&self) -> SecurityLevel {
-        SecurityLevel::new(self.sec_level)
-    }
-
     pub(crate) fn vectors(&self) -> &[PolyVec<S>] {
         &self.polyvecs.as_slice()[..self.sec_level.into()]
     }

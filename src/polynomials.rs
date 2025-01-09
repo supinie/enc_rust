@@ -204,6 +204,8 @@ impl Poly<Normalised> {
     // ```
     // let poly = Poly::new();
     // ```
+    // This is actually used, removing it creates errors but clippy thinks its not...
+    #[allow(dead_code)]
     pub const fn new() -> Self {
         Self {
             coeffs: [0; N],

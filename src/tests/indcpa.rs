@@ -78,6 +78,7 @@ pub(in crate::tests) mod indcpa_tests {
             assert_eq!(message, plaintext, "security level: {:?}", sec_level);
         }
 
+        #[cfg(feature = "decap_key")]
         #[test]
         fn key_pack_unpack(
             (priv_key, pub_key) in new_indcpa_keypair(),

@@ -3,7 +3,7 @@ use crate::{
     params::{Eta, SecurityLevel, K, N, POLYBYTES, Q_DIV_VEC, Q_I16, Q_U32},
     polynomials::{Barrett, Montgomery, Normalised, Poly, Reduced, State, Unnormalised, Unreduced},
 };
-use tinyvec::{array_vec, ArrayVec};
+use tinyvec::ArrayVec;
 
 #[derive(Copy, Clone, Default, PartialEq, Debug, Eq)]
 pub struct PolyVec<S: State> {
@@ -120,22 +120,6 @@ impl<S: State + Reduced + Copy> PolyVec<S> {
 }
 
 impl PolyVec<Normalised> {
-    // Create a new, empty polyvec.
-    pub(crate) fn new(k: K) -> Self {
-        let polynomials = match k {
-            K::Two => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new()),
-            K::Three => array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new()),
-            K::Four => {
-                array_vec!([Poly<Normalised>; 4] => Poly::new(), Poly::new(), Poly::new(), Poly::new())
-            }
-        };
-
-        Self {
-            polynomials,
-            sec_level: k,
-        }
-    }
-
     // buf should be of length k * POLYBYTES
     // packs the polyvec poly-wise into the buffer
     pub(crate) fn pack(&self, buf: &mut [u8]) -> Result<(), PackingError> {

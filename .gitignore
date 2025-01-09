@@ -21,3 +21,5 @@ proptest-regressions
 
 # Flamegraph
 benches/flamegraph/
+
+.direnv/

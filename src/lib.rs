@@ -18,6 +18,7 @@
 )]
 #![allow(clippy::too_long_first_doc_paragraph)]
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 //! ### About
 

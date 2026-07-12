@@ -583,11 +583,11 @@ impl PrivateKey {
             .pk
             .encrypt(&m, &r, &mut ct[..sec_level.indcpa_bytes()])?;
 
-        let equal = ct.ct_eq(ciphertext);
+        let equal = ct[..sec_level.indcpa_bytes()].ct_eq(ciphertext);
 
         Ok(k.iter()
             .zip(k_bar.iter())
-            .map(|(x, y)| u8::conditional_select(x, y, equal))
+            .map(|(x, y)| u8::conditional_select(y, x, equal))
             .collect::<ArrayVec<[u8; SHAREDSECRETBYTES]>>()
             .into_inner())
     }

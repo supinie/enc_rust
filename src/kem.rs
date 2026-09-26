@@ -310,7 +310,8 @@ impl PrivateKey {
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
     #[must_use]
-    #[cfg(not(feature = "decap_key"))]
+    #[cfg(any(doc, not(feature = "decap_key")))]
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "decap_key"))))]
     pub const fn pack(&self) -> [u8; 2 * SYMBYTES] {
         self.key.seed
     }
@@ -344,7 +345,8 @@ impl PrivateKey {
     ///
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
-    #[cfg(feature = "decap_key")]
+    #[cfg(any(doc, feature = "decap_key"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "decap_key")))]
     pub fn pack(&self, bytes: &mut [u8]) -> Result<(), PackingError> {
         let sec_level = self.sec_level();
 
@@ -393,7 +395,8 @@ impl PrivateKey {
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
     #[must_use]
-    #[cfg(not(feature = "decap_key"))]
+    #[cfg(any(doc, not(feature = "decap_key")))]
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "decap_key"))))]
     pub const fn unpack_512(bytes: [u8; 2 * SYMBYTES]) -> Self {
         Self {
             key: PrivateSeed { seed: bytes },
@@ -427,7 +430,8 @@ impl PrivateKey {
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
     #[must_use]
-    #[cfg(not(feature = "decap_key"))]
+    #[cfg(any(doc, not(feature = "decap_key")))]
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "decap_key"))))]
     pub const fn unpack_768(bytes: [u8; 2 * SYMBYTES]) -> Self {
         Self {
             key: PrivateSeed { seed: bytes },
@@ -461,7 +465,8 @@ impl PrivateKey {
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
     #[must_use]
-    #[cfg(not(feature = "decap_key"))]
+    #[cfg(any(doc, not(feature = "decap_key")))]
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "decap_key"))))]
     pub const fn unpack_1024(bytes: [u8; 2 * SYMBYTES]) -> Self {
         Self {
             key: PrivateSeed { seed: bytes },
@@ -494,7 +499,8 @@ impl PrivateKey {
     ///
     /// # Ok::<(), enc_rust::errors::PackingError>(())
     /// ```
-    #[cfg(feature = "decap_key")]
+    #[cfg(any(doc, feature = "decap_key"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "decap_key")))]
     pub fn unpack(bytes: &[u8]) -> Result<Self, PackingError> {
         let sec_level = match bytes.len() {
             1632 => SecurityLevel::new(K::Two),

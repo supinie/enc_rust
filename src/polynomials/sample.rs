@@ -4,10 +4,7 @@ use crate::{
     polynomials::{Montgomery, Poly},
 };
 use byteorder::{ByteOrder, LittleEndian};
-use sha3::{
-    digest::{ExtendableOutput, Update, XofReader},
-    Shake128, Shake256,
-};
+use shake::{ExtendableOutput, Shake128, Shake256, Update, XofReader};
 
 impl Poly<Montgomery> {
     // Sample our polynomial from a centered binomial distribution

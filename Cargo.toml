@@ -1,7 +1,8 @@
 [package]
 name = "enc_rust"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
+rust-version = "1.85"
 authors = ["supinie <joshua@supinie.com>"]
 
 description = "A pure rust implementation of the Module-Lattice-based standards ML-KEM and (soon) ML-DSA, also known as the PQC scheme Crystals Kyber and Dilithium."
@@ -31,20 +32,22 @@ strip = "symbols"
 debug = true
 
 [dependencies]
-byteorder = "1.4.3"
+byteorder = "1.5.0"
 more-asserts = "0.3.1"
-num_enum = { version = "0.7.1", default-features = false }
-rand_chacha = { version = "0.3.1", default-features = false }
-rand_core = { version = "0.6.4", features = ["getrandom"] }
-sha3 = "0.10.8"
-subtle = { version = "2.5.0", default-features = false }
-tinyvec = "1.6.0"
-zeroize = { version = "1.7.0", default-features = false }
+num_enum = { version = "0.7.6", default-features = false }
+rand_chacha = { version = "0.10.0", default-features = false }
+rand_core = "0.10.1"
+getrandom = { version = "0.4.3", features = ["sys_rng"] }
+sha3 = "0.12.0"
+shake = { version = "0.1.0", default-features = false }
+subtle = { version = "2.6.1", default-features = false }
+tinyvec = "1.13.3"
+zeroize = { version = "1.9.0", default-features = false }
 
 [dev-dependencies]
-rand = "0.8.5"
-proptest = "1.4.0"
-criterion = "0.5.1"
+rand = "0.10.3"
+proptest = "1.11.0"
+criterion = "0.8.2"
 
 # [workspace]
 # members = ["src/kyber"]

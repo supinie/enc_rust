@@ -5,12 +5,11 @@ use crate::{
     },
     params::{SecurityLevel, K, MAX_CIPHERTEXT, SHAREDSECRETBYTES, SYMBYTES},
 };
+use getrandom::SysRng;
 use rand_chacha::ChaCha20Rng;
-use rand_core::{CryptoRng, RngCore, SeedableRng};
-use sha3::{
-    digest::{ExtendableOutput, Update, XofReader},
-    Digest, Sha3_256, Sha3_512, Shake256,
-};
+use rand_core::{CryptoRng, Rng, SeedableRng};
+use sha3::{Digest, Sha3_256, Sha3_512};
+use shake::{ExtendableOutput, Shake256, Update, XofReader};
 use subtle::{ConditionallySelectable, ConstantTimeEq};
 use tinyvec::ArrayVec;
 
@@ -132,9 +131,10 @@ fn new_key_from_seed(
 }
 
 /// Acceptable RNG to be used in encapsulation and key generation must have the
-/// [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-/// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
-pub trait AcceptableRng: RngCore + CryptoRng {}
+/// [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) trait.
+pub trait AcceptableRng: CryptoRng {}
+
+impl<R: CryptoRng + ?Sized> AcceptableRng for R {}
 
 pub(crate) fn generate_key_pair(
     rng: Option<&mut dyn AcceptableRng>,
@@ -143,11 +143,11 @@ pub(crate) fn generate_key_pair(
     let mut seed = [0u8; 2 * SYMBYTES];
 
     if let Some(rng) = rng {
-        rng.try_fill_bytes(&mut seed)?;
+        rng.fill_bytes(&mut seed);
     } else {
-        let mut chacha = ChaCha20Rng::from_entropy();
-        chacha.try_fill_bytes(&mut seed)?;
-    };
+        let mut chacha = ChaCha20Rng::try_from_rng(&mut SysRng)?;
+        chacha.fill_bytes(&mut seed);
+    }
 
     let sec_level = SecurityLevel::new(k);
 
@@ -170,8 +170,7 @@ pub(crate) fn generate_key_pair(
 ///
 /// # Inputs
 /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
-///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) trait.
 ///   If RNG is not present, then
 ///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
 ///   will be used.
@@ -202,8 +201,7 @@ pub fn generate_keypair_512(
 ///
 /// # Inputs
 /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
-///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) trait.
 ///   If RNG is not present, then
 ///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
 ///   will be used.
@@ -234,8 +232,7 @@ pub fn generate_keypair_768(
 ///
 /// # Inputs
 /// - `rng`: (Optional) RNG to be used when generating the keypair. Must satisfy the
-///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) trait.
 ///   If RNG is not present, then
 ///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
 ///   will be used.
@@ -669,8 +666,7 @@ impl PublicKey {
     /// # Inputs
     /// - `seed`: (Optional) a 64 byte slice used as a seed for randomness
     /// - `rng`: (Optional) RNG to be used during encapsulation. Must satisfy the
-    ///   [`RngCore`](https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html) and
-    ///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) traits.
+    ///   [`CryptoRng`](https://docs.rs/rand_core/latest/rand_core/trait.CryptoRng.html) trait.
     ///   If RNG is not present, then
     ///   [`ChaCha20`](https://docs.rs/rand_chacha/latest/rand_chacha/struct.ChaCha20Rng.html)
     ///   will be used.
@@ -706,10 +702,10 @@ impl PublicKey {
             }
             m.copy_from_slice(seed);
         } else if let Some(rng) = rng {
-            rng.try_fill_bytes(&mut m)?;
+            rng.fill_bytes(&mut m);
         } else {
-            let mut chacha = ChaCha20Rng::from_entropy();
-            chacha.try_fill_bytes(&mut m)?;
+            let mut chacha = ChaCha20Rng::try_from_rng(&mut SysRng)?;
+            chacha.fill_bytes(&mut m);
         }
 
         let (k, r) = sha3_512_from(&[m, self.h_pk].concat());

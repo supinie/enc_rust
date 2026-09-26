@@ -66,7 +66,7 @@ pub enum KeyGenerationError {
     Crystals(CrystalsError),
     TryFromSlice(TryFromSliceError),
     Packing(PackingError),
-    Rand(rand_core::Error),
+    Rand(getrandom::Error),
 }
 
 impl From<CrystalsError> for KeyGenerationError {
@@ -87,8 +87,8 @@ impl From<PackingError> for KeyGenerationError {
     }
 }
 
-impl From<rand_core::Error> for KeyGenerationError {
-    fn from(error: rand_core::Error) -> Self {
+impl From<getrandom::Error> for KeyGenerationError {
+    fn from(error: getrandom::Error) -> Self {
         Self::Rand(error)
     }
 }
@@ -99,7 +99,7 @@ pub enum EncryptionDecryptionError {
     KeyGenerationError(KeyGenerationError),
     TryFromInt(TryFromIntError),
     Packing(PackingError),
-    Rand(rand_core::Error),
+    Rand(getrandom::Error),
 }
 
 impl From<CrystalsError> for EncryptionDecryptionError {
@@ -126,8 +126,8 @@ impl From<PackingError> for EncryptionDecryptionError {
     }
 }
 
-impl From<rand_core::Error> for EncryptionDecryptionError {
-    fn from(error: rand_core::Error) -> Self {
+impl From<getrandom::Error> for EncryptionDecryptionError {
+    fn from(error: getrandom::Error) -> Self {
         Self::Rand(error)
     }
 }

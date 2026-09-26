@@ -12,6 +12,17 @@ mod kem_tests {
             }
     }
 
+    #[test]
+    fn user_supplied_rng() {
+        let mut rng: rand::rngs::StdRng = rand::make_rng();
+        let (pk, sk) = generate_keypair_768(Some(&mut rng)).unwrap();
+        let (ciphertext, shared_secret) = pk.encapsulate(None, Some(&mut rng)).unwrap();
+
+        let decap_secret = sk.decapsulate(ciphertext.as_bytes()).unwrap();
+
+        assert_eq!(shared_secret, decap_secret);
+    }
+
     proptest! {
         #[test]
         fn encapsulate_decapsulate((pk, sk) in new_keypair()) {

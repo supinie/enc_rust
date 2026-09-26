@@ -7,11 +7,11 @@ pub(in crate::tests) mod indcpa_tests {
     };
     use proptest::prelude::*;
     use rand::rngs::StdRng;
-    use rand::{Rng, SeedableRng};
+    use rand::{make_rng, RngExt};
     use tinyvec::{array_vec, ArrayVec};
 
     pub(in crate::tests) fn generate_random_seed() -> [u8; 32] {
-        let mut rng = StdRng::from_entropy();
+        let mut rng: StdRng = make_rng();
         let mut seed = [0u8; 32];
         rng.fill(&mut seed);
         seed

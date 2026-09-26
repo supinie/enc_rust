@@ -402,7 +402,7 @@ impl Poly<Normalised> {
     // ```
     pub(crate) fn read_msg(msg: &[u8]) -> Result<Poly<Unreduced>, PackingError> {
         if msg.len() == SYMBYTES {
-            let q_plus_one_over_2 = i16::try_from((Q + 1) / 2)?;
+            let q_plus_one_over_2 = i16::try_from(Q.div_ceil(2))?;
             let coeffs_arr: [i16; N] = msg
                 .iter()
                 .flat_map(|&byte| (0..8).map(move |i| ((i16::from(byte) >> i) & 1).wrapping_neg()))
